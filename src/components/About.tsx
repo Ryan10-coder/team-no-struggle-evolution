@@ -5,33 +5,33 @@ const About = () => {
   const features = [
     {
       icon: Heart,
-      title: 'Community Support',
-      description: 'Providing financial assistance during medical emergencies, natural disasters, and family crises.',
+      title: 'Contribution Model',
+      description: 'Each member contributes Ksh 100 per occurrence (Ksh 50 for children under 10) to support families in need.',
     },
     {
       icon: Shield,
-      title: 'Reliable Protection',
-      description: 'Trusted support system with transparent processes and guaranteed assistance when you need it most.',
+      title: 'Guaranteed Payouts',
+      description: 'Up to Ksh 300,000 for principal members, spouses and parents; Ksh 150,000 for children under 10.',
     },
     {
       icon: Users,
-      title: 'Strong Network',
-      description: 'Building lasting relationships and connections within our diverse community of caring members.',
+      title: 'Open Membership',
+      description: 'Anyone 18+, any gender, no residence boundaries. Join our inclusive community of 3,500+ members.',
     },
     {
       icon: Target,
-      title: 'Focused Mission',
-      description: 'Dedicated to reducing financial stress and ensuring no member faces hardship alone.',
+      title: 'Pooled Support',
+      description: 'Small contributions from many members create a powerful safety net for all families.',
     },
     {
       icon: Award,
-      title: 'Proven Track Record',
-      description: 'Years of successful community support with thousands of families helped through difficult times.',
+      title: 'Administrative Fee',
+      description: 'One-time Ksh 50 registration fee to join and become part of our supportive community.',
     },
     {
       icon: Globe,
-      title: 'Growing Reach',
-      description: 'Expanding our impact across communities while maintaining our core values of trust and support.',
+      title: 'Wide Coverage',
+      description: 'Supporting members and their families across all regions with no geographical restrictions.',
     },
   ];
 
@@ -43,10 +43,9 @@ const About = () => {
             About <span className="text-primary">Team No Struggle</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Founded on the principle that no one should face life's struggles alone, Team No Struggle 
-            is a welfare group dedicated to providing financial support and community assistance during 
-            times of need. Our mission is to create a safety net of mutual support where every member 
-            contributes to and benefits from our collective strength.
+            Team No Struggle is a benevolent welfare group targeting 3,500+ members. We operate through 
+            a pooled support system where members contribute small amounts to collectively support families 
+            during difficult times, particularly with funeral expenses and related needs.
           </p>
         </div>
 
@@ -73,41 +72,40 @@ const About = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Our Commitment to You
+                How Our Pooled Support Works
               </h3>
               <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-                We believe that everyone deserves support during their most challenging moments. 
-                Through our welfare group, we've created a system where community members pool 
-                resources to help each other through medical emergencies, family crises, and 
-                unexpected financial hardships.
+                Our benevolent welfare system operates on the principle of collective responsibility. 
+                When a member or their family faces a bereavement, our community comes together to 
+                provide immediate financial support through our pooled contribution system.
               </p>
               <ul className="space-y-3">
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-foreground">Transparent contribution system</span>
+                  <span className="text-foreground">Ksh 100 contribution per occurrence</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-foreground">Quick assistance approval process</span>
+                  <span className="text-foreground">Ksh 50 for children under 10</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-foreground">24/7 member support</span>
+                  <span className="text-foreground">Ksh 50 one-time registration fee</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-foreground">Community-driven decision making</span>
+                  <span className="text-foreground">Transparent community-driven process</span>
                 </li>
               </ul>
             </div>
             <div className="lg:text-right">
               <div className="inline-block bg-white rounded-2xl p-8 shadow-soft">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">15+</div>
-                <div className="text-muted-foreground mb-4">Years of Service</div>
-                <div className="text-4xl md:text-5xl font-bold text-secondary mb-2">100%</div>
-                <div className="text-muted-foreground mb-4">Assistance Success Rate</div>
-                <div className="text-4xl md:text-5xl font-bold text-success mb-2">3.5K+</div>
-                <div className="text-muted-foreground">Families Supported</div>
+                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">3,500+</div>
+                <div className="text-muted-foreground mb-4">Target Members</div>
+                <div className="text-4xl md:text-5xl font-bold text-secondary mb-2">Ksh 300K</div>
+                <div className="text-muted-foreground mb-4">Max Payout</div>
+                <div className="text-4xl md:text-5xl font-bold text-success mb-2">Ksh 50</div>
+                <div className="text-muted-foreground">Registration Fee</div>
               </div>
             </div>
           </div>

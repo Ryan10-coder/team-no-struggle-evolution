@@ -7,16 +7,21 @@ const Header = () => {
 
   const navigation = [
     { name: 'About Us', href: '#about' },
-    { name: 'Membership', href: '#membership' },
-    { name: 'Benefits', href: '#benefits' },
-    { name: 'Registration', href: '#register' },
-    { name: 'Contact', href: '#contact' }
+    { name: 'Requirements', href: '#requirements' },
+    { name: 'Rights & Responsibilities', href: '#rights' },
+    { name: 'Register as a Member', href: '#register' },
+    { name: 'Register as an Admin', href: '/adminregistration', external: true },
+    { name: 'Registered Members', href: '/viewmems', external: true }
   ];
 
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  const handleNavigation = (item: { href: string; external?: boolean }) => {
+    if (item.external) {
+      window.location.href = item.href;
+    } else {
+      const element = document.querySelector(item.href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
     setIsMenuOpen(false);
   };
@@ -41,7 +46,7 @@ const Header = () => {
             {navigation.map((item) => (
               <button
                 key={item.name}
-                onClick={() => scrollToSection(item.href)}
+                onClick={() => handleNavigation(item)}
                 className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
               >
                 {item.name}
@@ -51,11 +56,7 @@ const Header = () => {
 
           {/* Action Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => scrollToSection('#contact')}>
-              <Phone className="h-4 w-4 mr-2" />
-              Contact
-            </Button>
-            <Button size="sm" onClick={() => scrollToSection('#register')}>
+            <Button size="sm" onClick={() => handleNavigation({ href: '#register' })}>
               <User className="h-4 w-4 mr-2" />
               Join Now
             </Button>
@@ -81,18 +82,14 @@ const Header = () => {
               {navigation.map((item) => (
                 <button
                   key={item.name}
-                  onClick={() => scrollToSection(item.href)}
+                  onClick={() => handleNavigation(item)}
                   className="text-left text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium py-2"
                 >
                   {item.name}
                 </button>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" onClick={() => scrollToSection('#contact')}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Contact
-                </Button>
-                <Button size="sm" onClick={() => scrollToSection('#register')}>
+                <Button size="sm" onClick={() => handleNavigation({ href: '#register' })}>
                   <User className="h-4 w-4 mr-2" />
                   Join Now
                 </Button>

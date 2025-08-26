@@ -1,9 +1,9 @@
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import About from '@/components/About';
-import Membership from '@/components/Membership';
-import Registration from '@/components/Registration';
-import ContactForm from '@/components/ContactForm';
+import Requirements from '@/components/Requirements';
+import RightsResponsibilities from '@/components/RightsResponsibilities';
+import MultiStepRegistration from '@/components/MultiStepRegistration';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -12,9 +12,9 @@ const Index = () => {
       <Header />
       <Hero />
       <About />
-      <Membership />
-      <Registration />
-      <ContactForm />
+      <Requirements />
+      <RightsResponsibilities />
+      <MultiStepRegistration />
       <Footer />
     </div>
   );

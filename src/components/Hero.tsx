@@ -32,17 +32,17 @@ const Hero = () => {
 
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 leading-tight animate-slide-up">
-            United in Support,
+            Supporting Members and Their Families
             <br />
             <span className="bg-gradient-hero bg-clip-text text-transparent">
-              Strong in Community
+              Through Difficult Times
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-slide-up" style={{animationDelay: '0.2s'}}>
-            Team No Struggle provides reliable financial support during life's most difficult moments,
-            bringing communities together through mutual aid and shared responsibility.
+            A benevolent welfare group for 3,500+ members that pools small contributions 
+            to support families with funeral expenses and related needs.
           </p>
 
           {/* Action Buttons */}
@@ -74,12 +74,12 @@ const Hero = () => {
               <div className="text-muted-foreground">Active Members</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-secondary mb-2">₹50L+</div>
-              <div className="text-muted-foreground">Total Support Provided</div>
+              <div className="text-3xl md:text-4xl font-bold text-secondary mb-2">Ksh 300K</div>
+              <div className="text-muted-foreground">Max Payout</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl md:text-4xl font-bold text-success mb-2">98%</div>
-              <div className="text-muted-foreground">Member Satisfaction</div>
+              <div className="text-3xl md:text-4xl font-bold text-success mb-2">Ksh 100</div>
+              <div className="text-muted-foreground">Per Contribution</div>
             </div>
           </div>
         </div>
