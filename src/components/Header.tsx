@@ -1,0 +1,108 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Menu, X, Users, Phone, FileText, User } from 'lucide-react';
+
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navigation = [
+    { name: 'About Us', href: '#about' },
+    { name: 'Membership', href: '#membership' },
+    { name: 'Benefits', href: '#benefits' },
+    { name: 'Registration', href: '#register' },
+    { name: 'Contact', href: '#contact' }
+  ];
+
+  const scrollToSection = (href: string) => {
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMenuOpen(false);
+  };
+
+  return (
+    <header className="fixed w-full top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border shadow-soft">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Team No Struggle</h1>
+              <p className="text-xs text-muted-foreground">Welfare Group</p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6">
+            {navigation.map((item) => (
+              <button
+                key={item.name}
+                onClick={() => scrollToSection(item.href)}
+                className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+              >
+                {item.name}
+              </button>
+            ))}
+          </nav>
+
+          {/* Action Buttons */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => scrollToSection('#contact')}>
+              <Phone className="h-4 w-4 mr-2" />
+              Contact
+            </Button>
+            <Button size="sm" onClick={() => scrollToSection('#register')}>
+              <User className="h-4 w-4 mr-2" />
+              Join Now
+            </Button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 rounded-md hover:bg-accent transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t border-border bg-background/95 backdrop-blur-sm">
+            <nav className="flex flex-col gap-4">
+              {navigation.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => scrollToSection(item.href)}
+                  className="text-left text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium py-2"
+                >
+                  {item.name}
+                </button>
+              ))}
+              <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <Button variant="outline" size="sm" onClick={() => scrollToSection('#contact')}>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Contact
+                </Button>
+                <Button size="sm" onClick={() => scrollToSection('#register')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Join Now
+                </Button>
+              </div>
+            </nav>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
+
+export default Header;
