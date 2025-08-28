@@ -11,7 +11,8 @@ const Header = () => {
     { name: 'Rights & Responsibilities', href: '#rights' },
     { name: 'Register as a Member', href: '#register' },
     { name: 'Register as an Admin', href: '/adminregistration', external: true },
-    { name: 'Registered Members', href: '/viewmems', external: true }
+    { name: 'Registered Members', href: '/viewmems', external: true },
+    { name: 'Staff Portal', href: '/auth', external: true }
   ];
 
   const handleNavigation = (item: { href: string; external?: boolean }) => {
