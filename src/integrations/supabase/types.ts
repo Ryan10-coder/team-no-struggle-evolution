@@ -47,12 +47,133 @@ export type Database = {
         }
         Relationships: []
       }
+      contributions: {
+        Row: {
+          amount: number
+          contribution_date: string
+          contribution_type: string
+          created_at: string
+          id: string
+          member_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          contribution_date?: string
+          contribution_type?: string
+          created_at?: string
+          id?: string
+          member_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          contribution_date?: string
+          contribution_type?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contributions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "membership_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disbursements: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          created_at: string
+          disbursement_date: string
+          id: string
+          member_id: string
+          reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          disbursement_date?: string
+          id?: string
+          member_id: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          disbursement_date?: string
+          id?: string
+          member_id?: string
+          reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disbursements_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "membership_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_balances: {
+        Row: {
+          current_balance: number
+          id: string
+          last_updated: string
+          member_id: string
+          total_contributions: number
+          total_disbursements: number
+        }
+        Insert: {
+          current_balance?: number
+          id?: string
+          last_updated?: string
+          member_id: string
+          total_contributions?: number
+          total_disbursements?: number
+        }
+        Update: {
+          current_balance?: number
+          id?: string
+          last_updated?: string
+          member_id?: string
+          total_contributions?: number
+          total_disbursements?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_balances_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: true
+            referencedRelation: "membership_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_registrations: {
         Row: {
           address: string
           alternative_phone: string | null
           city: string
           created_at: string
+          days_to_maturity: number | null
           email: string
           emergency_contact_name: string
           emergency_contact_phone: string
@@ -61,13 +182,17 @@ export type Database = {
           id_number: string | null
           last_name: string
           marital_status: string | null
+          maturity_status: string | null
           membership_type: string
           payment_status: string | null
           phone: string
+          probation_end_date: string | null
           profile_picture_url: string | null
+          registration_date: string | null
           registration_status: string | null
           sex: string | null
           state: string
+          tns_number: string | null
           updated_at: string
           user_id: string | null
           zip_code: string
@@ -77,6 +202,7 @@ export type Database = {
           alternative_phone?: string | null
           city: string
           created_at?: string
+          days_to_maturity?: number | null
           email: string
           emergency_contact_name: string
           emergency_contact_phone: string
@@ -85,13 +211,17 @@ export type Database = {
           id_number?: string | null
           last_name: string
           marital_status?: string | null
+          maturity_status?: string | null
           membership_type: string
           payment_status?: string | null
           phone: string
+          probation_end_date?: string | null
           profile_picture_url?: string | null
+          registration_date?: string | null
           registration_status?: string | null
           sex?: string | null
           state: string
+          tns_number?: string | null
           updated_at?: string
           user_id?: string | null
           zip_code: string
@@ -101,6 +231,7 @@ export type Database = {
           alternative_phone?: string | null
           city?: string
           created_at?: string
+          days_to_maturity?: number | null
           email?: string
           emergency_contact_name?: string
           emergency_contact_phone?: string
@@ -109,16 +240,56 @@ export type Database = {
           id_number?: string | null
           last_name?: string
           marital_status?: string | null
+          maturity_status?: string | null
           membership_type?: string
           payment_status?: string | null
           phone?: string
+          probation_end_date?: string | null
           profile_picture_url?: string | null
+          registration_date?: string | null
           registration_status?: string | null
           sex?: string | null
           state?: string
+          tns_number?: string | null
           updated_at?: string
           user_id?: string | null
           zip_code?: string
+        }
+        Relationships: []
+      }
+      monthly_expenses: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          created_at: string
+          description: string | null
+          expense_category: string
+          expense_date: string
+          id: string
+          month_year: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          expense_category: string
+          expense_date?: string
+          id?: string
+          month_year: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          created_at?: string
+          description?: string | null
+          expense_category?: string
+          expense_date?: string
+          id?: string
+          month_year?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -212,12 +383,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          assigned_area: string | null
+          created_at: string
+          data: Json | null
+          description: string | null
+          id: string
+          priority: string | null
+          status: string
+          submitted_by: string
+          submitted_to_role: string
+          task_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_area?: string | null
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          submitted_by: string
+          submitted_to_role: string
+          task_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_area?: string | null
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          id?: string
+          priority?: string | null
+          status?: string
+          submitted_by?: string
+          submitted_to_role?: string
+          task_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_maturity_status: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
