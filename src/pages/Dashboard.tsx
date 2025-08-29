@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, FileText, DollarSign, Settings } from "lucide-react";
+import { Loader2, Users, FileText, DollarSign, Settings, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -144,12 +144,21 @@ const Dashboard = () => {
         });
         break;
         
-      case "Treasurer":
+        case "Treasurer":
         portals.push({
           title: "Treasurer Portal",
           description: "Manage treasury and financial operations",
           icon: DollarSign,
           route: "treasurer"
+        });
+        break;
+        
+      case "Admin":
+        portals.push({
+          title: "Admin Portal",
+          description: "Approve members and manage staff registrations",
+          icon: Shield,
+          route: "admin"
         });
         break;
         

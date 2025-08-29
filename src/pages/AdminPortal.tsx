@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, Shield, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { useNavigate } from "react-router-dom";
 
 interface MemberRegistration {
   id: string;
@@ -39,24 +37,24 @@ interface StaffRegistration {
 }
 
 const AdminPortal = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [pendingMembers, setPendingMembers] = useState<MemberRegistration[]>([]);
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    checkAdminStatus();
+    
+    checkAdminAccess();
   }, [user, navigate]);
 
-  const checkAdminStatus = async () => {
+  const checkAdminAccess = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: staffData, error } = await supabase
         .from("staff_registrations")
         .select("*")
         .eq("user_id", user?.id)
@@ -64,72 +62,71 @@ const AdminPortal = () => {
         .eq("pending", "approved")
         .single();
 
-      if (error && error.code !== "PGRST116") {
-        console.error("Error checking admin status:", error);
+      if (error) {
+        toast.error("Access denied. Admin privileges required.");
+        navigate("/dashboard");
         return;
       }
 
-      if (data) {
-        setIsAdmin(true);
-        await fetchPendingData();
-      }
+      fetchPendingRegistrations();
     } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error checking admin access:", error);
+      navigate("/dashboard");
     }
   };
 
-  const fetchPendingData = async () => {
+  const fetchPendingRegistrations = async () => {
+    setLoading(true);
     try {
       // Fetch pending member registrations
-      const { data: membersData, error: membersError } = await supabase
+      const { data: members, error: membersError } = await supabase
         .from("membership_registrations")
         .select("*")
         .eq("registration_status", "pending")
         .order("created_at", { ascending: false });
 
-      if (membersError) {
-        console.error("Error fetching pending members:", membersError);
-      } else {
-        setPendingMembers(membersData || []);
-      }
+      if (membersError) throw membersError;
 
       // Fetch pending staff registrations
-      const { data: staffData, error: staffError } = await supabase
+      const { data: staff, error: staffError } = await supabase
         .from("staff_registrations")
         .select("*")
-        .eq("pending", "pending")
+        .in("pending", ["", "pending"])
         .order("created_at", { ascending: false });
 
-      if (staffError) {
-        console.error("Error fetching pending staff:", staffError);
-      } else {
-        setPendingStaff(staffData || []);
-      }
+      if (staffError) throw staffError;
+
+      setPendingMembers(members || []);
+      setPendingStaff(staff || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching registrations:", error);
+      toast.error("Failed to load registrations");
+    } finally {
+      setLoading(false);
     }
   };
 
   const approveMember = async (memberId: string) => {
     try {
+      // Generate TNS number
+      const tnsNumber = `TNS${Date.now().toString().slice(-6)}`;
+      
       const { error } = await supabase
         .from("membership_registrations")
-        .update({ registration_status: "approved" })
+        .update({ 
+          registration_status: "approved",
+          tns_number: tnsNumber,
+          payment_status: "paid"
+        })
         .eq("id", memberId);
 
-      if (error) {
-        toast.error("Error approving member");
-        console.error(error);
-        return;
-      }
+      if (error) throw error;
 
-      toast.success("Member approved successfully");
-      setPendingMembers(prev => prev.filter(member => member.id !== memberId));
+      toast.success("Member approved successfully!");
+      fetchPendingRegistrations();
     } catch (error) {
-      toast.error("Error approving member");
-      console.error(error);
+      console.error("Error approving member:", error);
+      toast.error("Failed to approve member");
     }
   };
 
@@ -140,17 +137,13 @@ const AdminPortal = () => {
         .update({ registration_status: "rejected" })
         .eq("id", memberId);
 
-      if (error) {
-        toast.error("Error rejecting member");
-        console.error(error);
-        return;
-      }
+      if (error) throw error;
 
-      toast.success("Member rejected");
-      setPendingMembers(prev => prev.filter(member => member.id !== memberId));
+      toast.success("Member registration rejected");
+      fetchPendingRegistrations();
     } catch (error) {
-      toast.error("Error rejecting member");
-      console.error(error);
+      console.error("Error rejecting member:", error);
+      toast.error("Failed to reject member");
     }
   };
 
@@ -161,17 +154,13 @@ const AdminPortal = () => {
         .update({ pending: "approved" })
         .eq("id", staffId);
 
-      if (error) {
-        toast.error("Error approving staff");
-        console.error(error);
-        return;
-      }
+      if (error) throw error;
 
-      toast.success("Staff approved successfully");
-      setPendingStaff(prev => prev.filter(staff => staff.id !== staffId));
+      toast.success("Staff member approved successfully!");
+      fetchPendingRegistrations();
     } catch (error) {
-      toast.error("Error approving staff");
-      console.error(error);
+      console.error("Error approving staff:", error);
+      toast.error("Failed to approve staff member");
     }
   };
 
@@ -182,27 +171,13 @@ const AdminPortal = () => {
         .update({ pending: "rejected" })
         .eq("id", staffId);
 
-      if (error) {
-        toast.error("Error rejecting staff");
-        console.error(error);
-        return;
-      }
+      if (error) throw error;
 
-      toast.success("Staff rejected");
-      setPendingStaff(prev => prev.filter(staff => staff.id !== staffId));
+      toast.success("Staff registration rejected");
+      fetchPendingRegistrations();
     } catch (error) {
-      toast.error("Error rejecting staff");
-      console.error(error);
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate("/auth");
-      toast.success("Successfully signed out");
-    } catch (error) {
-      toast.error("Error signing out");
+      console.error("Error rejecting staff:", error);
+      toast.error("Failed to reject staff member");
     }
   };
 
@@ -214,53 +189,31 @@ const AdminPortal = () => {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] p-4">
-          <Card className="w-full max-w-md text-center">
-            <CardHeader>
-              <CardTitle>Access Restricted</CardTitle>
-              <CardDescription>
-                You don't have admin privileges. Please contact the system administrator.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={handleSignOut} variant="outline" className="w-full">
-                Sign Out
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Portal</h1>
-            <p className="text-muted-foreground">Manage member and staff approvals</p>
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-3">
+            <Shield className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold">Admin Portal</h1>
+              <p className="text-muted-foreground">Manage member and staff approvals</p>
+            </div>
           </div>
-          <Button onClick={handleSignOut} variant="outline">
-            Sign Out
+          <Button onClick={() => navigate("/dashboard")} variant="outline">
+            Back to Dashboard
           </Button>
         </div>
 
-        <Tabs defaultValue="members" className="space-y-6">
+        <Tabs defaultValue="members" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="members" className="flex items-center gap-2">
+            <TabsTrigger value="members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              Member Approvals ({pendingMembers.length})
+              <span>Pending Members ({pendingMembers.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="staff" className="flex items-center gap-2">
+            <TabsTrigger value="staff" className="flex items-center space-x-2">
               <Shield className="h-4 w-4" />
-              Staff Approvals ({pendingStaff.length})
+              <span>Pending Staff ({pendingStaff.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -269,7 +222,7 @@ const AdminPortal = () => {
               <CardHeader>
                 <CardTitle>Pending Member Registrations</CardTitle>
                 <CardDescription>
-                  Review and approve or reject new member applications
+                  Review and approve member applications
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -285,7 +238,7 @@ const AdminPortal = () => {
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
                         <TableHead>Location</TableHead>
-                        <TableHead>Type</TableHead>
+                        <TableHead>Membership Type</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -306,20 +259,22 @@ const AdminPortal = () => {
                             {new Date(member.registration_date).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <div className="flex space-x-2">
                               <Button
                                 size="sm"
                                 onClick={() => approveMember(member.id)}
                                 className="bg-green-600 hover:bg-green-700"
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <UserCheck className="h-4 w-4 mr-1" />
+                                Approve
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => rejectMember(member.id)}
                               >
-                                <XCircle className="h-4 w-4" />
+                                <UserX className="h-4 w-4 mr-1" />
+                                Reject
                               </Button>
                             </div>
                           </TableCell>
@@ -337,7 +292,7 @@ const AdminPortal = () => {
               <CardHeader>
                 <CardTitle>Pending Staff Registrations</CardTitle>
                 <CardDescription>
-                  Review and approve or reject new staff applications
+                  Review and approve staff applications
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -374,20 +329,22 @@ const AdminPortal = () => {
                             {new Date(staff.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
+                            <div className="flex space-x-2">
                               <Button
                                 size="sm"
                                 onClick={() => approveStaff(staff.id)}
                                 className="bg-green-600 hover:bg-green-700"
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <UserCheck className="h-4 w-4 mr-1" />
+                                Approve
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => rejectStaff(staff.id)}
                               >
-                                <XCircle className="h-4 w-4" />
+                                <UserX className="h-4 w-4 mr-1" />
+                                Reject
                               </Button>
                             </div>
                           </TableCell>
@@ -401,7 +358,6 @@ const AdminPortal = () => {
           </TabsContent>
         </Tabs>
       </div>
-      <Footer />
     </div>
   );
 };
