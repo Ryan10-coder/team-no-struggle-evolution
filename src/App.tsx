@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CoordinatorPortal from "./pages/CoordinatorPortal";
 import AuditorPortal from "./pages/AuditorPortal";
+import AdminPortal from "./pages/AdminPortal";
 import AdminRegistration from "./pages/AdminRegistration";
 import ViewMembers from "./pages/ViewMembers";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/coordinator" element={<CoordinatorPortal />} />
             <Route path="/auditor" element={<AuditorPortal />} />
+            <Route path="/admin" element={<AdminPortal />} />
             <Route path="/backhome" element={<Index />} />
             <Route path="/adminregistration" element={<AdminRegistration />} />
             <Route path="/viewmems" element={<ViewMembers />} />

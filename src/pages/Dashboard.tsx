@@ -152,6 +152,15 @@ const Dashboard = () => {
           route: "treasurer"
         });
         break;
+        
+      case "Admin":
+        portals.push({
+          title: "Admin Portal",
+          description: "Approve members and staff registrations",
+          icon: Settings,
+          route: "admin"
+        });
+        break;
     }
     
     return portals;
