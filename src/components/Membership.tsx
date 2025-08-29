@@ -7,11 +7,11 @@ const Membership = () => {
   const plans = [
     {
       name: 'Basic Member',
-      price: '₹500',
+      price: 'Ksh 500',
       period: 'per month',
       description: 'Essential support for individuals and small families',
       features: [
-        'Emergency financial assistance up to ₹50,000',
+        'Emergency financial assistance up to Ksh 50,000',
         'Medical emergency support',
         'Community network access',
         'Basic grief support',
@@ -23,11 +23,11 @@ const Membership = () => {
     },
     {
       name: 'Family Member',
-      price: '₹1,200',
+      price: 'Ksh 1,200',
       period: 'per month',
       description: 'Comprehensive coverage for families with enhanced benefits',
       features: [
-        'Emergency financial assistance up to ₹1,50,000',
+        'Emergency financial assistance up to Ksh 1,50,000',
         'Extended medical emergency support',
         'Family crisis intervention',
         'Premium grief support services',
@@ -41,11 +41,11 @@ const Membership = () => {
     },
     {
       name: 'Community Leader',
-      price: '₹2,500',
+      price: 'Ksh 2,500',
       period: 'per month',
       description: 'Leadership role with maximum support and community benefits',
       features: [
-        'Emergency financial assistance up to ₹3,00,000',
+        'Emergency financial assistance up to Ksh 3,00,000',
         'Comprehensive medical coverage',
         'Priority support in all categories',
         'Leadership development programs',
