@@ -433,6 +433,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_admin: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       update_maturity_status: {
         Args: Record<PropertyKey, never>
         Returns: undefined
