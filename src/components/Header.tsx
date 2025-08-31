@@ -1,23 +1,27 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, Users, Phone, FileText, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const navigation = [
     { name: 'About Us', href: '#about' },
     { name: 'Requirements', href: '#requirements' },
     { name: 'Rights & Responsibilities', href: '#rights' },
     { name: 'Register as a Member', href: '#register' },
-    { name: 'Register as an Admin', href: '/adminregistration', external: true },
-    { name: 'Registered Members', href: '/viewmems', external: true },
-    { name: 'Staff Portal', href: '/auth', external: true }
+    { name: 'Register as an Admin', href: '/adminregistration', route: true },
+    { name: 'Registered Members', href: '/viewmems', route: true },
+    { name: user ? 'Dashboard' : 'Staff Portal', href: user ? '/dashboard' : '/auth', route: true }
   ];
 
-  const handleNavigation = (item: { href: string; external?: boolean }) => {
-    if (item.external) {
-      window.location.href = item.href;
+  const handleNavigation = (item: { href: string; route?: boolean }) => {
+    if (item.route) {
+      navigate(item.href);
     } else {
       const element = document.querySelector(item.href);
       if (element) {
