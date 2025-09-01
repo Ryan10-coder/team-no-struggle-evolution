@@ -40,6 +40,7 @@ const AdminPortal = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [pendingMembers, setPendingMembers] = useState<MemberRegistration[]>([]);
+  const [allMembers, setAllMembers] = useState<MemberRegistration[]>([]);
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,6 +88,14 @@ const AdminPortal = () => {
 
       if (membersError) throw membersError;
 
+      // Fetch all member registrations
+      const { data: allMembersData, error: allMembersError } = await supabase
+        .from("membership_registrations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (allMembersError) throw allMembersError;
+
       // Fetch pending staff registrations
       const { data: staff, error: staffError } = await supabase
         .from("staff_registrations")
@@ -97,6 +106,7 @@ const AdminPortal = () => {
       if (staffError) throw staffError;
 
       setPendingMembers(members || []);
+      setAllMembers(allMembersData || []);
       setPendingStaff(staff || []);
     } catch (error) {
       console.error("Error fetching registrations:", error);
@@ -205,11 +215,15 @@ const AdminPortal = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="members" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="members" className="flex items-center space-x-2">
+        <Tabs defaultValue="pending-members" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Pending Members ({pendingMembers.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="all-members" className="flex items-center space-x-2">
+              <Users className="h-4 w-4" />
+              <span>All Members ({allMembers.length})</span>
             </TabsTrigger>
             <TabsTrigger value="staff" className="flex items-center space-x-2">
               <Shield className="h-4 w-4" />
@@ -217,7 +231,7 @@ const AdminPortal = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="members">
+          <TabsContent value="pending-members">
             <Card>
               <CardHeader>
                 <CardTitle>Pending Member Registrations</CardTitle>
@@ -277,6 +291,68 @@ const AdminPortal = () => {
                                 Reject
                               </Button>
                             </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="all-members">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Members</CardTitle>
+                <CardDescription>
+                  View all registered members and their status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {allMembers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No members registered yet
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Membership Type</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>TNS Number</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allMembers.map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell className="font-medium">
+                            {member.first_name} {member.last_name}
+                          </TableCell>
+                          <TableCell>{member.email}</TableCell>
+                          <TableCell>{member.phone}</TableCell>
+                          <TableCell>{member.city}, {member.state}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{member.membership_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                member.registration_status === 'approved' ? 'default' :
+                                member.registration_status === 'pending' ? 'secondary' : 'destructive'
+                              }
+                            >
+                              {member.registration_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{member.tns_number || "Not assigned"}</TableCell>
+                          <TableCell>
+                            {new Date(member.registration_date).toLocaleDateString()}
                           </TableCell>
                         </TableRow>
                       ))}
