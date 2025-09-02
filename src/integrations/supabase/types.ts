@@ -433,6 +433,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_next_tns_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin: {
         Args: { user_id_param: string }
         Returns: boolean

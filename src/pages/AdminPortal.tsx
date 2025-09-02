@@ -118,14 +118,11 @@ const AdminPortal = () => {
 
   const approveMember = async (memberId: string) => {
     try {
-      // Generate TNS number
-      const tnsNumber = `TNS${Date.now().toString().slice(-6)}`;
-      
+      // Just approve the member - TNS number is already auto-assigned
       const { error } = await supabase
         .from("membership_registrations")
         .update({ 
           registration_status: "approved",
-          tns_number: tnsNumber,
           payment_status: "paid"
         })
         .eq("id", memberId);
