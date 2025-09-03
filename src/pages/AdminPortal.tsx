@@ -42,6 +42,7 @@ const AdminPortal = () => {
   const [pendingMembers, setPendingMembers] = useState<MemberRegistration[]>([]);
   const [allMembers, setAllMembers] = useState<MemberRegistration[]>([]);
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
+  const [allStaff, setAllStaff] = useState<StaffRegistration[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -105,9 +106,18 @@ const AdminPortal = () => {
 
       if (staffError) throw staffError;
 
+      // Fetch all staff registrations
+      const { data: allStaffData, error: allStaffError } = await supabase
+        .from("staff_registrations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (allStaffError) throw allStaffError;
+
       setPendingMembers(members || []);
       setAllMembers(allMembersData || []);
       setPendingStaff(staff || []);
+      setAllStaff(allStaffData || []);
     } catch (error) {
       console.error("Error fetching registrations:", error);
       toast.error("Failed to load registrations");
@@ -213,7 +223,7 @@ const AdminPortal = () => {
         </div>
 
         <Tabs defaultValue="pending-members" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Pending Members ({pendingMembers.length})</span>
@@ -222,9 +232,13 @@ const AdminPortal = () => {
               <Users className="h-4 w-4" />
               <span>All Members ({allMembers.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="staff" className="flex items-center space-x-2">
+            <TabsTrigger value="pending-staff" className="flex items-center space-x-2">
               <Shield className="h-4 w-4" />
               <span>Pending Staff ({pendingStaff.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="all-staff" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span>All Staff ({allStaff.length})</span>
             </TabsTrigger>
           </TabsList>
 
@@ -360,7 +374,7 @@ const AdminPortal = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="staff">
+          <TabsContent value="pending-staff">
             <Card>
               <CardHeader>
                 <CardTitle>Pending Staff Registrations</CardTitle>
@@ -420,6 +434,66 @@ const AdminPortal = () => {
                                 Reject
                               </Button>
                             </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="all-staff">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Staff</CardTitle>
+                <CardDescription>
+                  View all registered staff and their status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {allStaff.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No staff registered yet
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Assigned Area</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allStaff.map((staff) => (
+                        <TableRow key={staff.id}>
+                          <TableCell className="font-medium">
+                            {staff.first_name} {staff.last_name}
+                          </TableCell>
+                          <TableCell>{staff.email}</TableCell>
+                          <TableCell>{staff.phone}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{staff.staff_role}</Badge>
+                          </TableCell>
+                          <TableCell>{staff.assigned_area || "N/A"}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                staff.pending === 'approved' ? 'default' :
+                                staff.pending === 'pending' || staff.pending === '' ? 'secondary' : 'destructive'
+                              }
+                            >
+                              {staff.pending || 'pending'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(staff.created_at).toLocaleDateString()}
                           </TableCell>
                         </TableRow>
                       ))}
