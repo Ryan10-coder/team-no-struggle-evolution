@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, ChevronLeft, ChevronRight, Upload, Users, Heart, User, Baby, UserCheck, Receipt } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MemberInfo {
   name: string;
+  email: string;
   idNumber: string;
   phone: string;
   altPhone: string;
@@ -55,6 +57,7 @@ const MultiStepRegistration = () => {
 
   const [memberInfo, setMemberInfo] = useState<MemberInfo>({
     name: '',
+    email: '',
     idNumber: '',
     phone: '',
     altPhone: '',
@@ -125,43 +128,91 @@ const MultiStepRegistration = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      // Extract city and state from area of residence
+      const areaOfResidence = memberInfo.areaOfResidence;
+      const areaParts = areaOfResidence.split(',').map(part => part.trim());
+      const city = areaParts[0] || areaOfResidence;
+      const state = areaParts[1] || '';
 
-    toast({
-      title: "Registration Submitted!",
-      description: "Your member registration has been submitted successfully. Our team will review and contact you within 24 hours.",
-    });
+      // Determine membership type based on marital status
+      const membershipType = memberInfo.maritalStatus === 'married' ? 'family' : 
+                            memberInfo.maritalStatus === 'single' ? 'basic' : 'basic';
 
-    // Reset form
-    setCurrentStep(1);
-    setMemberInfo({
-      name: '',
-      idNumber: '',
-      phone: '',
-      altPhone: '',
-      sex: '',
-      maritalStatus: '',
-      areaOfResidence: '',
-      photo: null,
-    });
-    setSpouseInfo({
-      name: '',
-      idNumber: '',
-      phone: '',
-      altPhone: '',
-      sex: '',
-      areaOfResidence: '',
-      photo: null,
-    });
-    setChildren([]);
-    setParentsInfo({
-      member: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
-      spouse: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
-    });
-    setTransactionId('');
+      // Parse member name (assume format "First Last")
+      const nameParts = memberInfo.name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-    setIsSubmitting(false);
+      const { data, error } = await supabase
+        .from('membership_registrations')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          email: memberInfo.email,
+          phone: memberInfo.phone,
+          address: areaOfResidence,
+          city: city,
+          state: state,
+          zip_code: '00000', // Default zip code
+          emergency_contact_name: parentsInfo.member.name || 'Not provided',
+          emergency_contact_phone: parentsInfo.member.phone || memberInfo.altPhone || memberInfo.phone,
+          membership_type: membershipType,
+          id_number: memberInfo.idNumber,
+          alternative_phone: memberInfo.altPhone,
+          sex: memberInfo.sex,
+          marital_status: memberInfo.maritalStatus,
+          registration_status: 'pending',
+          payment_status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Registration Submitted!",
+        description: "Your member registration has been submitted successfully. Our team will review and contact you within 24 hours.",
+      });
+
+      // Reset form
+      setCurrentStep(1);
+      setMemberInfo({
+        name: '',
+        email: '',
+        idNumber: '',
+        phone: '',
+        altPhone: '',
+        sex: '',
+        maritalStatus: '',
+        areaOfResidence: '',
+        photo: null,
+      });
+      setSpouseInfo({
+        name: '',
+        idNumber: '',
+        phone: '',
+        altPhone: '',
+        sex: '',
+        areaOfResidence: '',
+        photo: null,
+      });
+      setChildren([]);
+      setParentsInfo({
+        member: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+        spouse: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+      });
+      setTransactionId('');
+    } catch (error) {
+      console.error('Error submitting registration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit registration. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -187,6 +238,17 @@ const MultiStepRegistration = () => {
                   value={memberInfo.name}
                   onChange={(e) => setMemberInfo({ ...memberInfo, name: e.target.value })}
                   placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="memberEmail">Email Address *</Label>
+                <Input
+                  id="memberEmail"
+                  type="email"
+                  value={memberInfo.email}
+                  onChange={(e) => setMemberInfo({ ...memberInfo, email: e.target.value })}
+                  placeholder="Enter your email address"
                   required
                 />
               </div>
