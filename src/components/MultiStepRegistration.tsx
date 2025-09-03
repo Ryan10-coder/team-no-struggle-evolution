@@ -136,8 +136,8 @@ const MultiStepRegistration = () => {
       const state = areaParts[1] || '';
 
       // Determine membership type based on marital status
-      const membershipType = memberInfo.maritalStatus === 'married' ? 'family' : 
-                            memberInfo.maritalStatus === 'single' ? 'basic' : 'basic';
+      const membershipType = memberInfo.maritalStatus === 'Married' ? 'family' : 
+                            memberInfo.maritalStatus === 'Single' ? 'basic' : 'basic';
 
       // Parse member name (assume format "First Last")
       const nameParts = memberInfo.name.trim().split(' ');
@@ -301,10 +301,10 @@ const MultiStepRegistration = () => {
                     <SelectValue placeholder="Select marital status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="married">Married</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
+                    <SelectItem value="Single">Single</SelectItem>
+                    <SelectItem value="Married">Married</SelectItem>
+                    <SelectItem value="Divorced">Divorced</SelectItem>
+                    <SelectItem value="Widowed">Widowed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -358,7 +358,7 @@ const MultiStepRegistration = () => {
               <p className="text-muted-foreground">Please provide your spouse's details (if married)</p>
             </div>
 
-            {memberInfo.maritalStatus === 'married' ? (
+            {memberInfo.maritalStatus === 'Married' ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -644,7 +644,7 @@ const MultiStepRegistration = () => {
               {/* Spouse's Parents */}
               <div>
                 <h4 className="text-lg font-semibold text-foreground mb-4">
-                  Spouse's Parents {memberInfo.maritalStatus !== 'married' && '(Optional)'}
+                  Spouse's Parents {memberInfo.maritalStatus !== 'Married' && '(Optional)'}
                 </h4>
                 <div className="space-y-4">
                   <div className="space-y-2">
