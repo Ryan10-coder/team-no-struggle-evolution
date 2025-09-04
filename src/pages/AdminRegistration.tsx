@@ -8,28 +8,29 @@ import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Shield } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { supabase } from '@/integrations/supabase/client';
 
 const AdminRegistration = () => {
   const { toast } = useToast();
   const [selectedRole, setSelectedRole] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    idNumber: '',
+    firstName: '',
+    lastName: '',
+    email: '',
     phone: '',
     areaOfResidence: '',
-    password: '',
   });
 
   const roles = [
-    { value: 'advisory', label: 'Advisory Committee' },
-    { value: 'general-coordinator', label: 'General Coordinator' },
-    { value: 'area-coordinator', label: 'Area Coordinator' },
-    { value: 'secretary', label: 'Secretary' },
-    { value: 'customer-service', label: 'Customer Service Personnel' },
-    { value: 'organizing-secretary', label: 'Organizing Secretary' },
-    { value: 'treasurer', label: 'Treasurer' },
-    { value: 'auditor', label: 'Auditor' },
+    { value: 'Advisory Committee', label: 'Advisory Committee' },
+    { value: 'General Coordinator', label: 'General Coordinator' },
+    { value: 'Area Coordinator', label: 'Area Coordinator' },
+    { value: 'Secretary', label: 'Secretary' },
+    { value: 'Customer Service', label: 'Customer Service Personnel' },
+    { value: 'Organizing Secretary', label: 'Organizing Secretary' },
+    { value: 'Treasurer', label: 'Treasurer' },
+    { value: 'Auditor', label: 'Auditor' },
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -47,27 +48,67 @@ const AdminRegistration = () => {
       return;
     }
 
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const { data, error } = await supabase
+        .from('staff_registrations')
+        .insert([
+          {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            staff_role: selectedRole,
+            assigned_area: formData.areaOfResidence,
+            pending: 'pending',
+          }
+        ]);
 
-    toast({
-      title: "Admin Registration Submitted!",
-      description: "Your registration has been submitted for approval. You will be contacted within 24 hours.",
-    });
+      if (error) {
+        console.error('Error submitting staff registration:', error);
+        toast({
+          title: "Registration Failed",
+          description: error.message || "Failed to submit registration. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // Reset form
-    setFormData({
-      name: '',
-      idNumber: '',
-      phone: '',
-      areaOfResidence: '',
-      password: '',
-    });
-    setSelectedRole('');
+      toast({
+        title: "Admin Registration Submitted!",
+        description: "Your registration has been submitted for approval. You will be contacted within 24 hours.",
+      });
 
-    setIsSubmitting(false);
+      // Reset form
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        areaOfResidence: '',
+      });
+      setSelectedRole('');
+
+    } catch (error) {
+      console.error('Error submitting staff registration:', error);
+      toast({
+        title: "Registration Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,28 +163,43 @@ const AdminRegistration = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-foreground font-medium">
-                      Full Name *
+                    <Label htmlFor="firstName" className="text-foreground font-medium">
+                      First Name *
                     </Label>
                     <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter your full name"
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      placeholder="Enter your first name"
                       required
                       className="border-border/50 focus:border-primary"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="idNumber" className="text-foreground font-medium">
-                      ID Number *
+                    <Label htmlFor="lastName" className="text-foreground font-medium">
+                      Last Name *
                     </Label>
                     <Input
-                      id="idNumber"
-                      value={formData.idNumber}
-                      onChange={(e) => handleInputChange('idNumber', e.target.value)}
-                      placeholder="Enter your national ID number"
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      placeholder="Enter your last name"
+                      required
+                      className="border-border/50 focus:border-primary"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-foreground font-medium">
+                      Email *
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="Enter your email address"
                       required
                       className="border-border/50 focus:border-primary"
                     />
@@ -165,29 +221,13 @@ const AdminRegistration = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="areaOfResidence" className="text-foreground font-medium">
-                      Area of Residence *
+                      Area of Residence/Assignment
                     </Label>
                     <Input
                       id="areaOfResidence"
                       value={formData.areaOfResidence}
                       onChange={(e) => handleInputChange('areaOfResidence', e.target.value)}
-                      placeholder="Enter your area of residence"
-                      required
-                      className="border-border/50 focus:border-primary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-foreground font-medium">
-                      Password *
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      placeholder="Create a secure password"
-                      required
+                      placeholder="Enter your area of residence or assignment"
                       className="border-border/50 focus:border-primary"
                     />
                   </div>
