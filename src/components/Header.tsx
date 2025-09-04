@@ -39,11 +39,6 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <div className="h-10 w-10 bg-gradient-primary rounded-lg flex items-center justify-center">
               <Users className="h-6 w-6 text-primary-foreground" />
-              <img
-                 src={heroImage}
-                 alt="Team No Struggle"
-                 className="w-full h-full object-cover opacity-10"
-              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Team No Struggle</h1>
