@@ -12,6 +12,7 @@ import AuditorPortal from "./pages/AuditorPortal";
 import AdminPortal from "./pages/AdminPortal";
 import AdminRegistration from "./pages/AdminRegistration";
 import ViewMembers from "./pages/ViewMembers";
+import PortalLogin from "./pages/PortalLogin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/backhome" element={<Index />} />
             <Route path="/adminregistration" element={<AdminRegistration />} />
             <Route path="/viewmems" element={<ViewMembers />} />
+            <Route path="/portal-login" element={<PortalLogin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
