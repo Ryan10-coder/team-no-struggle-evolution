@@ -68,6 +68,45 @@ const About = () => {
           })}
         </div>
 
+        {/* Our Team in Action Section */}
+        <div className="mb-16">
+          <h3 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-8">
+            Our Team in Action
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="group cursor-pointer">
+              <div className="overflow-hidden rounded-xl shadow-medium group-hover:shadow-large transition-all duration-300">
+                <img 
+                  src="/lovable-uploads/2b896dec-cf05-49e1-adf4-2812daf80b94.png" 
+                  alt="Team No Struggle members gathering together for community support" 
+                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <p className="text-center text-muted-foreground mt-3">Our dedicated team members</p>
+            </div>
+            <div className="group cursor-pointer">
+              <div className="overflow-hidden rounded-xl shadow-medium group-hover:shadow-large transition-all duration-300">
+                <img 
+                  src="/lovable-uploads/72c12052-4bfc-47e0-83da-a8ab3a74fc60.png" 
+                  alt="Team No Struggle community volunteers in their signature uniforms" 
+                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <p className="text-center text-muted-foreground mt-3">Community volunteers united</p>
+            </div>
+            <div className="group cursor-pointer md:col-span-2 lg:col-span-1">
+              <div className="overflow-hidden rounded-xl shadow-medium group-hover:shadow-large transition-all duration-300">
+                <img 
+                  src="/lovable-uploads/5799a3f3-3192-499e-9b94-50df16c3444a.png" 
+                  alt="Team No Struggle members providing support and care to community members in need" 
+                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+              <p className="text-center text-muted-foreground mt-3">Supporting those in need</p>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 md:p-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
