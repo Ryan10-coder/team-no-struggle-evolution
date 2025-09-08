@@ -351,6 +351,7 @@ export type Database = {
           last_name: string
           pending: string | null
           phone: string
+          portal_password: string | null
           staff_role: string
           updated_at: string
           user_id: string | null
@@ -364,6 +365,7 @@ export type Database = {
           last_name: string
           pending?: string | null
           phone: string
+          portal_password?: string | null
           staff_role: string
           updated_at?: string
           user_id?: string | null
@@ -377,6 +379,7 @@ export type Database = {
           last_name?: string
           pending?: string | null
           phone?: string
+          portal_password?: string | null
           staff_role?: string
           updated_at?: string
           user_id?: string | null

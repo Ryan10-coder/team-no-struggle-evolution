@@ -37,7 +37,7 @@ const PortalLogin = () => {
       // Verify user has the selected role and is approved
       const { data: staffData, error: staffError } = await supabase
         .from("staff_registrations")
-        .select("staff_role, pending")
+        .select("staff_role, pending, portal_password")
         .eq("user_id", user.id)
         .eq("staff_role", selectedRole)
         .single();
@@ -54,16 +54,15 @@ const PortalLogin = () => {
         return;
       }
 
-      // Check password against role-specific passwords
-      const rolePasswords: { [key: string]: string } = {
-        "Admin": "admin123",
-        "Coordinator": "coord123", 
-        "Auditor": "audit123",
-        "Treasurer": "treasure123"
-      };
+      // Check password against the assigned portal password
+      if (!staffData.portal_password) {
+        toast.error("No portal password assigned. Contact your administrator.");
+        setIsLoading(false);
+        return;
+      }
 
-      if (password !== rolePasswords[selectedRole]) {
-        toast.error("Incorrect password for this role");
+      if (password !== staffData.portal_password) {
+        toast.error("Incorrect portal password");
         setIsLoading(false);
         return;
       }

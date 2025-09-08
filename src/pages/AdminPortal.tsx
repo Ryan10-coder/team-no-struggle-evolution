@@ -5,7 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Users, UserCheck, UserX, Shield } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Users, UserCheck, UserX, Shield, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +47,9 @@ const AdminPortal = () => {
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
   const [allStaff, setAllStaff] = useState<StaffRegistration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStaff, setSelectedStaff] = useState<StaffRegistration | null>(null);
+  const [portalPassword, setPortalPassword] = useState("");
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -164,16 +170,33 @@ const AdminPortal = () => {
     }
   };
 
-  const approveStaff = async (staffId: string) => {
+  const openPasswordDialog = (staff: StaffRegistration) => {
+    setSelectedStaff(staff);
+    setPortalPassword("");
+    setIsPasswordDialogOpen(true);
+  };
+
+  const approveStaffWithPassword = async () => {
+    if (!selectedStaff || !portalPassword.trim()) {
+      toast.error("Please enter a portal password");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("staff_registrations")
-        .update({ pending: "approved" })
-        .eq("id", staffId);
+        .update({ 
+          pending: "approved",
+          portal_password: portalPassword.trim()
+        })
+        .eq("id", selectedStaff.id);
 
       if (error) throw error;
 
-      toast.success("Staff member approved successfully!");
+      toast.success("Staff member approved with portal password!");
+      setIsPasswordDialogOpen(false);
+      setSelectedStaff(null);
+      setPortalPassword("");
       fetchPendingRegistrations();
     } catch (error) {
       console.error("Error approving staff:", error);
@@ -415,26 +438,26 @@ const AdminPortal = () => {
                           <TableCell>
                             {new Date(staff.created_at).toLocaleDateString()}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                onClick={() => approveStaff(staff.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => rejectStaff(staff.id)}
-                              >
-                                <UserX className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          </TableCell>
+                           <TableCell>
+                             <div className="flex space-x-2">
+                               <Button
+                                 size="sm"
+                                 onClick={() => openPasswordDialog(staff)}
+                                 className="bg-green-600 hover:bg-green-700"
+                               >
+                                 <Key className="h-4 w-4 mr-1" />
+                                 Approve & Set Password
+                               </Button>
+                               <Button
+                                 size="sm"
+                                 variant="destructive"
+                                 onClick={() => rejectStaff(staff.id)}
+                               >
+                                 <UserX className="h-4 w-4 mr-1" />
+                                 Reject
+                               </Button>
+                             </div>
+                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -504,6 +527,43 @@ const AdminPortal = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Password Assignment Dialog */}
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Portal Password</DialogTitle>
+              <DialogDescription>
+                Set a portal password for {selectedStaff?.first_name} {selectedStaff?.last_name} ({selectedStaff?.staff_role})
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="portal-password">Portal Password</Label>
+                <Input
+                  id="portal-password"
+                  type="password"
+                  placeholder="Enter a secure password"
+                  value={portalPassword}
+                  onChange={(e) => setPortalPassword(e.target.value)}
+                  autoFocus
+                />
+                <p className="text-sm text-muted-foreground">
+                  This password will be used to access their role-specific portal
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={approveStaffWithPassword} disabled={!portalPassword.trim()}>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Approve & Assign Password
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
