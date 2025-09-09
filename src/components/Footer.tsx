@@ -106,7 +106,7 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-background/80">
                 <Phone className="h-4 w-4 text-secondary" />
-                <span>+91 98765 43210</span>
+                <span>07XXXXXXX</span>
               </div>
               <div className="flex items-center gap-3 text-background/80">
                 <Mail className="h-4 w-4 text-secondary" />
@@ -114,7 +114,7 @@ const Footer = () => {
               </div>
               <div className="flex items-start gap-3 text-background/80">
                 <MapPin className="h-4 w-4 text-secondary mt-1" />
-                <span>Community Center<br />New Delhi, India</span>
+                <span>Community Center<br />Kakamega</span>
               </div>
             </div>
 
