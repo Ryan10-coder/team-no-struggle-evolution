@@ -444,6 +444,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      link_staff_to_user: {
+        Args: { auth_user_id: string; staff_email: string }
+        Returns: undefined
+      }
       update_maturity_status: {
         Args: Record<PropertyKey, never>
         Returns: undefined
