@@ -37,14 +37,12 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Team No Struggle</h1>
-              <p className="text-xs text-muted-foreground">Welfare Group</p>
-            </div>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/d8a56827-a0a0-45cd-8555-8fd9643d5b96.png" 
+              alt="Team No Struggle - making things easier" 
+              className="h-12 w-auto"
+            />
           </div>
 
           {/* Desktop Navigation */}
