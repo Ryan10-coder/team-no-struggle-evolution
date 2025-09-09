@@ -39,7 +39,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <img 
-              src="/lovable-uploads/d8a56827-a0a0-45cd-8555-8fd9643d5b96.png" 
+              src="/lovable-uploads/4a4961c3-bc53-48f7-a650-4dc70fb40614.png" 
               alt="Team No Struggle - making things easier" 
               className="h-12 w-auto"
             />
