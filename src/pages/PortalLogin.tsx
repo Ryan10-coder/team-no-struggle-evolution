@@ -4,94 +4,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Shield, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useStaffAuth } from "@/hooks/useStaffAuth";
 import { toast } from "sonner";
 
 const PortalLogin = () => {
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { login, isLoading } = useStaffAuth();
 
   const handlePortalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      toast.error("Please login first");
-      navigate("/auth");
+    if (!email || !password) {
+      toast.error("Please enter your email and password");
       return;
     }
 
-    if (!selectedRole || !password) {
-      toast.error("Please select a role and enter password");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Verify user has the selected role and is approved
-      const { data: staffData, error: staffError } = await supabase
-        .from("staff_registrations")
-        .select("staff_role, pending, portal_password")
-        .eq("user_id", user.id)
-        .eq("staff_role", selectedRole)
-        .single();
-
-      if (staffError || !staffData) {
-        toast.error(`You are not registered as ${selectedRole}`);
-        setIsLoading(false);
-        return;
-      }
-
-      if (staffData.pending !== "approved") {
-        toast.error(`Your ${selectedRole} role is still pending approval`);
-        setIsLoading(false);
-        return;
-      }
-
-      // Check password against the assigned portal password
-      if (!staffData.portal_password) {
-        toast.error("No portal password assigned. Contact your administrator.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (password !== staffData.portal_password) {
-        toast.error("Incorrect portal password");
-        setIsLoading(false);
-        return;
-      }
-
-      // Success - redirect to appropriate portal
-      toast.success(`Welcome to ${selectedRole} Portal`);
-      
-      switch (selectedRole) {
-        case "Admin":
-          navigate("/admin");
-          break;
-        case "Coordinator":
-          navigate("/coordinator");
-          break;
-        case "Auditor":
-          navigate("/auditor");
-          break;
-        case "Treasurer":
-          navigate("/admin"); // Treasurers use admin portal
-          break;
-        default:
-          navigate("/dashboard");
-      }
-
-    } catch (error) {
-      console.error("Portal login error:", error);
-      toast.error("An error occurred during portal login");
-    } finally {
-      setIsLoading(false);
+    const result = await login(email, password);
+    
+    if (result.success) {
+      toast.success("Welcome to Staff Portal");
+      navigate("/admin"); // All staff members go to admin portal for now
+    } else {
+      toast.error(result.error || "Login failed");
     }
   };
 
@@ -105,26 +42,23 @@ const PortalLogin = () => {
                 <Shield className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Portal Access</CardTitle>
+            <CardTitle className="text-2xl">Staff Portal Login</CardTitle>
             <CardDescription>
-              Select your role and enter the portal password
+              Enter your staff email and portal password
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePortalLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Select Role</Label>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Coordinator">Coordinator</SelectItem>
-                    <SelectItem value="Auditor">Auditor</SelectItem>
-                    <SelectItem value="Treasurer">Treasurer</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="email">Staff Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your staff email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
@@ -142,15 +76,15 @@ const PortalLogin = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading || !selectedRole || !password}
+                disabled={isLoading || !email || !password}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Accessing Portal...
+                    Logging in...
                   </>
                 ) : (
-                  "Access Portal"
+                  "Login to Portal"
                 )}
               </Button>
             </form>
@@ -158,11 +92,11 @@ const PortalLogin = () => {
             <div className="mt-4 text-center space-y-2">
               <Button 
                 variant="outline" 
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
                 className="w-full"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                Back to Home
               </Button>
               
               <div className="text-sm text-muted-foreground">

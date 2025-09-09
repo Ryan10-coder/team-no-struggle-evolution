@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useStaffAuth } from "@/hooks/useStaffAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +42,7 @@ interface StaffRegistration {
 
 const AdminPortal = () => {
   const { user } = useAuth();
+  const { staffUser, logout: staffLogout } = useStaffAuth();
   const navigate = useNavigate();
   const [pendingMembers, setPendingMembers] = useState<MemberRegistration[]>([]);
   const [allMembers, setAllMembers] = useState<MemberRegistration[]>([]);
@@ -52,34 +54,50 @@ const AdminPortal = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
+    // Check if user is authenticated either through regular auth or staff auth
+    if (!user && !staffUser) {
+      navigate("/portal-login");
       return;
     }
     
     checkAdminAccess();
-  }, [user, navigate]);
+  }, [user, staffUser, navigate]);
 
   const checkAdminAccess = async () => {
     try {
-      const { data: staffData, error } = await supabase
-        .from("staff_registrations")
-        .select("*")
-        .eq("user_id", user?.id)
-        .eq("staff_role", "Admin")
-        .eq("pending", "approved")
-        .single();
-
-      if (error) {
-        toast.error("Access denied. Admin privileges required.");
-        navigate("/dashboard");
-        return;
+      // If logged in via staff auth, check if they have admin/treasurer role
+      if (staffUser) {
+        if (staffUser.staff_role === "Admin" || staffUser.staff_role === "Treasurer") {
+          fetchPendingRegistrations();
+          return;
+        } else {
+          toast.error("Access denied. Admin or Treasurer privileges required.");
+          navigate("/portal-login");
+          return;
+        }
       }
 
-      fetchPendingRegistrations();
+      // If logged in via regular auth, check if they have admin role
+      if (user) {
+        const { data: staffData, error } = await supabase
+          .from("staff_registrations")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("staff_role", "Admin")
+          .eq("pending", "approved")
+          .single();
+
+        if (error) {
+          toast.error("Access denied. Admin privileges required.");
+          navigate("/dashboard");
+          return;
+        }
+
+        fetchPendingRegistrations();
+      }
     } catch (error) {
       console.error("Error checking admin access:", error);
-      navigate("/dashboard");
+      navigate(staffUser ? "/portal-login" : "/dashboard");
     }
   };
 
@@ -221,6 +239,16 @@ const AdminPortal = () => {
     }
   };
 
+  const handleLogout = () => {
+    if (staffUser) {
+      staffLogout();
+      toast.success("Logged out successfully");
+      navigate("/portal-login");
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -237,12 +265,24 @@ const AdminPortal = () => {
             <Shield className="h-8 w-8 text-primary" />
             <div>
               <h1 className="text-3xl font-bold">Admin Portal</h1>
-              <p className="text-muted-foreground">Manage member and staff approvals</p>
+              <p className="text-muted-foreground">
+                Manage member and staff approvals 
+                {staffUser && ` • Logged in as: ${staffUser.first_name} ${staffUser.last_name} (${staffUser.staff_role})`}
+                {user && !staffUser && ` • User: ${user.email}`}
+              </p>
             </div>
           </div>
-          <Button onClick={() => navigate("/dashboard")} variant="outline">
-            Back to Dashboard
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button onClick={() => navigate(staffUser ? "/portal-login" : "/dashboard")} variant="outline">
+              Back to {staffUser ? "Portal Login" : "Dashboard"}
+            </Button>
+            {staffUser && (
+              <Button onClick={handleLogout} variant="outline">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="pending-members" className="w-full">
