@@ -153,11 +153,20 @@ const Dashboard = () => {
         });
         break;
         
-        case "Admin":
+      case "Admin":
         portals.push({
           title: "Admin Portal",
           description: "Approve members and manage staff registrations",
           icon: Shield,
+          route: "admin"
+        });
+        break;
+        
+      case "Admin":
+        portals.push({
+          title: "Admin Portal",
+          description: "Approve members and staff registrations",
+          icon: Settings,
           route: "admin"
         });
         break;
