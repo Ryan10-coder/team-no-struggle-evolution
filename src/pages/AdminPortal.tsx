@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -267,14 +267,14 @@ const AdminPortal = () => {
 
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
     try {
-      toast.loading(`Generating ${format.toUpperCase()} export...`);
+      toast.loading("Generating " + format.toUpperCase() + " export...");
       
       // Call the edge function directly with the format parameter
-      const response = await fetch(`https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-members?format=${format}`, {
+      const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-members?format=" + format, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA`,
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA'
+          'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
+          'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
         }
       });
 
@@ -287,17 +287,82 @@ const AdminPortal = () => {
       
       const date = new Date().toISOString().split('T')[0];
       const extension = format === 'excel' ? 'xls' : format === 'pdf' ? 'html' : 'csv';
-      a.download = `members_export_${date}.${extension}`;
+      a.download = "members_export_" + date + "." + extension;
       
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      toast.success(`${format.toUpperCase()} export downloaded successfully!`);
+      toast.success(format.toUpperCase() + " export downloaded successfully!");
     } catch (error) {
       console.error('Export error:', error);
-      toast.error(`Failed to export ${format.toUpperCase()} file`);
+      toast.error("Failed to export " + format.toUpperCase() + " file");
+    }
+  };
+
+  const handleTreasurerExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    try {
+      toast.loading("Generating treasurer " + format.toUpperCase() + " report...");
+      
+      // Generate sample financial data for the report
+      const financialSummary = {
+        totalMembers: allMembers.length,
+        totalContributions: 2450000,
+        totalDisbursements: 1850000,
+        monthlyExpenses: 125000,
+        netPosition: 600000,
+        avgMonthlyContribution: 2450000 / 6,
+        avgDisbursement: 1850000 / 12,
+        contributionGrowth: 15.2,
+        expenseRatio: 5.1,
+        liquidityRatio: 4.8
+      };
+
+      const monthlyData = [
+        { month: "January 2024", members: 85, contributions: 180000, disbursements: 120000, expenses: 15000, growth: 8.5 },
+        { month: "February 2024", members: 92, contributions: 210000, disbursements: 150000, expenses: 15000, growth: 16.7 },
+        { month: "March 2024", members: 89, contributions: 190000, disbursements: 140000, expenses: 15000, growth: -9.5 },
+        { month: "April 2024", members: 105, contributions: 250000, disbursements: 180000, expenses: 15000, growth: 31.6 },
+        { month: "May 2024", members: 118, contributions: 280000, disbursements: 200000, expenses: 15000, growth: 12.0 },
+        { month: "June 2024", members: 125, contributions: 320000, disbursements: 250000, expenses: 15000, growth: 14.3 }
+      ];
+
+      // Call the treasurer report edge function
+      const response = await fetch('https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-treasurer-report', {
+        method: 'POST',
+        headers: {
+          'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          summary: financialSummary,
+          monthlyData: monthlyData,
+          generatedBy: staffUser ? staffUser.first_name + " " + staffUser.last_name : 'Admin',
+          generatedAt: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) throw new Error('Treasurer report export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const date = new Date().toISOString().split('T')[0];
+      a.download = "TNS_Treasurer_Report_" + date + ".csv";
+      
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("Treasurer " + format.toUpperCase() + " report downloaded successfully!");
+    } catch (error) {
+      console.error('Treasurer export error:', error);
+      toast.error("Failed to export treasurer " + format.toUpperCase() + " report");
     }
   };
 
@@ -319,8 +384,8 @@ const AdminPortal = () => {
               <h1 className="text-3xl font-bold">Admin Portal</h1>
               <p className="text-muted-foreground">
                 Manage member and staff approvals 
-                {staffUser && ` • Logged in as: ${staffUser.first_name} ${staffUser.last_name} (${staffUser.staff_role})`}
-                {user && !staffUser && ` • User: ${user.email}`}
+                {staffUser && " • Logged in as: " + staffUser.first_name + " " + staffUser.last_name + " (" + staffUser.staff_role + ")"}
+                {user && !staffUser && " • User: " + user.email}
               </p>
             </div>
           </div>
@@ -338,10 +403,14 @@ const AdminPortal = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="treasurer" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>Treasurer</span>
             </TabsTrigger>
             <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -658,7 +727,7 @@ const AdminPortal = () => {
                               <Avatar className="h-10 w-10">
                                 <AvatarImage 
                                   src={member.profile_picture_url || undefined}
-                                  alt={`${member.first_name} ${member.last_name}`}
+                                  alt={member.first_name + " " + member.last_name}
                                 />
                                 <AvatarFallback>
                                   {member.first_name.charAt(0)}{member.last_name.charAt(0)}
@@ -807,7 +876,7 @@ const AdminPortal = () => {
                             <Avatar className="h-10 w-10">
                               <AvatarImage 
                                 src={member.profile_picture_url || undefined}
-                                alt={`${member.first_name} ${member.last_name}`}
+                                alt={member.first_name + " " + member.last_name}
                               />
                               <AvatarFallback>
                                 {member.first_name.charAt(0)}{member.last_name.charAt(0)}
@@ -1013,6 +1082,228 @@ const AdminPortal = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="treasurer">
+            <div className="grid gap-6">
+              {/* Financial Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KES 2,450,000</div>
+                    <p className="text-xs text-muted-foreground">
+                      +12% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Disbursements</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KES 1,850,000</div>
+                    <p className="text-xs text-muted-foreground">
+                      +8% from last month
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Net Position</CardTitle>
+                    <Calculator className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">KES 600,000</div>
+                    <p className="text-xs text-muted-foreground">
+                      Positive balance
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">KES 125,000</div>
+                    <p className="text-xs text-muted-foreground">
+                      Operating costs
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-blue-600">15.2%</div>
+                    <p className="text-xs text-muted-foreground">
+                      Annual growth
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Financial Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Monthly Financial Trends */}
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Monthly Financial Trends</CardTitle>
+                    <CardDescription>Contributions, disbursements, and net position over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        contributions: { label: "Contributions", color: "hsl(var(--chart-2))" },
+                        disbursements: { label: "Disbursements", color: "hsl(var(--chart-5))" },
+                        netPosition: { label: "Net Position", color: "hsl(var(--chart-7))" },
+                      }}
+                      className="h-[400px]"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={[
+                          { month: "Jan", contributions: 180000, disbursements: 120000, netPosition: 60000 },
+                          { month: "Feb", contributions: 210000, disbursements: 150000, netPosition: 60000 },
+                          { month: "Mar", contributions: 190000, disbursements: 140000, netPosition: 50000 },
+                          { month: "Apr", contributions: 250000, disbursements: 180000, netPosition: 70000 },
+                          { month: "May", contributions: 280000, disbursements: 200000, netPosition: 80000 },
+                          { month: "Jun", contributions: 320000, disbursements: 250000, netPosition: 70000 },
+                        ]}>
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Line type="monotone" dataKey="contributions" stroke="hsl(var(--chart-2))" strokeWidth={3} />
+                          <Line type="monotone" dataKey="disbursements" stroke="hsl(var(--chart-5))" strokeWidth={3} />
+                          <Line type="monotone" dataKey="netPosition" stroke="hsl(var(--chart-7))" strokeWidth={3} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Expense Categories */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Monthly Expense Categories</CardTitle>
+                    <CardDescription>Breakdown of operating expenses</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        administrative: { label: "Administrative", color: "hsl(var(--chart-1))" },
+                        operational: { label: "Operational", color: "hsl(var(--chart-4))" },
+                        marketing: { label: "Marketing", color: "hsl(var(--chart-6))" },
+                        other: { label: "Other", color: "hsl(var(--chart-8))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "administrative", value: 45000, fill: "hsl(var(--chart-1))" },
+                            { name: "operational", value: 35000, fill: "hsl(var(--chart-4))" },
+                            { name: "marketing", value: 25000, fill: "hsl(var(--chart-6))" },
+                            { name: "other", value: 20000, fill: "hsl(var(--chart-8))" },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          innerRadius={30}
+                          label
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Cash Flow Trends */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cash Flow Analysis</CardTitle>
+                    <CardDescription>Monthly cash inflow vs outflow</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        inflow: { label: "Inflow", color: "hsl(var(--chart-7))" },
+                        outflow: { label: "Outflow", color: "hsl(var(--chart-9))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                          { month: "Jan", inflow: 180000, outflow: 135000 },
+                          { month: "Feb", inflow: 210000, outflow: 165000 },
+                          { month: "Mar", inflow: 190000, outflow: 155000 },
+                          { month: "Apr", inflow: 250000, outflow: 195000 },
+                          { month: "May", inflow: 280000, outflow: 215000 },
+                          { month: "Jun", inflow: 320000, outflow: 265000 },
+                        ]}>
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Bar dataKey="inflow" fill="hsl(var(--chart-7))" radius={4} />
+                          <Bar dataKey="outflow" fill="hsl(var(--chart-9))" radius={4} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Export Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Treasurer Report Downloads</CardTitle>
+                  <CardDescription>
+                    Generate detailed financial reports for analysis and record keeping
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleTreasurerExport('csv')}
+                      className="flex items-center space-x-2"
+                    >
+                      <File className="h-4 w-4" />
+                      <span>Download CSV Report</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleTreasurerExport('excel')}
+                      className="flex items-center space-x-2"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      <span>Download Excel Report</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleTreasurerExport('pdf')}
+                      className="flex items-center space-x-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>Download PDF Report</span>
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Reports include financial summaries, monthly trends, expense analysis, and recommendations for financial management.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
