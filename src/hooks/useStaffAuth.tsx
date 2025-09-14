@@ -39,8 +39,8 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
-      
-      // Query staff_registrations directly
+
+      // 1) Verify staff record and portal password
       const { data: staffData, error } = await supabase
         .from('staff_registrations')
         .select('*')
@@ -60,19 +60,77 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: 'Incorrect portal password' };
       }
 
-      // Create staff user object
+      // 2) Ensure a Supabase Auth session exists for this staff
+      // If already logged in with a different account, sign out first
+      const { data: existingSession } = await supabase.auth.getSession();
+      const existingEmail = existingSession.session?.user?.email;
+      if (existingEmail && existingEmail.toLowerCase() !== email.toLowerCase()) {
+        await supabase.auth.signOut();
+      }
+
+      // Try sign-in using the staff portal password
+      let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // If credentials invalid, try to create the auth user
+        if (signInError.message?.toLowerCase().includes('invalid')) {
+          const redirectUrl = `${window.location.origin}/secretary`;
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: redirectUrl,
+              data: {
+                first_name: staffData.first_name,
+                last_name: staffData.last_name,
+                staff_role: staffData.staff_role,
+              },
+            },
+          });
+
+          if (signUpError) {
+            return { success: false, error: `Unable to create account: ${signUpError.message}` };
+          }
+
+          // If email confirmation is required, there will be no session yet
+          if (!signUpData.session) {
+            return {
+              success: false,
+              error: 'Account created. Please confirm the email we sent, then log in again.',
+            };
+          }
+
+          signInData = signUpData as any;
+        } else {
+          return { success: false, error: signInError.message };
+        }
+      }
+
+      // 3) Link staff_registrations to this auth user (SECURITY DEFINER function)
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        await supabase.rpc('link_staff_to_user', {
+          staff_email: email,
+          auth_user_id: userData.user.id,
+        });
+      }
+
+      // 4) Store staff context as before
       const staff: StaffUser = {
         id: staffData.id,
         email: staffData.email,
         first_name: staffData.first_name,
         last_name: staffData.last_name,
         staff_role: staffData.staff_role,
-        assigned_area: staffData.assigned_area
+        assigned_area: staffData.assigned_area,
       };
 
       setStaffUser(staff);
       localStorage.setItem('staff_user', JSON.stringify(staff));
-      
+
       return { success: true };
     } catch (error) {
       console.error('Staff login error:', error);
@@ -85,6 +143,8 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setStaffUser(null);
     localStorage.removeItem('staff_user');
+    // Also clear Supabase auth session
+    supabase.auth.signOut();
   };
 
   return (
