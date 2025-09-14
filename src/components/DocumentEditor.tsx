@@ -50,9 +50,14 @@ export const DocumentEditor = ({ document, onSave, onCancel }: DocumentEditorPro
     try {
       setIsLoading(true);
       
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('Auth error:', userError);
+        toast.error("Please log in again - your session has expired");
+        return;
+      }
       if (!user) {
-        toast.error("Authentication required");
+        toast.error("Authentication required - please log in");
         return;
       }
 
