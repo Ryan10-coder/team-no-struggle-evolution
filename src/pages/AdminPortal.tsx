@@ -9,11 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 
 interface MemberRegistration {
   id: string;
@@ -335,8 +337,12 @@ const AdminPortal = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="pending-members" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="analytics" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Analytics</span>
+            </TabsTrigger>
             <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Pending Members ({pendingMembers.length})</span>
@@ -354,6 +360,262 @@ const AdminPortal = () => {
               <span>All Staff ({allStaff.length})</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <div className="grid gap-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{allMembers.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingMembers.length} pending approval
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Approved Members</CardTitle>
+                    <UserCheck className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {allMembers.filter(m => m.registration_status === 'approved').length}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{allStaff.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {pendingStaff.length} pending approval
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Payment Rate</CardTitle>
+                    <PieChart className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {Math.round((allMembers.filter(m => m.payment_status === 'paid').length / allMembers.length) * 100) || 0}%
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Registration Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Registration Status Distribution</CardTitle>
+                    <CardDescription>Breakdown of member registration statuses</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        approved: { label: "Approved", color: "hsl(var(--chart-1))" },
+                        pending: { label: "Pending", color: "hsl(var(--chart-2))" },
+                        rejected: { label: "Rejected", color: "hsl(var(--chart-3))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(var(--chart-1))" },
+                            { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(var(--chart-2))" },
+                            { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(var(--chart-3))" },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Membership Type Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Membership Type Distribution</CardTitle>
+                    <CardDescription>Distribution by membership types</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        individual: { label: "Individual", color: "hsl(var(--chart-1))" },
+                        family: { label: "Family", color: "hsl(var(--chart-2))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "individual", value: allMembers.filter(m => m.membership_type === 'individual').length, fill: "hsl(var(--chart-1))" },
+                            { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(var(--chart-2))" },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Payment Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment Status Distribution</CardTitle>
+                    <CardDescription>Payment completion rates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        paid: { label: "Paid", color: "hsl(var(--chart-1))" },
+                        pending: { label: "Pending", color: "hsl(var(--chart-2))" },
+                        failed: { label: "Failed", color: "hsl(var(--chart-3))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "paid", value: allMembers.filter(m => m.payment_status === 'paid').length, fill: "hsl(var(--chart-1))" },
+                            { name: "pending", value: allMembers.filter(m => m.payment_status === 'pending').length, fill: "hsl(var(--chart-2))" },
+                            { name: "failed", value: allMembers.filter(m => m.payment_status === 'failed').length, fill: "hsl(var(--chart-3))" },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Members by State */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Members by State</CardTitle>
+                    <CardDescription>Geographic distribution of members</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        count: { label: "Members", color: "hsl(var(--chart-1))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <BarChart
+                        data={Object.entries(
+                          allMembers.reduce((acc, member) => {
+                            acc[member.state] = (acc[member.state] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        )
+                        .map(([state, count]) => ({ state, count }))
+                        .sort((a, b) => b.count - a.count)
+                        .slice(0, 10)}
+                      >
+                        <XAxis dataKey="state" />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="count" fill="hsl(var(--chart-1))" />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Maturity Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Member Maturity Status</CardTitle>
+                    <CardDescription>Distribution of member maturity levels</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        probation: { label: "Probation", color: "hsl(var(--chart-1))" },
+                        mature: { label: "Mature", color: "hsl(var(--chart-2))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <RechartsPieChart>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Pie
+                          dataKey="value"
+                          data={[
+                            { name: "probation", value: allMembers.filter(m => m.maturity_status === 'probation').length, fill: "hsl(var(--chart-1))" },
+                            { name: "mature", value: allMembers.filter(m => m.maturity_status === 'mature').length, fill: "hsl(var(--chart-2))" },
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                      </RechartsPieChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Staff Role Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Staff Role Distribution</CardTitle>
+                    <CardDescription>Breakdown of staff by roles</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        count: { label: "Staff Count", color: "hsl(var(--chart-2))" },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <BarChart
+                        data={Object.entries(
+                          allStaff.reduce((acc, staff) => {
+                            acc[staff.staff_role] = (acc[staff.staff_role] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([role, count]) => ({ role, count }))}
+                      >
+                        <XAxis dataKey="role" angle={-45} textAnchor="end" height={80} />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="count" fill="hsl(var(--chart-2))" />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
           <TabsContent value="pending-members">
             <Card>
