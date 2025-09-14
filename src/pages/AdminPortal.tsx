@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +27,7 @@ interface MemberRegistration {
   registration_status: string;
   registration_date: string;
   tns_number?: string;
+  profile_picture_url?: string;
 }
 
 interface StaffRegistration {
@@ -319,57 +321,69 @@ const AdminPortal = () => {
                     No pending member registrations
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Membership Type</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingMembers.map((member) => (
-                        <TableRow key={member.id}>
-                          <TableCell className="font-medium">
-                            {member.first_name} {member.last_name}
-                          </TableCell>
-                          <TableCell>{member.email}</TableCell>
-                          <TableCell>{member.phone}</TableCell>
-                          <TableCell>{member.city}, {member.state}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{member.membership_type}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(member.registration_date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                size="sm"
-                                onClick={() => approveMember(member.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => rejectMember(member.id)}
-                              >
-                                <UserX className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          </TableCell>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Profile</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Location</TableHead>
+                          <TableHead>Membership Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {pendingMembers.map((member) => (
+                          <TableRow key={member.id}>
+                            <TableCell>
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage 
+                                  src={member.profile_picture_url ? `https://wfqgnshhlfuznabweofj.supabase.co/storage/v1/object/public/member-profiles/${member.profile_picture_url}` : undefined}
+                                  alt={`${member.first_name} ${member.last_name}`}
+                                />
+                                <AvatarFallback>
+                                  {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {member.first_name} {member.last_name}
+                            </TableCell>
+                            <TableCell>{member.email}</TableCell>
+                            <TableCell>{member.phone}</TableCell>
+                            <TableCell>{member.city}, {member.state}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{member.membership_type}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(member.registration_date).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => approveMember(member.id)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => rejectMember(member.id)}
+                                >
+                                  <UserX className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                 )}
               </CardContent>
             </Card>
@@ -392,6 +406,7 @@ const AdminPortal = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Profile</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Phone</TableHead>
@@ -405,6 +420,17 @@ const AdminPortal = () => {
                     <TableBody>
                       {allMembers.map((member) => (
                         <TableRow key={member.id}>
+                          <TableCell>
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage 
+                                src={member.profile_picture_url ? `https://wfqgnshhlfuznabweofj.supabase.co/storage/v1/object/public/member-profiles/${member.profile_picture_url}` : undefined}
+                                alt={`${member.first_name} ${member.last_name}`}
+                              />
+                              <AvatarFallback>
+                                {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </TableCell>
                           <TableCell className="font-medium">
                             {member.first_name} {member.last_name}
                           </TableCell>
