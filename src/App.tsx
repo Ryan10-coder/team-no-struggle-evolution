@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CoordinatorPortal from "./pages/CoordinatorPortal";
 import AuditorPortal from "./pages/AuditorPortal";
 import AdminPortal from "./pages/AdminPortal";
+import SecretaryPortal from "./pages/SecretaryPortal";
 import AdminRegistration from "./pages/AdminRegistration";
 import ViewMembers from "./pages/ViewMembers";
 import PortalLogin from "./pages/PortalLogin";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/coordinator" element={<CoordinatorPortal />} />
               <Route path="/auditor" element={<AuditorPortal />} />
               <Route path="/admin" element={<AdminPortal />} />
+              <Route path="/secretary" element={<SecretaryPortal />} />
               <Route path="/backhome" element={<Index />} />
               <Route path="/adminregistration" element={<AdminRegistration />} />
               <Route path="/viewmems" element={<ViewMembers />} />
