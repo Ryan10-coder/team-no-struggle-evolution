@@ -340,7 +340,7 @@ const AdminPortal = () => {
                             <TableCell>
                               <Avatar className="h-10 w-10">
                                 <AvatarImage 
-                                  src={member.profile_picture_url ? `https://wfqgnshhlfuznabweofj.supabase.co/storage/v1/object/public/member-profiles/${member.profile_picture_url}` : undefined}
+                                  src={member.profile_picture_url || undefined}
                                   alt={`${member.first_name} ${member.last_name}`}
                                 />
                                 <AvatarFallback>
@@ -423,7 +423,7 @@ const AdminPortal = () => {
                           <TableCell>
                             <Avatar className="h-10 w-10">
                               <AvatarImage 
-                                src={member.profile_picture_url ? `https://wfqgnshhlfuznabweofj.supabase.co/storage/v1/object/public/member-profiles/${member.profile_picture_url}` : undefined}
+                                src={member.profile_picture_url || undefined}
                                 alt={`${member.first_name} ${member.last_name}`}
                               />
                               <AvatarFallback>
