@@ -132,6 +132,51 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          document_type: string
+          id: string
+          meeting_date: string | null
+          recipient: string | null
+          status: string
+          tags: string[] | null
+          template_category: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          document_type: string
+          id?: string
+          meeting_date?: string | null
+          recipient?: string | null
+          status?: string
+          tags?: string[] | null
+          template_category?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          document_type?: string
+          id?: string
+          meeting_date?: string | null
+          recipient?: string | null
+          status?: string
+          tags?: string[] | null
+          template_category?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_balances: {
         Row: {
           current_balance: number

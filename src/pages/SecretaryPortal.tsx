@@ -27,6 +27,7 @@ import {
   CheckCircle,
   AlertCircle
 } from "lucide-react";
+import { DocumentList } from "@/components/DocumentList";
 
 interface ContactSubmission {
   id: string;
@@ -356,50 +357,7 @@ const SecretaryPortal = () => {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Document Management</CardTitle>
-                <CardDescription>
-                  Manage organizational documents and templates
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="font-semibold mb-1">Meeting Minutes</h3>
-                      <p className="text-sm text-muted-foreground text-center mb-3">
-                        Create and manage meeting minutes
-                      </p>
-                      <Button variant="outline" size="sm">Create New</Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="font-semibold mb-1">Templates</h3>
-                      <p className="text-sm text-muted-foreground text-center mb-3">
-                        Standard letter and form templates
-                      </p>
-                      <Button variant="outline" size="sm">View Templates</Button>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      <FileText className="h-8 w-8 text-muted-foreground mb-2" />
-                      <h3 className="font-semibold mb-1">Correspondence</h3>
-                      <p className="text-sm text-muted-foreground text-center mb-3">
-                        Official letters and communications
-                      </p>
-                      <Button variant="outline" size="sm">Manage</Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
+            <DocumentList />
           </TabsContent>
 
           {/* Events Tab */}
