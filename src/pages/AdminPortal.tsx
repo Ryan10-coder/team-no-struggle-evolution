@@ -424,9 +424,9 @@ const AdminPortal = () => {
                   <CardContent>
                     <ChartContainer
                       config={{
-                        approved: { label: "Approved", color: "hsl(var(--chart-1))" },
-                        pending: { label: "Pending", color: "hsl(var(--chart-2))" },
-                        rejected: { label: "Rejected", color: "hsl(var(--chart-3))" },
+                        approved: { label: "Approved", color: "hsl(var(--chart-7))" },
+                        pending: { label: "Pending", color: "hsl(var(--chart-3))" },
+                        rejected: { label: "Rejected", color: "hsl(var(--chart-9))" },
                       }}
                       className="h-[300px]"
                     >
@@ -435,14 +435,15 @@ const AdminPortal = () => {
                         <Pie
                           dataKey="value"
                           data={[
-                            { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(var(--chart-1))" },
-                            { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(var(--chart-2))" },
-                            { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(var(--chart-3))" },
+                            { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(var(--chart-7))" },
+                            { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(var(--chart-3))" },
+                            { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(var(--chart-9))" },
                           ]}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
                           label
+                          innerRadius={20}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
                       </RechartsPieChart>
@@ -460,7 +461,7 @@ const AdminPortal = () => {
                     <ChartContainer
                       config={{
                         individual: { label: "Individual", color: "hsl(var(--chart-1))" },
-                        family: { label: "Family", color: "hsl(var(--chart-2))" },
+                        family: { label: "Family", color: "hsl(var(--chart-5))" },
                       }}
                       className="h-[300px]"
                     >
@@ -470,12 +471,13 @@ const AdminPortal = () => {
                           dataKey="value"
                           data={[
                             { name: "individual", value: allMembers.filter(m => m.membership_type === 'individual').length, fill: "hsl(var(--chart-1))" },
-                            { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(var(--chart-2))" },
+                            { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(var(--chart-5))" },
                           ]}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
                           label
+                          innerRadius={20}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
                       </RechartsPieChart>
@@ -492,9 +494,9 @@ const AdminPortal = () => {
                   <CardContent>
                     <ChartContainer
                       config={{
-                        paid: { label: "Paid", color: "hsl(var(--chart-1))" },
-                        pending: { label: "Pending", color: "hsl(var(--chart-2))" },
-                        failed: { label: "Failed", color: "hsl(var(--chart-3))" },
+                        paid: { label: "Paid", color: "hsl(var(--chart-7))" },
+                        pending: { label: "Pending", color: "hsl(var(--chart-4))" },
+                        failed: { label: "Failed", color: "hsl(var(--chart-9))" },
                       }}
                       className="h-[300px]"
                     >
@@ -503,14 +505,15 @@ const AdminPortal = () => {
                         <Pie
                           dataKey="value"
                           data={[
-                            { name: "paid", value: allMembers.filter(m => m.payment_status === 'paid').length, fill: "hsl(var(--chart-1))" },
-                            { name: "pending", value: allMembers.filter(m => m.payment_status === 'pending').length, fill: "hsl(var(--chart-2))" },
-                            { name: "failed", value: allMembers.filter(m => m.payment_status === 'failed').length, fill: "hsl(var(--chart-3))" },
+                            { name: "paid", value: allMembers.filter(m => m.payment_status === 'paid').length, fill: "hsl(var(--chart-7))" },
+                            { name: "pending", value: allMembers.filter(m => m.payment_status === 'pending').length, fill: "hsl(var(--chart-4))" },
+                            { name: "failed", value: allMembers.filter(m => m.payment_status === 'failed').length, fill: "hsl(var(--chart-9))" },
                           ]}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
                           label
+                          innerRadius={20}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
                       </RechartsPieChart>
@@ -527,7 +530,7 @@ const AdminPortal = () => {
                   <CardContent>
                     <ChartContainer
                       config={{
-                        count: { label: "Members", color: "hsl(var(--chart-1))" },
+                        count: { label: "Members", color: "hsl(var(--chart-6))" },
                       }}
                       className="h-[300px]"
                     >
@@ -545,7 +548,7 @@ const AdminPortal = () => {
                         <XAxis dataKey="state" />
                         <YAxis />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" fill="hsl(var(--chart-1))" />
+                        <Bar dataKey="count" fill="hsl(var(--chart-6))" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ChartContainer>
                   </CardContent>
@@ -560,8 +563,8 @@ const AdminPortal = () => {
                   <CardContent>
                     <ChartContainer
                       config={{
-                        probation: { label: "Probation", color: "hsl(var(--chart-1))" },
-                        mature: { label: "Mature", color: "hsl(var(--chart-2))" },
+                        probation: { label: "Probation", color: "hsl(var(--chart-4))" },
+                        mature: { label: "Mature", color: "hsl(var(--chart-8))" },
                       }}
                       className="h-[300px]"
                     >
@@ -570,13 +573,14 @@ const AdminPortal = () => {
                         <Pie
                           dataKey="value"
                           data={[
-                            { name: "probation", value: allMembers.filter(m => m.maturity_status === 'probation').length, fill: "hsl(var(--chart-1))" },
-                            { name: "mature", value: allMembers.filter(m => m.maturity_status === 'mature').length, fill: "hsl(var(--chart-2))" },
+                            { name: "probation", value: allMembers.filter(m => m.maturity_status === 'probation').length, fill: "hsl(var(--chart-4))" },
+                            { name: "mature", value: allMembers.filter(m => m.maturity_status === 'mature').length, fill: "hsl(var(--chart-8))" },
                           ]}
                           cx="50%"
                           cy="50%"
                           outerRadius={80}
                           label
+                          innerRadius={20}
                         />
                         <ChartLegend content={<ChartLegendContent />} />
                       </RechartsPieChart>
@@ -608,7 +612,7 @@ const AdminPortal = () => {
                         <XAxis dataKey="role" angle={-45} textAnchor="end" height={80} />
                         <YAxis />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" fill="hsl(var(--chart-2))" />
+                        <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ChartContainer>
                   </CardContent>

@@ -59,6 +59,18 @@ export default {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))'
 				},
+				chart: {
+					'1': 'hsl(var(--chart-1))',
+					'2': 'hsl(var(--chart-2))',
+					'3': 'hsl(var(--chart-3))',
+					'4': 'hsl(var(--chart-4))',
+					'5': 'hsl(var(--chart-5))',
+					'6': 'hsl(var(--chart-6))',
+					'7': 'hsl(var(--chart-7))',
+					'8': 'hsl(var(--chart-8))',
+					'9': 'hsl(var(--chart-9))',
+					'10': 'hsl(var(--chart-10))',
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -79,6 +91,7 @@ export default {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-secondary': 'var(--gradient-secondary)',
 				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-chart': 'var(--gradient-chart)',
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
