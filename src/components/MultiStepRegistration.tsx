@@ -144,6 +144,24 @@ const MultiStepRegistration = () => {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
+      // Upload profile picture if provided
+      let profilePictureUrl = null;
+      if (memberInfo.photo) {
+        const fileName = `${Date.now()}-${memberInfo.photo.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('member-profiles')
+          .upload(fileName, memberInfo.photo);
+
+        if (uploadError) {
+          console.error('Error uploading photo:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('member-profiles')
+            .getPublicUrl(fileName);
+          profilePictureUrl = publicUrl;
+        }
+      }
+
       const { data, error } = await supabase
         .from('membership_registrations')
         .insert({
@@ -163,7 +181,8 @@ const MultiStepRegistration = () => {
           sex: memberInfo.sex,
           marital_status: memberInfo.maritalStatus,
           registration_status: 'pending',
-          payment_status: 'pending'
+          payment_status: 'pending',
+          profile_picture_url: profilePictureUrl
         })
         .select()
         .single();
