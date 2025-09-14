@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -263,6 +263,42 @@ const AdminPortal = () => {
     }
   };
 
+  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    try {
+      toast.loading(`Generating ${format.toUpperCase()} export...`);
+      
+      // Call the edge function directly with the format parameter
+      const response = await fetch(`https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-members?format=${format}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA'
+        }
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      
+      const date = new Date().toISOString().split('T')[0];
+      const extension = format === 'excel' ? 'xls' : format === 'pdf' ? 'html' : 'csv';
+      a.download = `members_export_${date}.${extension}`;
+      
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success(`${format.toUpperCase()} export downloaded successfully!`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Failed to export ${format.toUpperCase()} file`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -440,10 +476,40 @@ const AdminPortal = () => {
           <TabsContent value="all-members">
             <Card>
               <CardHeader>
-                <CardTitle>All Members</CardTitle>
-                <CardDescription>
-                  View all registered members and their status
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>All Members</CardTitle>
+                    <CardDescription>
+                      View all registered members and their status
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={() => handleExport('csv')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <File className="h-4 w-4 mr-2" />
+                      CSV
+                    </Button>
+                    <Button
+                      onClick={() => handleExport('excel')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Excel
+                    </Button>
+                    <Button
+                      onClick={() => handleExport('pdf')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {allMembers.length === 0 ? (
