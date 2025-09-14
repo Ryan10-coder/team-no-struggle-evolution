@@ -21,13 +21,25 @@ interface MemberRegistration {
   last_name: string;
   email: string;
   phone: string;
+  address: string;
   city: string;
   state: string;
+  zip_code: string;
   membership_type: string;
   registration_status: string;
+  payment_status: string;
   registration_date: string;
   tns_number?: string;
   profile_picture_url?: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  id_number?: string;
+  alternative_phone?: string;
+  sex?: string;
+  marital_status?: string;
+  maturity_status?: string;
+  days_to_maturity?: number;
+  probation_end_date?: string;
 }
 
 interface StaffRegistration {
@@ -321,19 +333,22 @@ const AdminPortal = () => {
                     No pending member registrations
                   </div>
                 ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Profile</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Location</TableHead>
-                          <TableHead>Membership Type</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Profile</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone/Alt Phone</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>ID Number</TableHead>
+                        <TableHead>Emergency Contact</TableHead>
+                        <TableHead>Personal Info</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
                       <TableBody>
                         {pendingMembers.map((member) => (
                           <TableRow key={member.id}>
@@ -349,13 +364,46 @@ const AdminPortal = () => {
                               </Avatar>
                             </TableCell>
                             <TableCell className="font-medium">
-                              {member.first_name} {member.last_name}
+                              <div>{member.first_name} {member.last_name}</div>
+                              <div className="text-sm text-muted-foreground">{member.sex || 'N/A'}, {member.marital_status || 'N/A'}</div>
                             </TableCell>
                             <TableCell>{member.email}</TableCell>
-                            <TableCell>{member.phone}</TableCell>
-                            <TableCell>{member.city}, {member.state}</TableCell>
                             <TableCell>
-                              <Badge variant="outline">{member.membership_type}</Badge>
+                              <div>{member.phone}</div>
+                              {member.alternative_phone && (
+                                <div className="text-sm text-muted-foreground">Alt: {member.alternative_phone}</div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div>{member.address}</div>
+                                <div>{member.city}, {member.state} {member.zip_code}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {member.id_number || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div className="font-medium">{member.emergency_contact_name}</div>
+                                <div className="text-muted-foreground">{member.emergency_contact_phone}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div>Sex: {member.sex || 'N/A'}</div>
+                                <div>Status: {member.marital_status || 'N/A'}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <Badge variant="outline">{member.membership_type}</Badge>
+                                <div className="text-sm">
+                                  <Badge variant={member.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                    {member.payment_status}
+                                  </Badge>
+                                </div>
+                              </div>
                             </TableCell>
                             <TableCell>
                               {new Date(member.registration_date).toLocaleDateString()}
@@ -409,11 +457,14 @@ const AdminPortal = () => {
                         <TableHead>Profile</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Membership Type</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Phone/Alt Phone</TableHead>
+                        <TableHead>Address</TableHead>
+                        <TableHead>ID Number</TableHead>
+                        <TableHead>Emergency Contact</TableHead>
+                        <TableHead>Membership</TableHead>
+                        <TableHead>Maturity Status</TableHead>
                         <TableHead>TNS Number</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -432,14 +483,54 @@ const AdminPortal = () => {
                             </Avatar>
                           </TableCell>
                           <TableCell className="font-medium">
-                            {member.first_name} {member.last_name}
+                            <div>{member.first_name} {member.last_name}</div>
+                            <div className="text-sm text-muted-foreground">{member.sex || 'N/A'}, {member.marital_status || 'N/A'}</div>
                           </TableCell>
                           <TableCell>{member.email}</TableCell>
-                          <TableCell>{member.phone}</TableCell>
-                          <TableCell>{member.city}, {member.state}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{member.membership_type}</Badge>
+                            <div>{member.phone}</div>
+                            {member.alternative_phone && (
+                              <div className="text-sm text-muted-foreground">Alt: {member.alternative_phone}</div>
+                            )}
                           </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>{member.address}</div>
+                              <div>{member.city}, {member.state} {member.zip_code}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {member.id_number || 'N/A'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="font-medium">{member.emergency_contact_name}</div>
+                              <div className="text-muted-foreground">{member.emergency_contact_phone}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Badge variant="outline">{member.membership_type}</Badge>
+                              <div className="text-sm">
+                                <Badge variant={member.payment_status === 'paid' ? 'default' : 'secondary'}>
+                                  {member.payment_status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <Badge variant={member.maturity_status === 'mature' ? 'default' : 'secondary'}>
+                                {member.maturity_status || 'probation'}
+                              </Badge>
+                              {member.days_to_maturity !== undefined && member.days_to_maturity > 0 && (
+                                <div className="text-xs text-muted-foreground">
+                                  {member.days_to_maturity} days left
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{member.tns_number || "Not assigned"}</TableCell>
                           <TableCell>
                             <Badge 
                               variant={
@@ -450,7 +541,6 @@ const AdminPortal = () => {
                               {member.registration_status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{member.tns_number || "Not assigned"}</TableCell>
                           <TableCell>
                             {new Date(member.registration_date).toLocaleDateString()}
                           </TableCell>
