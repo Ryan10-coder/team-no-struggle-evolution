@@ -12,7 +12,7 @@ const PortalLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { login, isLoading } = useStaffAuth();
+  const { login, isLoading, staffUser } = useStaffAuth();
 
   const handlePortalLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +25,15 @@ const PortalLogin = () => {
     const result = await login(email, password);
     
     if (result.success) {
-      toast.success("Welcome to Staff Portal");
-      navigate("/admin"); // All staff members go to admin portal for now
+      const stored = localStorage.getItem('staff_user');
+      const staff = staffUser || (stored ? JSON.parse(stored) : null);
+      const role = staff?.staff_role;
+      let target = "/admin";
+      if (role === "Secretary") target = "/secretary";
+      else if (role === "Auditor") target = "/auditor";
+      else if (role === "Area Coordinator" || role === "General Coordinator") target = "/coordinator";
+      toast.success(`Welcome to ${role || 'Staff'} Portal`);
+      navigate(target);
     } else {
       toast.error(result.error || "Login failed");
     }
