@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useStaffAuth } from "@/hooks/useStaffAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,7 @@ interface Contribution {
 }
 
 const CoordinatorPortal = () => {
-  const { user } = useAuth();
+  const { staffUser } = useStaffAuth();
   const navigate = useNavigate();
   const [members, setMembers] = useState<Member[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
@@ -48,13 +48,13 @@ const CoordinatorPortal = () => {
   const [assignedArea, setAssignedArea] = useState("");
 
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
+    if (!staffUser) {
+      navigate("/portal-login");
       return;
     }
 
     fetchCoordinatorData();
-  }, [user, navigate]);
+  }, [staffUser, navigate]);
 
   useEffect(() => {
     const filtered = members.filter(member =>
@@ -68,30 +68,40 @@ const CoordinatorPortal = () => {
 
   const fetchCoordinatorData = async () => {
     try {
-      // First, verify coordinator role and get assigned area
-      const { data: staffData, error: staffError } = await supabase
-        .from("staff_registrations")
-        .select("assigned_area")
-        .eq("user_id", user?.id)
-        .eq("staff_role", "Area Coordinator")
-        .eq("pending", "approved")
-        .single();
-
-      if (staffError || !staffData) {
+      if (!staffUser || staffUser.staff_role !== "Area Coordinator") {
         toast.error("Access denied. You are not an approved area coordinator.");
-        navigate("/dashboard");
+        navigate("/portal-login");
         return;
       }
 
-      setAssignedArea(staffData.assigned_area);
+      if (!staffUser.assigned_area) {
+        toast.error("No assigned area found. Contact your administrator.");
+        return;
+      }
+
+      setAssignedArea(staffUser.assigned_area);
+
+      // Parse the assigned area - handle both "City, State" and just "City" formats
+      const areaParts = staffUser.assigned_area.includes(',') 
+        ? staffUser.assigned_area.split(', ')
+        : [staffUser.assigned_area, ''];
+
+      const city = areaParts[0].trim();
+      const state = areaParts[1] ? areaParts[1].trim() : '';
 
       // Fetch members in coordinator's area
-      const { data: membersData, error: membersError } = await supabase
+      let query = supabase
         .from("membership_registrations")
         .select("*")
-        .eq("city", staffData.assigned_area.split(", ")[0])
-        .eq("state", staffData.assigned_area.split(", ")[1])
+        .eq("city", city)
         .eq("registration_status", "approved");
+
+      // Add state filter if it exists
+      if (state) {
+        query = query.eq("state", state);
+      }
+
+      const { data: membersData, error: membersError } = await query;
 
       if (membersError) {
         toast.error("Error fetching members data");
@@ -217,9 +227,9 @@ const CoordinatorPortal = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+            <Button variant="outline" onClick={() => navigate("/portal-login")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              Back to Portal
             </Button>
             <div>
               <h1 className="text-3xl font-bold">Area Coordinator Portal</h1>
