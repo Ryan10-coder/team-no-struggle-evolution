@@ -139,12 +139,12 @@ const CoordinatorPortal = () => {
           maturity_status,
           tns_number
         `)
-        .eq("city", city)
+        .ilike("city", city)
         .in("registration_status", ["approved", "pending"]);
 
       // Add state filter if it exists
       if (state) {
-        query = query.eq("state", state);
+        query = query.ilike("state", state);
       }
 
       const { data: membersData, error: membersError } = await query;
