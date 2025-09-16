@@ -56,6 +56,24 @@ interface StaffRegistration {
   created_at: string;
 }
 
+interface MPESAPayment {
+  id: string;
+  member_id: string;
+  amount: number;
+  phone_number: string;
+  mpesa_receipt_number?: string;
+  checkout_request_id?: string;
+  transaction_date?: string;
+  status: string;
+  created_at: string;
+  membership_registrations?: {
+    first_name: string;
+    last_name: string;
+    tns_number?: string;
+    email: string;
+  } | null;
+}
+
 const AdminPortal = () => {
   const { user } = useAuth();
   const { staffUser, logout: staffLogout } = useStaffAuth();
@@ -64,6 +82,7 @@ const AdminPortal = () => {
   const [allMembers, setAllMembers] = useState<MemberRegistration[]>([]);
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
   const [allStaff, setAllStaff] = useState<StaffRegistration[]>([]);
+  const [mpesaPayments, setMpesaPayments] = useState<MPESAPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStaff, setSelectedStaff] = useState<StaffRegistration | null>(null);
   const [portalPassword, setPortalPassword] = useState("");
@@ -154,10 +173,35 @@ const AdminPortal = () => {
 
       if (allStaffError) throw allStaffError;
 
+      // Fetch MPESA payments
+      const { data: mpesaData, error: mpesaError } = await supabase
+        .from("mpesa_payments")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (mpesaError) throw mpesaError;
+
+      // Fetch member details for MPESA payments
+      const mpesaWithMembers = await Promise.all(
+        (mpesaData || []).map(async (payment) => {
+          const { data: memberData } = await supabase
+            .from("membership_registrations")
+            .select("first_name, last_name, tns_number, email")
+            .eq("id", payment.member_id)
+            .single();
+
+          return {
+            ...payment,
+            membership_registrations: memberData || null
+          };
+        })
+      );
+
       setPendingMembers(members || []);
       setAllMembers(allMembersData || []);
       setPendingStaff(staff || []);
       setAllStaff(allStaffData || []);
+      setMpesaPayments(mpesaWithMembers || []);
     } catch (error) {
       console.error("Error fetching registrations:", error);
       toast.error("Failed to load registrations");
@@ -403,7 +447,7 @@ const AdminPortal = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
@@ -411,6 +455,10 @@ const AdminPortal = () => {
             <TabsTrigger value="treasurer" className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4" />
               <span>Treasurer</span>
+            </TabsTrigger>
+            <TabsTrigger value="mpesa-payments" className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4" />
+              <span>MPESA ({mpesaPayments.length})</span>
             </TabsTrigger>
             <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -688,6 +736,49 @@ const AdminPortal = () => {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="mpesa-payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>MPESA Payments</CardTitle>
+                <CardDescription>All MPESA payment transactions from members</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {mpesaPayments.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">No MPESA payments found</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Member</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Receipt</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mpesaPayments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell>
+                            {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
+                          </TableCell>
+                          <TableCell>KSH {payment.amount.toLocaleString()}</TableCell>
+                          <TableCell>{payment.mpesa_receipt_number || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
+                              {payment.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="pending-members">
