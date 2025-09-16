@@ -22,6 +22,23 @@ interface Member {
   maturity_status: string;
   days_to_maturity?: number;
   profile_picture_url?: string;
+  // Additional fields for comprehensive member data
+  address: string;
+  zip_code: string;
+  alternative_phone?: string;
+  id_number?: string;
+  sex?: string;
+  marital_status?: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  membership_type: string;
+  registration_status: string;
+  payment_status: string;
+  registration_date?: string;
+  probation_end_date?: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface MemberBalance {
@@ -89,12 +106,41 @@ const CoordinatorPortal = () => {
       const city = areaParts[0].trim();
       const state = areaParts[1] ? areaParts[1].trim() : '';
 
-      // Fetch members in coordinator's area
+      // Fetch ALL members in coordinator's area (both approved and pending for comprehensive view)
       let query = supabase
         .from("membership_registrations")
-        .select("*")
+        .select(`
+          *,
+          id,
+          user_id,
+          created_at,
+          updated_at,
+          registration_date,
+          probation_end_date,
+          days_to_maturity,
+          first_name,
+          last_name,
+          email,
+          phone,
+          address,
+          city,
+          state,
+          zip_code,
+          emergency_contact_name,
+          emergency_contact_phone,
+          membership_type,
+          payment_status,
+          registration_status,
+          id_number,
+          alternative_phone,
+          sex,
+          marital_status,
+          profile_picture_url,
+          maturity_status,
+          tns_number
+        `)
         .eq("city", city)
-        .eq("registration_status", "approved");
+        .in("registration_status", ["approved", "pending"]);
 
       // Add state filter if it exists
       if (state) {
@@ -310,65 +356,108 @@ const CoordinatorPortal = () => {
           <CardContent>
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
+                 <TableHeader>
                   <TableRow>
                     <TableHead>Photo</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>TNS Number</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Alt Phone</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>ID Number</TableHead>
+                    <TableHead>Sex</TableHead>
+                    <TableHead>Marital Status</TableHead>
+                    <TableHead>Emergency Contact</TableHead>
+                    <TableHead>Membership Type</TableHead>
+                    <TableHead>Registration Status</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                    <TableHead>Maturity Status</TableHead>
                     <TableHead>Balance</TableHead>
                     <TableHead>Total Contributions</TableHead>
                     <TableHead>Days to Maturity</TableHead>
+                    <TableHead>Registration Date</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        {member.profile_picture_url ? (
-                          <img 
-                            src={member.profile_picture_url} 
-                            alt={`${member.first_name} ${member.last_name}`}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                            <span className="text-sm font-medium">
-                              {member.first_name[0]}{member.last_name[0]}
-                            </span>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {member.first_name} {member.last_name}
-                      </TableCell>
-                      <TableCell>{member.tns_number || "N/A"}</TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{member.phone}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={member.maturity_status === 'mature' ? 'default' : 'secondary'}
-                        >
-                          {member.maturity_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(memberBalances[member.id]?.current_balance || 0)}
-                      </TableCell>
-                      <TableCell>
-                        {formatCurrency(memberBalances[member.id]?.total_contributions || 0)}
-                      </TableCell>
-                      <TableCell>
-                        {member.maturity_status === 'probation' 
-                          ? `${member.days_to_maturity || 0} days`
-                          : "Mature"
-                        }
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                 <TableBody>
+                   {filteredMembers.map((member) => (
+                     <TableRow key={member.id}>
+                       <TableCell>
+                         {member.profile_picture_url ? (
+                           <img 
+                             src={member.profile_picture_url} 
+                             alt={`${member.first_name} ${member.last_name}`}
+                             className="w-10 h-10 rounded-full object-cover"
+                           />
+                         ) : (
+                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                             <span className="text-sm font-medium">
+                               {member.first_name[0]}{member.last_name[0]}
+                             </span>
+                           </div>
+                         )}
+                       </TableCell>
+                       <TableCell className="font-medium">
+                         {member.first_name} {member.last_name}
+                       </TableCell>
+                       <TableCell>{member.tns_number || "N/A"}</TableCell>
+                       <TableCell>{member.email}</TableCell>
+                       <TableCell>{member.phone}</TableCell>
+                       <TableCell>{member.alternative_phone || "N/A"}</TableCell>
+                       <TableCell>
+                         <div className="max-w-xs truncate" title={`${member.address}, ${member.city}, ${member.state} ${member.zip_code}`}>
+                           {member.address ? `${member.address}, ${member.city}, ${member.state} ${member.zip_code}` : "N/A"}
+                         </div>
+                       </TableCell>
+                       <TableCell>{member.id_number || "N/A"}</TableCell>
+                       <TableCell>{member.sex || "N/A"}</TableCell>
+                       <TableCell>{member.marital_status || "N/A"}</TableCell>
+                       <TableCell>
+                         <div className="max-w-xs">
+                           <div className="font-medium">{member.emergency_contact_name || "N/A"}</div>
+                           <div className="text-sm text-muted-foreground">{member.emergency_contact_phone || ""}</div>
+                         </div>
+                       </TableCell>
+                       <TableCell>{member.membership_type}</TableCell>
+                       <TableCell>
+                         <Badge 
+                           variant={member.registration_status === 'approved' ? 'default' : 'secondary'}
+                         >
+                           {member.registration_status}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>
+                         <Badge 
+                           variant={member.payment_status === 'paid' ? 'default' : 'destructive'}
+                         >
+                           {member.payment_status}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>
+                         <Badge 
+                           variant={member.maturity_status === 'mature' ? 'default' : 'secondary'}
+                         >
+                           {member.maturity_status}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>
+                         {formatCurrency(memberBalances[member.id]?.current_balance || 0)}
+                       </TableCell>
+                       <TableCell>
+                         {formatCurrency(memberBalances[member.id]?.total_contributions || 0)}
+                       </TableCell>
+                       <TableCell>
+                         {member.maturity_status === 'probation' 
+                           ? `${member.days_to_maturity || 0} days`
+                           : "Mature"
+                         }
+                       </TableCell>
+                       <TableCell>
+                         {member.registration_date ? new Date(member.registration_date).toLocaleDateString() : "N/A"}
+                       </TableCell>
+                     </TableRow>
+                   ))}
+                 </TableBody>
               </Table>
             </div>
           </CardContent>
