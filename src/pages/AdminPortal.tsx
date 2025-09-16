@@ -74,6 +74,33 @@ interface MPESAPayment {
   } | null;
 }
 
+interface Contribution {
+  id: string;
+  member_id: string;
+  amount: number;
+  contribution_date: string;
+  contribution_type: string;
+  status: string;
+}
+
+interface Disbursement {
+  id: string;
+  member_id: string;
+  amount: number;
+  disbursement_date: string;
+  reason?: string;
+  status: string;
+}
+
+interface MonthlyExpense {
+  id: string;
+  amount: number;
+  expense_date: string;
+  expense_category: string;
+  description?: string;
+  month_year: string;
+}
+
 const AdminPortal = () => {
   const { user } = useAuth();
   const { staffUser, logout: staffLogout } = useStaffAuth();
@@ -83,6 +110,9 @@ const AdminPortal = () => {
   const [pendingStaff, setPendingStaff] = useState<StaffRegistration[]>([]);
   const [allStaff, setAllStaff] = useState<StaffRegistration[]>([]);
   const [mpesaPayments, setMpesaPayments] = useState<MPESAPayment[]>([]);
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [disbursements, setDisbursements] = useState<Disbursement[]>([]);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStaff, setSelectedStaff] = useState<StaffRegistration | null>(null);
   const [portalPassword, setPortalPassword] = useState("");
@@ -197,11 +227,38 @@ const AdminPortal = () => {
         })
       );
 
+      // Fetch contributions
+      const { data: contributionsData, error: contributionsError } = await supabase
+        .from("contributions")
+        .select("*")
+        .order("contribution_date", { ascending: false });
+
+      if (contributionsError) throw contributionsError;
+
+      // Fetch disbursements
+      const { data: disbursementsData, error: disbursementsError } = await supabase
+        .from("disbursements")
+        .select("*")
+        .order("disbursement_date", { ascending: false });
+
+      if (disbursementsError) throw disbursementsError;
+
+      // Fetch monthly expenses
+      const { data: expensesData, error: expensesError } = await supabase
+        .from("monthly_expenses")
+        .select("*")
+        .order("expense_date", { ascending: false });
+
+      if (expensesError) throw expensesError;
+
       setPendingMembers(members || []);
       setAllMembers(allMembersData || []);
       setPendingStaff(staff || []);
       setAllStaff(allStaffData || []);
       setMpesaPayments(mpesaWithMembers || []);
+      setContributions(contributionsData || []);
+      setDisbursements(disbursementsData || []);
+      setMonthlyExpenses(expensesData || []);
     } catch (error) {
       console.error("Error fetching registrations:", error);
       toast.error("Failed to load registrations");
@@ -447,18 +504,14 @@ const AdminPortal = () => {
         </div>
 
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="analytics" className="flex items-center space-x-2">
               <BarChart3 className="h-4 w-4" />
               <span>Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="treasurer" className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4" />
-              <span>Treasurer</span>
-            </TabsTrigger>
-            <TabsTrigger value="mpesa-payments" className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4" />
-              <span>MPESA ({mpesaPayments.length})</span>
+              <span>$ Treasurer</span>
             </TabsTrigger>
             <TabsTrigger value="pending-members" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
@@ -736,49 +789,6 @@ const AdminPortal = () => {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="mpesa-payments">
-            <Card>
-              <CardHeader>
-                <CardTitle>MPESA Payments</CardTitle>
-                <CardDescription>All MPESA payment transactions from members</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {mpesaPayments.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No MPESA payments found</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Member</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Receipt</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Date</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mpesaPayments.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell>
-                            {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
-                          </TableCell>
-                          <TableCell>KSH {payment.amount.toLocaleString()}</TableCell>
-                          <TableCell>{payment.mpesa_receipt_number || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                              {payment.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="pending-members">
@@ -1185,9 +1195,11 @@ const AdminPortal = () => {
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KES 2,450,000</div>
+                    <div className="text-2xl font-bold">
+                      KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      +12% from last month
+                      {contributions.length} total contributions
                     </p>
                   </CardContent>
                 </Card>
@@ -1197,9 +1209,11 @@ const AdminPortal = () => {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KES 1,850,000</div>
+                    <div className="text-2xl font-bold">
+                      KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      +8% from last month
+                      {disbursements.length} disbursements made
                     </p>
                   </CardContent>
                 </Card>
@@ -1209,9 +1223,20 @@ const AdminPortal = () => {
                     <Calculator className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-green-600">KES 600,000</div>
+                    <div className={`text-2xl font-bold ${
+                      contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
+                      disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
+                      monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0) >= 0 
+                      ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      KES {(
+                        contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
+                        disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
+                        monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)
+                      ).toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Positive balance
+                      Net position
                     </p>
                   </CardContent>
                 </Card>
@@ -1221,62 +1246,99 @@ const AdminPortal = () => {
                     <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">KES 125,000</div>
+                    <div className="text-2xl font-bold">
+                      KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Operating costs
+                      {monthlyExpenses.length} expense entries
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
+                    <CardTitle className="text-sm font-medium">MPESA Payments</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold text-blue-600">15.2%</div>
+                    <div className="text-2xl font-bold">
+                      KES {mpesaPayments.reduce((total, payment) => total + Number(payment.amount), 0).toLocaleString()}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Annual growth
+                      {mpesaPayments.length} MPESA transactions
                     </p>
                   </CardContent>
                 </Card>
               </div>
+
+              {/* MPESA Payments Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent MPESA Payments</CardTitle>
+                  <CardDescription>All MPESA payment transactions from members</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {mpesaPayments.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">No MPESA payments found</div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Member</TableHead>
+                          <TableHead>TNS Number</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Receipt</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mpesaPayments.slice(0, 10).map((payment) => (
+                          <TableRow key={payment.id}>
+                            <TableCell>
+                              {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
+                            </TableCell>
+                            <TableCell>{payment.membership_registrations?.tns_number || 'N/A'}</TableCell>
+                            <TableCell>KSH {payment.amount.toLocaleString()}</TableCell>
+                            <TableCell>{payment.mpesa_receipt_number || 'N/A'}</TableCell>
+                            <TableCell>
+                              <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
+                                {payment.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Financial Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Monthly Financial Trends */}
                 <Card className="lg:col-span-2">
                   <CardHeader>
-                    <CardTitle>Monthly Financial Trends</CardTitle>
-                    <CardDescription>Contributions, disbursements, and net position over time</CardDescription>
+                    <CardTitle>Financial Overview</CardTitle>
+                    <CardDescription>Real-time financial data from your organization</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer
-                      config={{
-                        contributions: { label: "Contributions", color: "hsl(var(--chart-2))" },
-                        disbursements: { label: "Disbursements", color: "hsl(var(--chart-5))" },
-                        netPosition: { label: "Net Position", color: "hsl(var(--chart-7))" },
-                      }}
-                      className="h-[400px]"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={[
-                          { month: "Jan", contributions: 180000, disbursements: 120000, netPosition: 60000 },
-                          { month: "Feb", contributions: 210000, disbursements: 150000, netPosition: 60000 },
-                          { month: "Mar", contributions: 190000, disbursements: 140000, netPosition: 50000 },
-                          { month: "Apr", contributions: 250000, disbursements: 180000, netPosition: 70000 },
-                          { month: "May", contributions: 280000, disbursements: 200000, netPosition: 80000 },
-                          { month: "Jun", contributions: 320000, disbursements: 250000, netPosition: 70000 },
-                        ]}>
-                          <XAxis dataKey="month" />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <ChartLegend content={<ChartLegendContent />} />
-                          <Line type="monotone" dataKey="contributions" stroke="hsl(var(--chart-2))" strokeWidth={3} />
-                          <Line type="monotone" dataKey="disbursements" stroke="hsl(var(--chart-5))" strokeWidth={3} />
-                          <Line type="monotone" dataKey="netPosition" stroke="hsl(var(--chart-7))" strokeWidth={3} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="font-medium text-green-600">Total Contributions</div>
+                          <div className="text-lg">KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-orange-600">Total Disbursements</div>
+                          <div className="text-lg">KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <div className="font-medium text-red-600">Total Expenses</div>
+                          <div className="text-lg">KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1287,69 +1349,48 @@ const AdminPortal = () => {
                     <CardDescription>Breakdown of operating expenses</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer
-                      config={{
-                        administrative: { label: "Administrative", color: "hsl(var(--chart-1))" },
-                        operational: { label: "Operational", color: "hsl(var(--chart-4))" },
-                        marketing: { label: "Marketing", color: "hsl(var(--chart-6))" },
-                        other: { label: "Other", color: "hsl(var(--chart-8))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie
-                          dataKey="value"
-                          data={[
-                            { name: "administrative", value: 45000, fill: "hsl(var(--chart-1))" },
-                            { name: "operational", value: 35000, fill: "hsl(var(--chart-4))" },
-                            { name: "marketing", value: 25000, fill: "hsl(var(--chart-6))" },
-                            { name: "other", value: 20000, fill: "hsl(var(--chart-8))" },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          innerRadius={30}
-                          label
-                        />
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        monthlyExpenses.reduce((acc, expense) => {
+                          acc[expense.expense_category] = (acc[expense.expense_category] || 0) + Number(expense.amount);
+                          return acc;
+                        }, {} as Record<string, number>)
+                      ).map(([category, amount]) => (
+                        <div key={category} className="flex justify-between items-center">
+                          <span className="text-sm capitalize">{category}</span>
+                          <span className="font-medium">KES {amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                      {monthlyExpenses.length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground">No expense data available</div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* Cash Flow Trends */}
+                {/* Contribution Types */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Cash Flow Analysis</CardTitle>
-                    <CardDescription>Monthly cash inflow vs outflow</CardDescription>
+                    <CardTitle>Contribution Types</CardTitle>
+                    <CardDescription>Distribution by contribution types</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer
-                      config={{
-                        inflow: { label: "Inflow", color: "hsl(var(--chart-7))" },
-                        outflow: { label: "Outflow", color: "hsl(var(--chart-9))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={[
-                          { month: "Jan", inflow: 180000, outflow: 135000 },
-                          { month: "Feb", inflow: 210000, outflow: 165000 },
-                          { month: "Mar", inflow: 190000, outflow: 155000 },
-                          { month: "Apr", inflow: 250000, outflow: 195000 },
-                          { month: "May", inflow: 280000, outflow: 215000 },
-                          { month: "Jun", inflow: 320000, outflow: 265000 },
-                        ]}>
-                          <XAxis dataKey="month" />
-                          <YAxis />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <ChartLegend content={<ChartLegendContent />} />
-                          <Bar dataKey="inflow" fill="hsl(var(--chart-7))" radius={4} />
-                          <Bar dataKey="outflow" fill="hsl(var(--chart-9))" radius={4} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                    <div className="space-y-2">
+                      {Object.entries(
+                        contributions.reduce((acc, contribution) => {
+                          acc[contribution.contribution_type] = (acc[contribution.contribution_type] || 0) + Number(contribution.amount);
+                          return acc;
+                        }, {} as Record<string, number>)
+                      ).map(([type, amount]) => (
+                        <div key={type} className="flex justify-between items-center">
+                          <span className="text-sm capitalize">{type}</span>
+                          <span className="font-medium">KES {amount.toLocaleString()}</span>
+                        </div>
+                      ))}
+                      {contributions.length === 0 && (
+                        <div className="text-center py-4 text-muted-foreground">No contribution data available</div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
