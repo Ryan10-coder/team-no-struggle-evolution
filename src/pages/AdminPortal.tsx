@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
+import { ManualPaymentEntry } from "@/components/ManualPaymentEntry";
 
 interface MemberRegistration {
   id: string;
@@ -1187,6 +1188,11 @@ const AdminPortal = () => {
           
           <TabsContent value="treasurer">
             <div className="grid gap-6">
+              {/* Manual Payment Entry */}
+              <div className="mb-6">
+                <ManualPaymentEntry />
+              </div>
+              
               {/* Financial Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <Card>
