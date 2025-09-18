@@ -26,7 +26,7 @@ const About = () => {
     {
       icon: Award,
       title: 'Administrative Fee',
-      description: 'One-time Ksh 50 registration fee to join and become part of our supportive community.',
+      description: 'One-time Ksh 1000 registration fee to join and become part of our supportive community.',
     },
     {
       icon: Globe,
@@ -129,7 +129,7 @@ const About = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span className="text-foreground">Ksh 50 one-time registration fee</span>
+                  <span className="text-foreground">Ksh 1000 one-time registration fee</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -143,7 +143,7 @@ const About = () => {
                 <div className="text-muted-foreground mb-4">Target Members</div>
                 <div className="text-4xl md:text-5xl font-bold text-secondary mb-2">Ksh 300K</div>
                 <div className="text-muted-foreground mb-4">Max Payout</div>
-                <div className="text-4xl md:text-5xl font-bold text-success mb-2">Ksh 50</div>
+                <div className="text-4xl md:text-5xl font-bold text-success mb-2">Ksh 1000</div>
                 <div className="text-muted-foreground">Registration Fee</div>
               </div>
             </div>
