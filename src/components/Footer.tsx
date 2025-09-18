@@ -114,7 +114,7 @@ const Footer = () => {
               </div>
               <div className="flex items-start gap-3 text-background/80">
                 <MapPin className="h-4 w-4 text-secondary mt-1" />
-                <span>Community Center<br />Kakamega</span>
+                <span>Shianda<br />Mumias</span>
               </div>
             </div>
 
