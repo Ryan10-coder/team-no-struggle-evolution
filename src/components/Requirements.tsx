@@ -34,7 +34,7 @@ const Requirements = () => {
     {
       icon: CheckCircle,
       title: 'Registration Fee',
-      description: 'One-time Ksh 50 administrative fee to join',
+      description: 'One-time Ksh 1000 administrative fee to join',
     },
   ];
 
@@ -126,7 +126,7 @@ const Requirements = () => {
               <div className="text-muted-foreground text-sm">Per Contribution</div>
             </div>
             <div className="bg-white rounded-lg p-4 shadow-soft">
-              <div className="text-2xl font-bold text-success mb-1">Ksh 50</div>
+              <div className="text-2xl font-bold text-success mb-1">Ksh 1000</div>
               <div className="text-muted-foreground text-sm">Registration Fee</div>
             </div>
           </div>
