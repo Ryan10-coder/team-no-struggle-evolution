@@ -43,7 +43,7 @@ const Header = () => {
               alt="Team No Struggle - making things easier" 
               className="h-12 w-auto"
             />
-            <h4>TEAM NO STRUGGLE</h4>
+            <h4><b>TEAM NO STRUGGLE</b></h4>
           </div>
 
           {/* Desktop Navigation */}
