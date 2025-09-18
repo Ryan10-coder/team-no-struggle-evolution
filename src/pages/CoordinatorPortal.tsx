@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, Search, ArrowLeft, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface Member {
@@ -58,6 +59,8 @@ const CoordinatorPortal = () => {
   const navigate = useNavigate();
   const [members, setMembers] = useState<Member[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
+  const [allAreas, setAllAreas] = useState<string[]>([]);
+  const [selectedArea, setSelectedArea] = useState<string>("all");
   const [memberBalances, setMemberBalances] = useState<Record<string, MemberBalance>>({});
   const [contributions, setContributions] = useState<Record<string, Contribution[]>>({});
   const [loading, setLoading] = useState(true);
@@ -74,14 +77,23 @@ const CoordinatorPortal = () => {
   }, [staffUser, navigate]);
 
   useEffect(() => {
-    const filtered = members.filter(member =>
+    let filtered = members.filter(member =>
       member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (member.tns_number && member.tns_number.includes(searchTerm))
     );
+
+    // Apply area filter
+    if (selectedArea !== "all") {
+      filtered = filtered.filter(member => {
+        const memberArea = `${member.city}, ${member.state}`;
+        return memberArea === selectedArea;
+      });
+    }
+
     setFilteredMembers(filtered);
-  }, [searchTerm, members]);
+  }, [searchTerm, members, selectedArea]);
 
   const fetchCoordinatorData = async () => {
     try {
@@ -98,16 +110,8 @@ const CoordinatorPortal = () => {
 
       setAssignedArea(staffUser.assigned_area);
 
-      // Parse the assigned area - handle both "City, State" and just "City" formats
-      const areaParts = staffUser.assigned_area.includes(',') 
-        ? staffUser.assigned_area.split(', ')
-        : [staffUser.assigned_area, ''];
-
-      const city = areaParts[0].trim();
-      const state = areaParts[1] ? areaParts[1].trim() : '';
-
-      // Fetch ALL members in coordinator's area (both approved and pending for comprehensive view)
-      let query = supabase
+      // Fetch ALL members from all areas (both approved and pending for comprehensive view)
+      const { data: membersData, error: membersError } = await supabase
         .from("membership_registrations")
         .select(`
           *,
@@ -139,15 +143,7 @@ const CoordinatorPortal = () => {
           maturity_status,
           tns_number
         `)
-        .ilike("city", city)
         .in("registration_status", ["approved", "pending"]);
-
-      // Add state filter if it exists
-      if (state) {
-        query = query.ilike("state", state);
-      }
-
-      const { data: membersData, error: membersError } = await query;
 
       if (membersError) {
         toast.error("Error fetching members data");
@@ -155,6 +151,12 @@ const CoordinatorPortal = () => {
       }
 
       setMembers(membersData || []);
+
+      // Extract unique areas from all members
+      const areas = Array.from(new Set(
+        (membersData || []).map(member => `${member.city}, ${member.state}`)
+      )).sort();
+      setAllAreas(areas);
 
       // Fetch member balances and contributions for each member
       if (membersData && membersData.length > 0) {
@@ -330,17 +332,35 @@ const CoordinatorPortal = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Member Search & Filter</CardTitle>
-            <CardDescription>Search by name, email, or TNS number</CardDescription>
+            <CardDescription>Search by name, email, TNS number, or filter by area</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search members..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
-              />
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search members..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-medium">Area:</label>
+                <Select value={selectedArea} onValueChange={setSelectedArea}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Areas</SelectItem>
+                    {allAreas.map((area) => (
+                      <SelectItem key={area} value={area}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -348,9 +368,12 @@ const CoordinatorPortal = () => {
         {/* Members Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Members in {assignedArea}</CardTitle>
+            <CardTitle>
+              Members {selectedArea === "all" ? "from All Areas" : `in ${selectedArea}`}
+            </CardTitle>
             <CardDescription>
               {filteredMembers.length} of {totalMembers} members shown
+              {selectedArea !== "all" && ` • Filtered by: ${selectedArea}`}
             </CardDescription>
           </CardHeader>
           <CardContent>
