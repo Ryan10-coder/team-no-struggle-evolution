@@ -10,7 +10,7 @@ const About = () => {
     },
     {
       icon: Shield,
-      title: 'Guaranteed Payouts',
+      title: 'Guaranteed Payouts after achieving the registration membership target',
       description: 'Up to Ksh 300,000 for principal members, spouses and parents; Ksh 150,000 for children under 10.',
     },
     {
