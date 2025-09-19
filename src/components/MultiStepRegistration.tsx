@@ -743,7 +743,7 @@ const MultiStepRegistration = () => {
             <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mb-6">
               <div className="text-center">
                 <h4 className="text-xl font-semibold text-foreground mb-2">Registration Fee</h4>
-                <div className="text-3xl font-bold text-primary mb-2">Ksh 50</div>
+                <div className="text-3xl font-bold text-primary mb-2">Ksh 1000</div>
                 <p className="text-muted-foreground">One-time administrative fee to join Team No Struggle</p>
               </div>
             </div>
@@ -758,14 +758,14 @@ const MultiStepRegistration = () => {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                Please provide the transaction ID from your Ksh 50 registration fee payment
+                Please provide the transaction ID from your Ksh 1000 registration fee payment
               </p>
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h5 className="font-semibold text-blue-900 mb-2">Payment Instructions:</h5>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Pay Ksh 50 to our official payment account</li>
+                <li>• Pay Ksh 1000 to our official payment account</li>
                 <li>• Note down the transaction ID from your payment receipt</li>
                 <li>• Enter the transaction ID in the field above</li>
                 <li>• Keep your payment receipt for your records</li>
