@@ -9,46 +9,72 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator, Download } from "lucide-react";
+import { Loader2, FileSpreadsheet, FileText } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { PieChart as RechartsPieChart, Pie, BarChart, Bar, XAxis, YAxis } from "recharts";
-import { ManualPaymentEntry } from "@/components/ManualPaymentEntry";
 import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 
-// ... (keep all your interfaces unchanged)
+// Interfaces matching your existing code
+interface Contribution {
+  id: string;
+  member_id: string;
+  member_name?: string;
+  amount: number;
+  contribution_date: string;
+}
+
+interface Disbursement {
+  id: string;
+  beneficiary: string;
+  amount: number;
+  disbursement_date: string;
+  reason: string;
+  status?: string;
+}
+
+interface MonthlyExpense {
+  id: string;
+  expense_category: string;
+  amount: number;
+  expense_date: string;
+  description: string;
+  month_year: string;
+}
 
 const AdminPortal = () => {
-  // existing states ...
   const { user } = useAuth();
   const { staffUser, logout: staffLogout } = useStaffAuth();
   const navigate = useNavigate();
-  // existing states ...
+
+  // Existing states (shortened for clarity)
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [disbursements, setDisbursements] = useState<Disbursement[]>([]);
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpense[]>([]);
 
   // New Treasurer states
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [beneficiary, setBeneficiary] = useState("");
-  const [disbAmount, setDisbAmount] = useState("");
-  const [disbReason, setDisbReason] = useState("");
-  const [disbDate, setDisbDate] = useState("");
-  const [expCategory, setExpCategory] = useState("");
-  const [expAmount, setExpAmount] = useState("");
-  const [expDesc, setExpDesc] = useState("");
-  const [expDate, setExpDate] = useState("");
-  const [monthFilter, setMonthFilter] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
-  // ... existing useEffect and functions
+  const [beneficiary, setBeneficiary] = useState<string>("");
+  const [disbAmount, setDisbAmount] = useState<string>("");
+  const [disbReason, setDisbReason] = useState<string>("");
+  const [disbDate, setDisbDate] = useState<string>("");
 
-  // Treasurer functions
+  const [expCategory, setExpCategory] = useState<string>("");
+  const [expAmount, setExpAmount] = useState<string>("");
+  const [expDesc, setExpDesc] = useState<string>("");
+  const [expDate, setExpDate] = useState<string>("");
+  const [monthFilter, setMonthFilter] = useState<string>("");
+
+  // Filtered contributions
   const filteredContributions = startDate && endDate
     ? contributions.filter(c => c.contribution_date >= startDate && c.contribution_date <= endDate)
     : contributions;
 
+  // Export contributions
   const exportPaymentsPDF = () => {
     const doc = new jsPDF();
     doc.text("Payments Report", 10, 10);
@@ -65,6 +91,7 @@ const AdminPortal = () => {
     XLSX.writeFile(workbook, "payments_report.xlsx");
   };
 
+  // Submit disbursement
   const handleDisbursementSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("disbursements").insert([
@@ -76,10 +103,10 @@ const AdminPortal = () => {
       setDisbAmount("");
       setDisbReason("");
       setDisbDate("");
-      fetchPendingRegistrations();
     }
   };
 
+  // Submit expenditure
   const handleExpenditureSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("monthly_expenses").insert([
@@ -91,7 +118,6 @@ const AdminPortal = () => {
       setExpAmount("");
       setExpDesc("");
       setExpDate("");
-      fetchPendingRegistrations();
     }
   };
 
@@ -99,20 +125,18 @@ const AdminPortal = () => {
     ? monthlyExpenses.filter(e => e.expense_date.startsWith(monthFilter))
     : monthlyExpenses;
 
-  // ... keep your existing return
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto">
-        {/* existing header and tabs list */}
-
-        <Tabs defaultValue="analytics" className="w-full">
-          {/* existing TabsTrigger ... */}
-
-          {/* existing TabsContent ... */}
+        <Tabs defaultValue="treasurer" className="w-full">
+          <TabsList>
+            <TabsTrigger value="treasurer">Treasurer</TabsTrigger>
+            {/* keep your other tabs */}
+          </TabsList>
 
           <TabsContent value="treasurer">
             <div className="grid gap-6">
-              {/* existing Treasurer content ... */}
+              {/* === Existing Treasurer content remains here === */}
 
               {/* === Appended Treasurer Features === */}
               <Card>
@@ -173,7 +197,7 @@ const AdminPortal = () => {
                     <TableBody>
                       {disbursements.map(d => (
                         <TableRow key={d.id}>
-                          <TableCell>{d.member_id || d.beneficiary}</TableCell>
+                          <TableCell>{d.beneficiary}</TableCell>
                           <TableCell>{d.amount}</TableCell>
                           <TableCell>{d.disbursement_date}</TableCell>
                           <TableCell>{d.reason}</TableCell>
@@ -228,8 +252,6 @@ const AdminPortal = () => {
             </div>
           </TabsContent>
         </Tabs>
-
-        {/* existing Dialog ... */}
       </div>
     </div>
   );
