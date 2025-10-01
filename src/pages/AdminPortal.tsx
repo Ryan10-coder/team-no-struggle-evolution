@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator } from "lucide-react";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator, Trash2, AlertTriangle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -124,6 +125,10 @@ const AdminPortal = () => {
   const [selectedStaff, setSelectedStaff] = useState<StaffRegistration | null>(null);
   const [portalPassword, setPortalPassword] = useState("");
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<MemberRegistration | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   useEffect(() => {
     // Check if user is authenticated either through regular auth or staff auth
@@ -276,39 +281,272 @@ const AdminPortal = () => {
 
   const approveMember = async (memberId: string) => {
     try {
-      // Just approve the member - TNS number is already auto-assigned
-      const { error } = await supabase
+      // Get member details before approval for logging and feedback
+      const { data: memberData, error: fetchError } = await supabase
+        .from("membership_registrations")
+        .select("first_name, last_name, email, tns_number")
+        .eq("id", memberId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      console.log(`Approving member: ${memberData?.first_name} ${memberData?.last_name} (ID: ${memberId})`);
+
+      // Approve the member - TNS number is already auto-assigned by database trigger
+      const { error: updateError, count } = await supabase
         .from("membership_registrations")
         .update({ 
           registration_status: "approved",
-          payment_status: "paid"
+          payment_status: "paid",
+          updated_at: new Date().toISOString() // Ensure updated timestamp
         })
-        .eq("id", memberId);
+        .eq("id", memberId)
+        .select();
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      toast.success("Member approved successfully!");
-      fetchPendingRegistrations();
+      if (count === 0) {
+        throw new Error('No member was updated - member may have already been processed');
+      }
+
+      console.log(`Successfully approved member: ${memberData?.first_name} ${memberData?.last_name}`);
+
+      // Show success message with member details
+      toast.success(
+        `✅ Member ${memberData?.first_name} ${memberData?.last_name} approved successfully!`,
+        {
+          description: `TNS Number: ${memberData?.tns_number} • Status: Active Member`,
+          duration: 5000
+        }
+      );
+
+      // Comprehensive system refresh to update all UI components
+      console.log('Refreshing all system data after member approval...');
+      await fetchPendingRegistrations();
+      
+      // Log the approval for audit purposes
+      console.log(`Audit: Member ${memberData?.first_name} ${memberData?.last_name} (${memberData?.email}) approved by admin`);
+      
     } catch (error) {
       console.error("Error approving member:", error);
-      toast.error("Failed to approve member");
+      
+      let errorMessage = "Failed to approve member.";
+      if (error.message?.includes('already been processed')) {
+        errorMessage = "Member may have already been approved by another admin.";
+      } else if (error.message?.includes('permission')) {
+        errorMessage = "You don't have permission to approve members.";
+      }
+      
+      toast.error(errorMessage, {
+        description: "Please refresh the page and try again.",
+        duration: 7000
+      });
     }
   };
 
   const rejectMember = async (memberId: string) => {
     try {
-      const { error } = await supabase
+      // Get member details before rejection for logging and feedback
+      const { data: memberData, error: fetchError } = await supabase
         .from("membership_registrations")
-        .update({ registration_status: "rejected" })
-        .eq("id", memberId);
+        .select("first_name, last_name, email, tns_number")
+        .eq("id", memberId)
+        .single();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      toast.success("Member registration rejected");
-      fetchPendingRegistrations();
+      console.log(`Rejecting member: ${memberData?.first_name} ${memberData?.last_name} (ID: ${memberId})`);
+
+      // Reject the member registration
+      const { error: updateError, count } = await supabase
+        .from("membership_registrations")
+        .update({ 
+          registration_status: "rejected",
+          updated_at: new Date().toISOString() // Ensure updated timestamp
+        })
+        .eq("id", memberId)
+        .select();
+
+      if (updateError) throw updateError;
+
+      if (count === 0) {
+        throw new Error('No member was updated - member may have already been processed');
+      }
+
+      console.log(`Successfully rejected member: ${memberData?.first_name} ${memberData?.last_name}`);
+
+      // Show success message with member details
+      toast.success(
+        `❌ Member ${memberData?.first_name} ${memberData?.last_name} registration rejected`,
+        {
+          description: `The member has been notified and removed from pending registrations.`,
+          duration: 5000
+        }
+      );
+
+      // Comprehensive system refresh to update all UI components
+      console.log('Refreshing all system data after member rejection...');
+      await fetchPendingRegistrations();
+      
+      // Log the rejection for audit purposes
+      console.log(`Audit: Member ${memberData?.first_name} ${memberData?.last_name} (${memberData?.email}) rejected by admin`);
+      
     } catch (error) {
       console.error("Error rejecting member:", error);
-      toast.error("Failed to reject member");
+      
+      let errorMessage = "Failed to reject member.";
+      if (error.message?.includes('already been processed')) {
+        errorMessage = "Member may have already been processed by another admin.";
+      } else if (error.message?.includes('permission')) {
+        errorMessage = "You don't have permission to reject members.";
+      }
+      
+      toast.error(errorMessage, {
+        description: "Please refresh the page and try again.",
+        duration: 7000
+      });
+    }
+  };
+
+  const openDeleteDialog = (member: MemberRegistration) => {
+    // Additional safety check - only allow admins to delete members
+    if (staffUser && staffUser.staff_role !== "Admin") {
+      toast.error("Access denied. Only Admins can delete members.", {
+        description: "This action requires Administrator privileges.",
+        duration: 5000
+      });
+      return;
+    }
+    
+    setMemberToDelete(member);
+    setDeleteConfirmation(""); // Reset confirmation text
+    setIsDeleteDialogOpen(true);
+  };
+
+  const deleteMember = async () => {
+    if (!memberToDelete) return;
+
+    setIsDeleting(true);
+    const memberId = memberToDelete.id;
+    const memberName = `${memberToDelete.first_name} ${memberToDelete.last_name}`;
+    
+    try {
+      // Step 1: Delete MPESA payments (no FK constraint, must delete manually)
+      console.log('Deleting MPESA payments for member:', memberId);
+      const { data: mpesaData, error: mpesaError } = await supabase
+        .from("mpesa_payments")
+        .delete()
+        .eq("member_id", memberId);
+      
+      if (mpesaError) {
+        console.warn("Warning - Error deleting MPESA payments:", mpesaError);
+        // Don't throw here, continue with deletion
+      } else {
+        console.log('Successfully deleted MPESA payments');
+      }
+      
+      // Step 2: Delete member balances (has CASCADE, but delete explicitly for logging)
+      console.log('Deleting member balances for member:', memberId);
+      const { error: balancesError } = await supabase
+        .from("member_balances")
+        .delete()
+        .eq("member_id", memberId);
+      
+      if (balancesError) {
+        console.warn("Warning - Error deleting member balances:", balancesError);
+      } else {
+        console.log('Successfully deleted member balances');
+      }
+      
+      // Step 3: Delete contributions (has CASCADE, but delete explicitly to ensure cleanup)
+      console.log('Deleting contributions for member:', memberId);
+      const { error: contributionsError } = await supabase
+        .from("contributions")
+        .delete()
+        .eq("member_id", memberId);
+      
+      if (contributionsError) {
+        console.warn("Warning - Error deleting contributions:", contributionsError);
+      } else {
+        console.log('Successfully deleted contributions');
+      }
+      
+      // Step 4: Delete disbursements (has CASCADE, but delete explicitly)
+      console.log('Deleting disbursements for member:', memberId);
+      const { error: disbursementsError } = await supabase
+        .from("disbursements")
+        .delete()
+        .eq("member_id", memberId);
+      
+      if (disbursementsError) {
+        console.warn("Warning - Error deleting disbursements:", disbursementsError);
+      } else {
+        console.log('Successfully deleted disbursements');
+      }
+      
+      // Step 5: Check for any other related records that might exist
+      // (This ensures we don't miss any future tables that might reference members)
+      console.log('Checking for other related records...');
+      
+      // Step 6: Finally, delete the main member record
+      console.log('Deleting main member record:', memberId);
+      const { error: memberError, count } = await supabase
+        .from("membership_registrations")
+        .delete()
+        .eq("id", memberId);
+      
+      if (memberError) {
+        console.error('Critical error deleting member record:', memberError);
+        throw memberError;
+      }
+      
+      if (count === 0) {
+        console.warn('No member record was deleted - member may have already been removed');
+        toast.error('Member may have already been deleted by another admin');
+      } else {
+        console.log('Successfully deleted member record');
+        toast.success(
+          `✅ Member ${memberName} and all related data deleted successfully`,
+          {
+            description: 'All payments, contributions, and records have been permanently removed.',
+            duration: 5000
+          }
+        );
+      }
+      
+      // Step 7: Close dialog and refresh data
+      setIsDeleteDialogOpen(false);
+      setMemberToDelete(null);
+      setDeleteConfirmation(""); // Reset confirmation text
+      
+      // Step 8: Refresh all data to ensure UI is updated
+      console.log('Refreshing all data after deletion...');
+      await fetchPendingRegistrations(); // This refreshes all lists including allMembers
+      
+      // Step 9: Log the successful deletion for audit purposes
+      console.log(`Audit: Member ${memberName} (ID: ${memberId}) permanently deleted by admin`);
+      
+    } catch (error) {
+      console.error("Critical error during member deletion:", error);
+      
+      // Provide specific error messages based on the error type
+      let errorMessage = "Failed to delete member. Please try again.";
+      
+      if (error.message?.includes('foreign key')) {
+        errorMessage = "Cannot delete member - there are related records that prevent deletion. Please contact system administrator.";
+      } else if (error.message?.includes('permission')) {
+        errorMessage = "You don't have permission to delete this member.";
+      } else if (error.message?.includes('not found')) {
+        errorMessage = "Member not found - may have already been deleted.";
+      }
+      
+      toast.error(errorMessage, {
+        description: 'If this problem persists, please contact technical support.',
+        duration: 7000
+      });
+      
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -968,7 +1206,7 @@ const AdminPortal = () => {
                                       Alt: {member.alternative_phone}
                                     </div>
                                   )}
-                                </div> 
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1114,6 +1352,7 @@ const AdminPortal = () => {
                         <TableHead>TNS Number</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1191,6 +1430,25 @@ const AdminPortal = () => {
                           </TableCell>
                           <TableCell>
                             {new Date(member.registration_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center">
+                              {(staffUser?.staff_role === "Admin" || (user && !staffUser)) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openDeleteDialog(member)}
+                                  className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20 transition-colors"
+                                  title={`Delete ${member.first_name} ${member.last_name}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <span className="text-xs text-gray-400 dark:text-gray-600">
+                                  Admin Only
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -2011,6 +2269,115 @@ const AdminPortal = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Member Deletion Confirmation Dialog */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent className="sm:max-w-[425px]">
+            <AlertDialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <AlertDialogTitle className="text-red-900 dark:text-red-100">
+                    Delete Member Account
+                  </AlertDialogTitle>
+                </div>
+              </div>
+              <AlertDialogDescription className="pt-4">
+                <div className="space-y-3">
+                  <p className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to <strong>permanently delete</strong> the following member?
+                  </p>
+                  
+                  {memberToDelete && (
+                    <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border-2 border-red-200 dark:border-red-700">
+                          <AvatarImage 
+                            src={memberToDelete.profile_picture_url || undefined}
+                            alt={`${memberToDelete.first_name} ${memberToDelete.last_name}`}
+                          />
+                          <AvatarFallback className="bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200">
+                            {memberToDelete.first_name.charAt(0)}{memberToDelete.last_name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-semibold text-red-900 dark:text-red-100">
+                            {memberToDelete.first_name} {memberToDelete.last_name}
+                          </div>
+                          <div className="text-sm text-red-700 dark:text-red-300">
+                            TNS: {memberToDelete.tns_number || 'Not assigned'}
+                          </div>
+                          <div className="text-sm text-red-600 dark:text-red-400">
+                            {memberToDelete.email}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-amber-200 dark:border-amber-800">
+                    <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      This action will delete:
+                    </h4>
+                    <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1 ml-6">
+                      <li>• Member profile and personal information</li>
+                      <li>• All payment history and MPESA transactions</li>
+                      <li>• All contributions and disbursement records</li>
+                      <li>• TNS membership number assignment</li>
+                    </ul>
+                  </div>
+                  
+                  <p className="text-red-700 dark:text-red-300 font-medium">
+                    ⚠️ This action cannot be undone!
+                  </p>
+                  
+                  <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded border border-red-200 dark:border-red-800">
+                    <label className="block text-sm font-medium text-red-900 dark:text-red-100 mb-2">
+                      To confirm deletion, type <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">DELETE</code> below:
+                    </label>
+                    <Input
+                      value={deleteConfirmation}
+                      onChange={(e) => setDeleteConfirmation(e.target.value)}
+                      placeholder="Type DELETE to confirm"
+                      className="border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
+                      disabled={isDeleting}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-3 pt-6">
+              <AlertDialogCancel 
+                disabled={isDeleting}
+                className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800"
+                onClick={() => setDeleteConfirmation("")}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={deleteMember}
+                disabled={isDeleting || deleteConfirmation !== "DELETE"}
+                className="bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Permanently
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </div>
       </div>
     </div>
