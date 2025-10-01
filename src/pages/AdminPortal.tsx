@@ -17,6 +17,11 @@ import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 import { ManualPaymentEntry } from "@/components/ManualPaymentEntry";
+import { DisbursementForm } from "@/components/DisbursementForm";
+import { ExpenditureForm } from "@/components/ExpenditureForm";
+import { ContributionsReport } from "@/components/ContributionsReport";
+import { DisbursementsReport } from "@/components/DisbursementsReport";
+import { ExpensesReport } from "@/components/ExpensesReport";
 
 interface MemberRegistration {
   id: string;
@@ -1188,9 +1193,11 @@ const AdminPortal = () => {
           
           <TabsContent value="treasurer">
             <div className="grid gap-6">
-              {/* Manual Payment Entry */}
-              <div className="mb-6">
+              {/* Forms Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <ManualPaymentEntry />
+                <DisbursementForm onSuccess={fetchPendingRegistrations} />
+                <ExpenditureForm onSuccess={fetchPendingRegistrations} />
               </div>
               
               {/* Financial Summary Cards */}
@@ -1400,6 +1407,13 @@ const AdminPortal = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Detailed Reports Section */}
+              <ContributionsReport />
+              
+              <DisbursementsReport />
+              
+              <ExpensesReport />
 
               {/* Export Actions */}
               <Card>
