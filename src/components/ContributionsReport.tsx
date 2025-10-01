@@ -12,6 +12,7 @@ import { format } from "date-fns";
 
 interface ContributionWithMember {
   id: string;
+  member_id: string;
   amount: number;
   contribution_date: string;
   contribution_type: string;
@@ -75,17 +76,64 @@ export const ContributionsReport = () => {
 
   const exportToExcel = async () => {
     try {
-      const csvContent = [
-        ["Date", "Member", "TNS Number", "Amount (KES)", "Type", "Status"],
-        ...contributions.map(c => [
-          format(new Date(c.contribution_date), "yyyy-MM-dd"),
-          `${c.member?.first_name} ${c.member?.last_name}`,
-          c.member?.tns_number || "N/A",
-          c.amount.toString(),
-          c.contribution_type,
-          c.status
-        ])
-      ].map(row => row.join(",")).join("\n");
+      // Group contributions by member
+      const memberContributions = new Map<string, {
+        member: any;
+        contributions: ContributionWithMember[];
+      }>();
+
+      contributions.forEach(c => {
+        const memberId = c.member_id;
+        if (!memberContributions.has(memberId)) {
+          memberContributions.set(memberId, {
+            member: c.member,
+            contributions: []
+          });
+        }
+        memberContributions.get(memberId)!.contributions.push(c);
+      });
+
+      // Sort each member's contributions by date
+      memberContributions.forEach(data => {
+        data.contributions.sort((a, b) => 
+          new Date(a.contribution_date).getTime() - new Date(b.contribution_date).getTime()
+        );
+      });
+
+      // Find the maximum number of contributions any member has
+      let maxContributions = 0;
+      memberContributions.forEach(data => {
+        maxContributions = Math.max(maxContributions, data.contributions.length);
+      });
+
+      // Build header row
+      const headers = ["Member Name", "TNS Number"];
+      for (let i = 1; i <= maxContributions; i++) {
+        headers.push(`Contribution ${i}`);
+      }
+
+      // Build data rows
+      const rows = Array.from(memberContributions.values()).map(data => {
+        const row = [
+          `${data.member?.first_name || ''} ${data.member?.last_name || ''}`,
+          data.member?.tns_number || "N/A"
+        ];
+        
+        // Add contribution amounts
+        for (let i = 0; i < maxContributions; i++) {
+          if (i < data.contributions.length) {
+            row.push(data.contributions[i].amount.toString());
+          } else {
+            row.push("");
+          }
+        }
+        
+        return row;
+      });
+
+      const csvContent = [headers, ...rows]
+        .map(row => row.join(","))
+        .join("\n");
 
       const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
