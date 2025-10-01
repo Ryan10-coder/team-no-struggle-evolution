@@ -1612,7 +1612,7 @@ const AdminPortal = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
-                      <ManualPaymentEntry />
+                      <ManualPaymentEntry onSuccess={fetchPendingRegistrations} />
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <DisbursementForm onSuccess={fetchPendingRegistrations} />
