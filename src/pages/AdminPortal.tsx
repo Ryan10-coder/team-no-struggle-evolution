@@ -22,6 +22,7 @@ import { ExpenditureForm } from "@/components/ExpenditureForm";
 import { ContributionsReport } from "@/components/ContributionsReport";
 import { DisbursementsReport } from "@/components/DisbursementsReport";
 import { ExpensesReport } from "@/components/ExpensesReport";
+import { MemberMPESAPayment } from "@/components/MemberMPESAPayment";
 
 interface MemberRegistration {
   id: string;
@@ -1365,6 +1366,17 @@ const AdminPortal = () => {
                 </CardContent>
               </Card>
               
+              {/* Member MPESA Payment Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Member Payment Processing</h3>
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">
+                    Paybill: 4148511
+                  </Badge>
+                </div>
+                <MemberMPESAPayment />
+              </div>
+              
               {/* Enhanced Financial Summary Cards */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -1500,7 +1512,7 @@ const AdminPortal = () => {
                         Recent MPESA Payments
                       </CardTitle>
                       <CardDescription className="text-slate-600 dark:text-slate-400">
-                        Real-time payment transactions from members • Showing latest {Math.min(mpesaPayments.length, 10)} of {mpesaPayments.length} transactions
+                        Real-time payment transactions from members via Paybill 4148511 • Showing latest {Math.min(mpesaPayments.length, 10)} of {mpesaPayments.length} transactions
                       </CardDescription>
                     </div>
                     {mpesaPayments.length > 10 && (
@@ -1517,7 +1529,10 @@ const AdminPortal = () => {
                         <DollarSign className="h-8 w-8 text-gray-400" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No MPESA payments yet</h3>
-                      <p className="text-gray-500 dark:text-gray-400">MPESA payment transactions will appear here once members start making payments.</p>
+                      <p className="text-gray-500 dark:text-gray-400 mb-3">MPESA payment transactions will appear here once members start making payments.</p>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 px-4 py-2 rounded-lg text-sm">
+                        <strong>Paybill Number:</strong> 4148511 • Payments are processed via STK Push
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-white dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -1526,8 +1541,9 @@ const AdminPortal = () => {
                           <TableRow>
                             <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Member Details</TableHead>
                             <TableHead className="font-semibold text-slate-700 dark:text-slate-300">TNS Number</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Phone Number</TableHead>
                             <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Amount</TableHead>
-                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Receipt</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">MPESA Receipt</TableHead>
                             <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Status</TableHead>
                             <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Transaction Date</TableHead>
                           </TableRow>
@@ -1551,6 +1567,11 @@ const AdminPortal = () => {
                                 <Badge variant="outline" className="font-mono">
                                   {payment.membership_registrations?.tns_number || 'N/A'}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-mono text-sm bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                  {payment.phone_number}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-semibold text-green-700 dark:text-green-400">
