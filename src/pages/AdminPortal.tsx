@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaffAuth } from "@/hooks/useStaffAuth";
 import { Button } from "@/components/ui/button";
@@ -129,6 +129,48 @@ const AdminPortal = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+
+  // Group MPESA payments by member to show contributions under one row per member
+  const groupedMpesaPayments = useMemo(() => {
+    type Grouped = {
+      member_id: string;
+      membership_registrations: MPESAPayment["membership_registrations"];
+      payments: MPESAPayment[];
+      totalAmount: number;
+      latest: MPESAPayment;
+      status: string;
+    };
+
+    const groups: Record<string, Grouped> = {};
+    (mpesaPayments || []).forEach((p) => {
+      const key = p.member_id;
+      if (!groups[key]) {
+        groups[key] = {
+          member_id: key,
+          membership_registrations: p.membership_registrations || null,
+          payments: [],
+          totalAmount: 0,
+          latest: p,
+          status: p.status,
+        };
+      }
+      groups[key].payments.push(p);
+      groups[key].totalAmount += Number(p.amount);
+      // Track latest payment
+      if (new Date(p.created_at) > new Date(groups[key].latest.created_at)) {
+        groups[key].latest = p;
+      }
+      // Determine status
+      if (groups[key].status !== p.status) {
+        groups[key].status = 'mixed';
+      }
+    });
+
+    // Sort groups by latest transaction date desc
+    return Object.values(groups).sort((a, b) => (
+      new Date(b.latest.created_at).getTime() - new Date(a.latest.created_at).getTime()
+    ));
+  }, [mpesaPayments]);
 
   useEffect(() => {
     // Check if user is authenticated either through regular auth or staff auth
@@ -1769,8 +1811,8 @@ const AdminPortal = () => {
                         </div>
                         Recent MPESA Payments
                       </CardTitle>
-                      <CardDescription className="text-slate-600 dark:text-slate-400">
-                        Real-time payment transactions from members via Paybill 4148511 • Showing latest {Math.min(mpesaPayments.length, 10)} of {mpesaPayments.length} transactions
+<CardDescription className="text-slate-600 dark:text-slate-400">
+                        Real-time payment transactions from members via Paybill 4148511 • Showing latest {Math.min(groupedMpesaPayments.length, 10)} of {groupedMpesaPayments.length} members with payments
                       </CardDescription>
                     </div>
                     {mpesaPayments.length > 10 && (
@@ -1781,7 +1823,7 @@ const AdminPortal = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {mpesaPayments.length === 0 ? (
+{groupedMpesaPayments.length === 0 ? (
                     <div className="text-center py-12">
                       <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                         <DollarSign className="h-8 w-8 text-gray-400" />
@@ -1807,65 +1849,71 @@ const AdminPortal = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {mpesaPayments.slice(0, 10).map((payment, index) => (
-                            <TableRow key={payment.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+{groupedMpesaPayments.slice(0, 10).map((group, index) => (
+<TableRow key={group.member_id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
                               index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-slate-25 dark:bg-slate-900/25'
                             }`}>
                               <TableCell>
                                 <div className="space-y-1">
                                   <div className="font-medium text-gray-900 dark:text-gray-100">
-                                    {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
+                                    {group.membership_registrations?.first_name} {group.membership_registrations?.last_name}
                                   </div>
                                   <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    {payment.membership_registrations?.email || 'No email'}
+                                    {group.membership_registrations?.email || 'No email'}
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="font-mono">
-                                  {payment.membership_registrations?.tns_number || 'N/A'}
+                                  {group.membership_registrations?.tns_number || 'N/A'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="font-mono text-sm bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                                  {payment.phone_number}
+                                  {group.latest.phone_number}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <div className="font-semibold text-green-700 dark:text-green-400">
-                                  KES {payment.amount.toLocaleString()}
+                                  KES {group.totalAmount.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {group.payments.length} contributions
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {payment.mpesa_receipt_number ? (
-                                  <div className="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 rounded text-sm font-mono">
-                                    {payment.mpesa_receipt_number}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-sm">Pending</span>
-                                )}
+                                <div className="flex flex-wrap gap-1">
+                                  {group.payments
+                                    .slice()
+                                    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                                    .map((p, i) => (
+                                      <Badge key={p.id} variant="secondary" className="text-xs">
+                                        Contribution {i + 1}: KES {Number(p.amount).toLocaleString()}
+                                      </Badge>
+                                    ))}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <Badge 
-                                  variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'secondary' : 'destructive'}
+                                  variant={group.status === 'completed' ? 'default' : group.status === 'pending' ? 'secondary' : 'destructive'}
                                   className={`${
-                                    payment.status === 'completed' 
+                                    group.status === 'completed' 
                                       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                                      : payment.status === 'pending'
+                                      : group.status === 'pending'
                                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                                         : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                                   }`}
                                 >
-                                  {payment.status}
+                                  {group.status}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="space-y-1">
                                   <div className="text-sm font-medium">
-                                    {new Date(payment.created_at).toLocaleDateString()}
+                                    {new Date(group.latest.created_at).toLocaleDateString()}
                                   </div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {new Date(payment.created_at).toLocaleTimeString()}
+                                    {new Date(group.latest.created_at).toLocaleTimeString()}
                                   </div>
                                 </div>
                               </TableCell>
