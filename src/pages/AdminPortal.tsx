@@ -482,426 +482,564 @@ const AdminPortal = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <Shield className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Admin Portal</h1>
-              <p className="text-muted-foreground">
-                Manage member and staff approvals 
-                {staffUser && " • Logged in as: " + staffUser.first_name + " " + staffUser.last_name + " (" + staffUser.staff_role + ")"}
-                {user && !staffUser && " • User: " + user.email}
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950">
+      {/* Enhanced Header with Gradient Background */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur opacity-75"></div>
+                <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-full">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+                  Admin Control Center
+                </h1>
+                <div className="flex items-center gap-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Complete administrative oversight and management
+                  </p>
+                  {staffUser && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-700">
+                        {staffUser.first_name} {staffUser.last_name} • {staffUser.staff_role}
+                      </Badge>
+                    </div>
+                  )}
+                  {user && !staffUser && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                      {user.email}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                onClick={() => navigate(staffUser ? "/portal-login" : "/dashboard")} 
+                variant="outline"
+                className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 transition-all duration-200"
+              >
+                Back to {staffUser ? "Portal Login" : "Dashboard"}
+              </Button>
+              {staffUser && (
+                <Button 
+                  onClick={handleLogout} 
+                  variant="outline"
+                  className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20 transition-all duration-200"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button onClick={() => navigate(staffUser ? "/portal-login" : "/dashboard")} variant="outline">
-              Back to {staffUser ? "Portal Login" : "Dashboard"}
-            </Button>
-            {staffUser && (
-              <Button onClick={handleLogout} variant="outline">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            )}
-          </div>
         </div>
+      </div>
 
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="analytics" className="flex items-center space-x-2">
-              <BarChart3 className="h-4 w-4" />
-              <span>Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="treasurer" className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4" />
-              <span>$ Treasurer</span>
-            </TabsTrigger>
-            <TabsTrigger value="pending-members" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>Pending Members ({pendingMembers.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="all-members" className="flex items-center space-x-2">
-              <Users className="h-4 w-4" />
-              <span>All Members ({allMembers.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="pending-staff" className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span>Pending Staff ({pendingStaff.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="all-staff" className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span>All Staff ({allStaff.length})</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="max-w-7xl mx-auto px-4 py-8">
 
-          <TabsContent value="analytics">
-            <div className="grid gap-6">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+        {/* Enhanced Tabs Navigation */}
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-2 mb-8">
+          <Tabs defaultValue="analytics" className="w-full">
+            <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+              <TabsTrigger 
+                value="analytics" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="font-medium">Analytics</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="treasurer" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+              >
+                <DollarSign className="h-4 w-4" />
+                <span className="font-medium">Treasurer</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="pending-members" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4 relative"
+              >
+                <Users className="h-4 w-4" />
+                <span className="font-medium">Pending Members</span>
+                {pendingMembers.length > 0 && (
+                  <Badge className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {pendingMembers.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="all-members" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+              >
+                <Users className="h-4 w-4" />
+                <span className="font-medium">All Members</span>
+                <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full">
+                  {allMembers.length}
+                </Badge>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="pending-staff" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+              >
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">Pending Staff</span>
+                {pendingStaff.length > 0 && (
+                  <Badge className="ml-2 bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {pendingStaff.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="all-staff" 
+                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+              >
+                <Shield className="h-4 w-4" />
+                <span className="font-medium">All Staff</span>
+                <Badge variant="secondary" className="ml-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">
+                  {allStaff.length}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
+
+          <TabsContent value="analytics" className="space-y-8">
+            {/* Analytics Header */}
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                <BarChart3 className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+                  System Analytics & Insights
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                  Real-time data visualization and organizational metrics
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-8">
+              {/* Enhanced Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800 hover:shadow-xl transition-all duration-300 group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">Total Members</CardTitle>
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{allMembers.length}</div>
-                    <p className="text-xs text-muted-foreground">
+                  <CardContent className="space-y-2">
+                    <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{allMembers.length}</div>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
                       {pendingMembers.length} pending approval
                     </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Approved Members</CardTitle>
-                    <UserCheck className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {allMembers.filter(m => m.registration_status === 'approved').length}
+                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${Math.min((allMembers.length / 100) * 100, 100)}%`}}
+                      ></div>
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
-                    <Shield className="h-4 w-4 text-muted-foreground" />
+
+                <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-800 hover:shadow-xl transition-all duration-300 group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Approved Members</CardTitle>
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{allStaff.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {pendingStaff.length} pending approval
+                  <CardContent className="space-y-2">
+                    <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200">
+                      {allMembers.filter(m => m.registration_status === 'approved').length}
+                    </div>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                      {((allMembers.filter(m => m.registration_status === 'approved').length / allMembers.length) * 100 || 0).toFixed(1)}% approval rate
                     </p>
+                    <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
+                      <div 
+                        className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${(allMembers.filter(m => m.registration_status === 'approved').length / allMembers.length) * 100 || 0}%`}}
+                      ></div>
+                    </div>
                   </CardContent>
                 </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Payment Rate</CardTitle>
-                    <PieChart className="h-4 w-4 text-muted-foreground" />
+
+                <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-purple-700 dark:text-purple-300">Total Staff</CardTitle>
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
+                  <CardContent className="space-y-2">
+                    <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">{allStaff.length}</div>
+                    <p className="text-sm text-purple-600 dark:text-purple-400">
+                      {pendingStaff.length} pending approval
+                    </p>
+                    <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2">
+                      <div 
+                        className="bg-purple-500 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${Math.min((allStaff.length / 20) * 100, 100)}%`}}
+                      ></div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800 hover:shadow-xl transition-all duration-300 group">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <CardTitle className="text-sm font-semibold text-orange-700 dark:text-orange-300">Payment Rate</CardTitle>
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <PieChart className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="text-3xl font-bold text-orange-800 dark:text-orange-200">
                       {Math.round((allMembers.filter(m => m.payment_status === 'paid').length / allMembers.length) * 100) || 0}%
+                    </div>
+                    <p className="text-sm text-orange-600 dark:text-orange-400">
+                      {allMembers.filter(m => m.payment_status === 'paid').length} members paid
+                    </p>
+                    <div className="w-full bg-orange-200 dark:bg-orange-800 rounded-full h-2">
+                      <div 
+                        className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${Math.round((allMembers.filter(m => m.payment_status === 'paid').length / allMembers.length) * 100) || 0}%`}}
+                      ></div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Registration Status Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Registration Status Distribution</CardTitle>
-                    <CardDescription>Breakdown of member registration statuses</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        approved: { label: "Approved", color: "hsl(var(--chart-7))" },
-                        pending: { label: "Pending", color: "hsl(var(--chart-3))" },
-                        rejected: { label: "Rejected", color: "hsl(var(--chart-9))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie
-                          dataKey="value"
-                          data={[
-                            { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(var(--chart-7))" },
-                            { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(var(--chart-3))" },
-                            { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(var(--chart-9))" },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label
-                          innerRadius={20}
-                        />
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Membership Type Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Membership Type Distribution</CardTitle>
-                    <CardDescription>Distribution by membership types</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        individual: { label: "Individual", color: "hsl(var(--chart-1))" },
-                        family: { label: "Family", color: "hsl(var(--chart-5))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie
-                          dataKey="value"
-                          data={[
-                            { name: "individual", value: allMembers.filter(m => m.membership_type === 'individual').length, fill: "hsl(var(--chart-1))" },
-                            { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(var(--chart-5))" },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label
-                          innerRadius={20}
-                        />
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Payment Status Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Payment Status Distribution</CardTitle>
-                    <CardDescription>Payment completion rates</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        paid: { label: "Paid", color: "hsl(var(--chart-7))" },
-                        pending: { label: "Pending", color: "hsl(var(--chart-4))" },
-                        failed: { label: "Failed", color: "hsl(var(--chart-9))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie
-                          dataKey="value"
-                          data={[
-                            { name: "paid", value: allMembers.filter(m => m.payment_status === 'paid').length, fill: "hsl(var(--chart-7))" },
-                            { name: "pending", value: allMembers.filter(m => m.payment_status === 'pending').length, fill: "hsl(var(--chart-4))" },
-                            { name: "failed", value: allMembers.filter(m => m.payment_status === 'failed').length, fill: "hsl(var(--chart-9))" },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label
-                          innerRadius={20}
-                        />
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Members by State */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Members by State</CardTitle>
-                    <CardDescription>Geographic distribution of members</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        count: { label: "Members", color: "hsl(var(--chart-6))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <BarChart
-                        data={Object.entries(
-                          allMembers.reduce((acc, member) => {
-                            acc[member.state] = (acc[member.state] || 0) + 1;
-                            return acc;
-                          }, {} as Record<string, number>)
-                        )
-                        .map(([state, count]) => ({ state, count }))
-                        .sort((a, b) => b.count - a.count)
-                        .slice(0, 10)}
+              {/* Enhanced Charts Grid */}
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Data Visualization & Trends</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Interactive charts and analytics for better decision making</p>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Enhanced Registration Status Distribution */}
+                  <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full">
+                          <PieChart className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">Registration Status Distribution</CardTitle>
+                          <CardDescription className="text-gray-600 dark:text-gray-400">Current breakdown of member registration statuses</CardDescription>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                            {allMembers.filter(m => m.registration_status === 'approved').length}
+                          </div>
+                          <div className="text-xs text-green-600 dark:text-green-500">Approved</div>
+                        </div>
+                        <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                            {allMembers.filter(m => m.registration_status === 'pending').length}
+                          </div>
+                          <div className="text-xs text-yellow-600 dark:text-yellow-500">Pending</div>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                          <div className="text-2xl font-bold text-red-700 dark:text-red-400">
+                            {allMembers.filter(m => m.registration_status === 'rejected').length}
+                          </div>
+                          <div className="text-xs text-red-600 dark:text-red-500">Rejected</div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          approved: { label: "Approved", color: "hsl(142, 76%, 36%)" },
+                          pending: { label: "Pending", color: "hsl(45, 93%, 47%)" },
+                          rejected: { label: "Rejected", color: "hsl(0, 84%, 60%)" },
+                        }}
+                        className="h-[350px]"
                       >
-                        <XAxis dataKey="state" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" fill="hsl(var(--chart-6))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
+                        <RechartsPieChart>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Pie
+                            dataKey="value"
+                            data={[
+                              { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(142, 76%, 36%)" },
+                              { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(45, 93%, 47%)" },
+                              { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(0, 84%, 60%)" },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={120}
+                            innerRadius={50}
+                            paddingAngle={2}
+                          >
+                            {[
+                              { name: "approved", value: allMembers.filter(m => m.registration_status === 'approved').length, fill: "hsl(142, 76%, 36%)" },
+                              { name: "pending", value: allMembers.filter(m => m.registration_status === 'pending').length, fill: "hsl(45, 93%, 47%)" },
+                              { name: "rejected", value: allMembers.filter(m => m.registration_status === 'rejected').length, fill: "hsl(0, 84%, 60%)" },
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} className="hover:opacity-80 transition-opacity cursor-pointer" />
+                            ))}
+                          </Pie>
+                          <ChartLegend content={<ChartLegendContent />} />
+                        </RechartsPieChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
 
-                {/* Maturity Status Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Member Maturity Status</CardTitle>
-                    <CardDescription>Distribution of member maturity levels</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        probation: { label: "Probation", color: "hsl(var(--chart-4))" },
-                        mature: { label: "Mature", color: "hsl(var(--chart-8))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <RechartsPieChart>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Pie
-                          dataKey="value"
-                          data={[
-                            { name: "probation", value: allMembers.filter(m => m.maturity_status === 'probation').length, fill: "hsl(var(--chart-4))" },
-                            { name: "mature", value: allMembers.filter(m => m.maturity_status === 'mature').length, fill: "hsl(var(--chart-8))" },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          label
-                          innerRadius={20}
-                        />
-                        <ChartLegend content={<ChartLegendContent />} />
-                      </RechartsPieChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Staff Role Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Staff Role Distribution</CardTitle>
-                    <CardDescription>Breakdown of staff by roles</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChartContainer
-                      config={{
-                        count: { label: "Staff Count", color: "hsl(var(--chart-2))" },
-                      }}
-                      className="h-[300px]"
-                    >
-                      <BarChart
-                        data={Object.entries(
-                          allStaff.reduce((acc, staff) => {
-                            acc[staff.staff_role] = (acc[staff.staff_role] || 0) + 1;
-                            return acc;
-                          }, {} as Record<string, number>)
-                        ).map(([role, count]) => ({ role, count }))}
+                  {/* Enhanced Membership Type Distribution */}
+                  <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 border-gray-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full">
+                          <Users className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">Membership Type Distribution</CardTitle>
+                          <CardDescription className="text-gray-600 dark:text-gray-400">Individual vs Family membership breakdown</CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <ChartContainer
+                        config={{
+                          individual: { label: "Individual", color: "hsl(217, 91%, 60%)" },
+                          family: { label: "Family", color: "hsl(142, 76%, 36%)" },
+                        }}
+                        className="h-[350px]"
                       >
-                        <XAxis dataKey="role" angle={-45} textAnchor="end" height={80} />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ChartContainer>
-                  </CardContent>
-                </Card>
+                        <RechartsPieChart>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Pie
+                            dataKey="value"
+                            data={[
+                              { name: "individual", value: allMembers.filter(m => m.membership_type === 'individual').length, fill: "hsl(217, 91%, 60%)" },
+                              { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(142, 76%, 36%)" },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={120}
+                            innerRadius={50}
+                            paddingAngle={2}
+                          >
+                            {[
+                              { name: "individual", value: allMembers.filter(m => m.membership_type === 'individual').length, fill: "hsl(217, 91%, 60%)" },
+                              { name: "family", value: allMembers.filter(m => m.membership_type === 'family').length, fill: "hsl(142, 76%, 36%)" },
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} className="hover:opacity-80 transition-opacity cursor-pointer" />
+                            ))}
+                          </Pie>
+                          <ChartLegend content={<ChartLegendContent />} />
+                        </RechartsPieChart>
+                      </ChartContainer>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="pending-members">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Member Registrations</CardTitle>
-                <CardDescription>
-                  Review and approve member applications
-                </CardDescription>
+          <TabsContent value="pending-members" className="space-y-6">
+            {/* Pending Members Header */}
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-orange-500 to-red-600 rounded-full shadow-lg">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+                  Pending Member Applications
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                  Review, verify, and approve new member registrations
+                </p>
+                {pendingMembers.length > 0 && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+                    <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-300 dark:border-orange-700">
+                      {pendingMembers.length} applications awaiting review
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Card className="bg-gradient-to-br from-white to-orange-50/30 dark:from-gray-900 dark:to-orange-950/10 border-orange-200 dark:border-orange-800 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-b border-orange-200 dark:border-orange-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                      <UserCheck className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl text-orange-900 dark:text-orange-100">Member Registration Review</CardTitle>
+                      <CardDescription className="text-orange-700 dark:text-orange-300">
+                        Carefully review member details and approve qualified applications
+                      </CardDescription>
+                    </div>
+                  </div>
+                  {pendingMembers.length > 0 && (
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-orange-800 dark:text-orange-200">{pendingMembers.length}</div>
+                      <div className="text-xs text-orange-600 dark:text-orange-400">Pending Reviews</div>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 {pendingMembers.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No pending member registrations
+                  <div className="text-center py-16">
+                    <div className="mx-auto w-32 h-32 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-full flex items-center justify-center mb-6">
+                      <UserCheck className="h-16 w-16 text-green-500 dark:text-green-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">All Applications Reviewed!</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-lg mb-6">No pending member registrations require your attention at this time.</p>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 px-4 py-2 text-sm">
+                      System Up to Date
+                    </Badge>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Profile</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone/Alt Phone</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>ID Number</TableHead>
-                        <TableHead>Emergency Contact</TableHead>
-                        <TableHead>Personal Info</TableHead>
-                        <TableHead>Membership</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                  <div className="bg-white dark:bg-gray-900 rounded-lg border border-orange-200 dark:border-orange-700 overflow-hidden">
+                    <Table>
+                      <TableHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
+                        <TableRow className="border-orange-200 dark:border-orange-800">
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300 py-4">Profile</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Member Details</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Contact Info</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Address</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">ID Number</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Emergency Contact</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Membership Type</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Registration Date</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300 text-center">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
                       <TableBody>
-                        {pendingMembers.map((member) => (
-                          <TableRow key={member.id}>
-                            <TableCell>
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage 
-                                  src={member.profile_picture_url || undefined}
-                                  alt={member.first_name + " " + member.last_name}
-                                />
-                                <AvatarFallback>
-                                  {member.first_name.charAt(0)}{member.last_name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <div>{member.first_name} {member.last_name}</div>
-                              <div className="text-sm text-muted-foreground">{member.sex || 'N/A'}, {member.marital_status || 'N/A'}</div>
-                            </TableCell>
-                            <TableCell>{member.email}</TableCell>
-                            <TableCell>
-                              <div>{member.phone}</div>
-                              {member.alternative_phone && (
-                                <div className="text-sm text-muted-foreground">Alt: {member.alternative_phone}</div>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div>{member.address}</div>
-                                <div>{member.city}, {member.state} {member.zip_code}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {member.id_number || 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div className="font-medium">{member.emergency_contact_name}</div>
-                                <div className="text-muted-foreground">{member.emergency_contact_phone}</div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm">
-                                <div>Sex: {member.sex || 'N/A'}</div>
-                                <div>Status: {member.marital_status || 'N/A'}</div>
+                        {pendingMembers.map((member, index) => (
+                          <TableRow 
+                            key={member.id} 
+                            className={`hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors border-orange-100 dark:border-orange-900 ${
+                              index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-orange-25 dark:bg-orange-950/10'
+                            }`}
+                          >
+                            <TableCell className="py-4">
+                              <div className="relative">
+                                <Avatar className="h-12 w-12 border-2 border-orange-200 dark:border-orange-700">
+                                  <AvatarImage 
+                                    src={member.profile_picture_url || undefined}
+                                    alt={member.first_name + " " + member.last_name}
+                                  />
+                                  <AvatarFallback className="bg-gradient-to-r from-orange-400 to-red-500 text-white font-semibold">
+                                    {member.first_name.charAt(0)}{member.last_name.charAt(0)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-400 rounded-full animate-pulse"></div>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">
-                                <Badge variant="outline">{member.membership_type}</Badge>
-                                <div className="text-sm">
-                                  <Badge variant={member.payment_status === 'paid' ? 'default' : 'secondary'}>
-                                    {member.payment_status}
+                                <div className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+                                  {member.first_name} {member.last_name}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
+                                    {member.sex || 'N/A'}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs border-gray-300 text-gray-600">
+                                    {member.marital_status || 'N/A'}
                                   </Badge>
                                 </div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              {new Date(member.registration_date).toLocaleDateString()}
+                              <div className="space-y-2">
+                                <div className="font-medium text-gray-900 dark:text-gray-100">{member.email}</div>
+                                <div className="space-y-1">
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">{member.phone}</div>
+                                  {member.alternative_phone && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                      Alt: {member.alternative_phone}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
                             </TableCell>
                             <TableCell>
-                              <div className="flex space-x-2">
+                              <div className="space-y-1 text-sm">
+                                <div className="font-medium text-gray-900 dark:text-gray-100">{member.address}</div>
+                                <div className="text-gray-600 dark:text-gray-400">
+                                  {member.city}, {member.state} {member.zip_code}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {member.id_number || 'N/A'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                                  {member.emergency_contact_name}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {member.emergency_contact_phone}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-2">
+                                <Badge 
+                                  variant="secondary" 
+                                  className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs"
+                                >
+                                  {member.membership_type}
+                                </Badge>
+                                <Badge 
+                                  variant={member.payment_status === 'paid' ? 'default' : 'secondary'}
+                                  className={`text-xs ${
+                                    member.payment_status === 'paid' 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                  }`}
+                                >
+                                  {member.payment_status}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-900 dark:text-gray-100">
+                                  {new Date(member.registration_date).toLocaleDateString()}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-500">
+                                  {new Date(member.registration_date).toLocaleTimeString()}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col space-y-2">
                                 <Button
                                   size="sm"
                                   onClick={() => approveMember(member.id)}
-                                  className="bg-green-600 hover:bg-green-700"
+                                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-200 w-full"
                                 >
-                                  <UserCheck className="h-4 w-4 mr-1" />
+                                  <UserCheck className="h-4 w-4 mr-2" />
                                   Approve
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => rejectMember(member.id)}
+                                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-md hover:shadow-lg transition-all duration-200 w-full"
                                 >
-                                  <UserX className="h-4 w-4 mr-1" />
+                                  <UserX className="h-4 w-4 mr-2" />
                                   Reject
                                 </Button>
                               </div>
@@ -910,6 +1048,7 @@ const AdminPortal = () => {
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1192,220 +1331,465 @@ const AdminPortal = () => {
           </TabsContent>
           
           <TabsContent value="treasurer">
-            <div className="grid gap-6">
-              {/* Forms Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <ManualPaymentEntry />
-                <DisbursementForm onSuccess={fetchPendingRegistrations} />
-                <ExpenditureForm onSuccess={fetchPendingRegistrations} />
-              </div>
-              
-              {/* Financial Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {contributions.length} total contributions
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Disbursements</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {disbursements.length} disbursements made
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Net Position</CardTitle>
-                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`text-2xl font-bold ${
-                      contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
-                      disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
-                      monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0) >= 0 
-                      ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      KES {(
-                        contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
-                        disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
-                        monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)
-                      ).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Net position
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
-                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {monthlyExpenses.length} expense entries
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">MPESA Payments</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      KES {mpesaPayments.reduce((total, payment) => total + Number(payment.amount), 0).toLocaleString()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {mpesaPayments.length} MPESA transactions
-                    </p>
-                  </CardContent>
-                </Card>
+            <div className="space-y-8">
+              {/* Header Section */}
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl font-bold text-primary">Financial Management Center</h2>
+                <p className="text-muted-foreground text-lg">Comprehensive financial oversight and transaction management</p>
+                <div className="w-24 h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20 mx-auto rounded-full"></div>
               </div>
 
-              {/* MPESA Payments Table */}
-              <Card>
+              {/* Quick Actions Forms */}
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
                 <CardHeader>
-                  <CardTitle>Recent MPESA Payments</CardTitle>
-                  <CardDescription>All MPESA payment transactions from members</CardDescription>
+                  <CardTitle className="text-xl text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Quick Financial Actions
+                  </CardTitle>
+                  <CardDescription className="text-blue-700 dark:text-blue-300">
+                    Manage payments, disbursements, and expenses efficiently
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+                      <ManualPaymentEntry />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+                      <DisbursementForm onSuccess={fetchPendingRegistrations} />
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+                      <ExpenditureForm onSuccess={fetchPendingRegistrations} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Enhanced Financial Summary Cards */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Financial Overview</h3>
+                  <div className="text-sm text-muted-foreground">
+                    Last updated: {new Date().toLocaleString()}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                  <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800 hover:shadow-lg transition-all duration-200 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className="text-sm font-semibold text-green-700 dark:text-green-300">Total Contributions</CardTitle>
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-green-800 dark:text-green-200">
+                        KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                        {contributions.length} total contributions
+                      </p>
+                      <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2 mt-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800 hover:shadow-lg transition-all duration-200 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className="text-sm font-semibold text-orange-700 dark:text-orange-300">Total Disbursements</CardTitle>
+                      <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform">
+                        <DollarSign className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-orange-800 dark:text-orange-200">
+                        KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                        {disbursements.length} disbursements made
+                      </p>
+                      <div className="w-full bg-orange-200 dark:bg-orange-800 rounded-full h-2 mt-2">
+                        <div className="bg-orange-500 h-2 rounded-full" style={{width: '65%'}}></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className={`bg-gradient-to-br ${(contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)) >= 0 ? 'from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800' : 'from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 border-red-200 dark:border-red-800'} hover:shadow-lg transition-all duration-200 group`}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className={`text-sm font-semibold ${(contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)) >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-red-700 dark:text-red-300'}`}>Net Position</CardTitle>
+                      <div className={`p-2 ${(contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)) >= 0 ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-red-100 dark:bg-red-900/30'} rounded-full group-hover:scale-110 transition-transform`}>
+                        <Calculator className={`h-4 w-4 ${(contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)) >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`} />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className={`text-2xl font-bold ${
+                        contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
+                        disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
+                        monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0) >= 0 
+                        ? 'text-blue-800 dark:text-blue-200' : 'text-red-800 dark:text-red-200'
+                      }`}>
+                        KES {(
+                          contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
+                          disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
+                          monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)
+                        ).toLocaleString()}
+                      </div>
+                      <p className={`text-xs mt-1 ${
+                        contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - 
+                        disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - 
+                        monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0) >= 0 
+                        ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {(contributions.reduce((total, contrib) => total + Number(contrib.amount), 0) - disbursements.reduce((total, disb) => total + Number(disb.amount), 0) - monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0)) >= 0 ? 'Positive' : 'Negative'} position
+                      </p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all duration-200 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className="text-sm font-semibold text-purple-700 dark:text-purple-300">Monthly Expenses</CardTitle>
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform">
+                        <BarChart3 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+                        KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                        {monthlyExpenses.length} expense entries
+                      </p>
+                      <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2 mt-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{width: '45%'}}></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/20 dark:to-cyan-950/20 border-teal-200 dark:border-teal-800 hover:shadow-lg transition-all duration-200 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardTitle className="text-sm font-semibold text-teal-700 dark:text-teal-300">MPESA Payments</CardTitle>
+                      <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-full group-hover:scale-110 transition-transform">
+                        <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-teal-800 dark:text-teal-200">
+                        KES {mpesaPayments.reduce((total, payment) => total + Number(payment.amount), 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                        {mpesaPayments.length} MPESA transactions
+                      </p>
+                      <div className="w-full bg-teal-200 dark:bg-teal-800 rounded-full h-2 mt-2">
+                        <div className="bg-teal-500 h-2 rounded-full" style={{width: '75%'}}></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Enhanced MPESA Payments Table */}
+              <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/50 dark:to-gray-950/50 border-slate-200 dark:border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-xl text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                        <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                          <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        Recent MPESA Payments
+                      </CardTitle>
+                      <CardDescription className="text-slate-600 dark:text-slate-400">
+                        Real-time payment transactions from members • Showing latest {Math.min(mpesaPayments.length, 10)} of {mpesaPayments.length} transactions
+                      </CardDescription>
+                    </div>
+                    {mpesaPayments.length > 10 && (
+                      <Button variant="outline" size="sm" className="text-xs">
+                        View All ({mpesaPayments.length})
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {mpesaPayments.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">No MPESA payments found</div>
+                    <div className="text-center py-12">
+                      <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                        <DollarSign className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No MPESA payments yet</h3>
+                      <p className="text-gray-500 dark:text-gray-400">MPESA payment transactions will appear here once members start making payments.</p>
+                    </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Member</TableHead>
-                          <TableHead>TNS Number</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Receipt</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mpesaPayments.slice(0, 10).map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell>
-                              {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
-                            </TableCell>
-                            <TableCell>{payment.membership_registrations?.tns_number || 'N/A'}</TableCell>
-                            <TableCell>KSH {payment.amount.toLocaleString()}</TableCell>
-                            <TableCell>{payment.mpesa_receipt_number || 'N/A'}</TableCell>
-                            <TableCell>
-                              <Badge variant={payment.status === 'completed' ? 'default' : 'secondary'}>
-                                {payment.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                      <Table>
+                        <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
+                          <TableRow>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Member Details</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">TNS Number</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Amount</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Receipt</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Status</TableHead>
+                            <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Transaction Date</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {mpesaPayments.slice(0, 10).map((payment, index) => (
+                            <TableRow key={payment.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                              index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-slate-25 dark:bg-slate-900/25'
+                            }`}>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                                    {payment.membership_registrations?.first_name} {payment.membership_registrations?.last_name}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    {payment.membership_registrations?.email || 'No email'}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono">
+                                  {payment.membership_registrations?.tns_number || 'N/A'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold text-green-700 dark:text-green-400">
+                                  KES {payment.amount.toLocaleString()}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {payment.mpesa_receipt_number ? (
+                                  <div className="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300 px-2 py-1 rounded text-sm font-mono">
+                                    {payment.mpesa_receipt_number}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-sm">Pending</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={payment.status === 'completed' ? 'default' : payment.status === 'pending' ? 'secondary' : 'destructive'}
+                                  className={`${
+                                    payment.status === 'completed' 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                      : payment.status === 'pending'
+                                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                        : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  }`}
+                                >
+                                  {payment.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="text-sm font-medium">
+                                    {new Date(payment.created_at).toLocaleDateString()}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    {new Date(payment.created_at).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Financial Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Monthly Financial Trends */}
-                <Card className="lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Financial Overview</CardTitle>
-                    <CardDescription>Real-time financial data from your organization</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <div className="font-medium text-green-600">Total Contributions</div>
-                          <div className="text-lg">KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}</div>
+              {/* Enhanced Financial Analysis Section */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Financial Analysis</h3>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs">Live Data</Badge>
+                    <Badge variant="secondary" className="text-xs">Updated {new Date().toLocaleTimeString()}</Badge>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Enhanced Financial Overview */}
+                  <Card className="lg:col-span-2 bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 dark:from-indigo-950/20 dark:via-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800">
+                    <CardHeader>
+                      <CardTitle className="text-xl text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                          <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div>
-                          <div className="font-medium text-orange-600">Total Disbursements</div>
-                          <div className="text-lg">KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}</div>
+                        Comprehensive Financial Overview
+                      </CardTitle>
+                      <CardDescription className="text-blue-700 dark:text-blue-300">
+                        Real-time financial data with key performance indicators
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-medium text-green-600 dark:text-green-400">Total Contributions</div>
+                            <TrendingUp className="h-4 w-4 text-green-500" />
+                          </div>
+                          <div className="text-3xl font-bold text-green-800 dark:text-green-200 mb-2">
+                            KES {contributions.reduce((total, contrib) => total + Number(contrib.amount), 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-green-600 dark:text-green-400 mb-3">
+                            From {contributions.length} transactions
+                          </div>
+                          <div className="w-full bg-green-100 dark:bg-green-900/30 rounded-full h-2">
+                            <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium text-red-600">Total Expenses</div>
-                          <div className="text-lg">KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}</div>
+                        
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-medium text-orange-600 dark:text-orange-400">Total Disbursements</div>
+                            <DollarSign className="h-4 w-4 text-orange-500" />
+                          </div>
+                          <div className="text-3xl font-bold text-orange-800 dark:text-orange-200 mb-2">
+                            KES {disbursements.reduce((total, disb) => total + Number(disb.amount), 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-orange-600 dark:text-orange-400 mb-3">
+                            From {disbursements.length} disbursements
+                          </div>
+                          <div className="w-full bg-orange-100 dark:bg-orange-900/30 rounded-full h-2">
+                            <div className="bg-orange-500 h-2 rounded-full" style={{width: '65%'}}></div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm font-medium text-purple-600 dark:text-purple-400">Total Expenses</div>
+                            <Calculator className="h-4 w-4 text-purple-500" />
+                          </div>
+                          <div className="text-3xl font-bold text-purple-800 dark:text-purple-200 mb-2">
+                            KES {monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-purple-600 dark:text-purple-400 mb-3">
+                            From {monthlyExpenses.length} expense entries
+                          </div>
+                          <div className="w-full bg-purple-100 dark:bg-purple-900/30 rounded-full h-2">
+                            <div className="bg-purple-500 h-2 rounded-full" style={{width: '45%'}}></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                {/* Expense Categories */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Monthly Expense Categories</CardTitle>
-                    <CardDescription>Breakdown of operating expenses</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(
-                        monthlyExpenses.reduce((acc, expense) => {
-                          acc[expense.expense_category] = (acc[expense.expense_category] || 0) + Number(expense.amount);
-                          return acc;
-                        }, {} as Record<string, number>)
-                      ).map(([category, amount]) => (
-                        <div key={category} className="flex justify-between items-center">
-                          <span className="text-sm capitalize">{category}</span>
-                          <span className="font-medium">KES {amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                      {monthlyExpenses.length === 0 && (
-                        <div className="text-center py-4 text-muted-foreground">No expense data available</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Enhanced Expense Categories */}
+                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                        <PieChart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        Expense Categories
+                      </CardTitle>
+                      <CardDescription className="text-purple-700 dark:text-purple-300">
+                        Breakdown of operational spending
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {Object.entries(
+                          monthlyExpenses.reduce((acc, expense) => {
+                            acc[expense.expense_category] = (acc[expense.expense_category] || 0) + Number(expense.amount);
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([category, amount], index) => {
+                          const total = monthlyExpenses.reduce((total, exp) => total + Number(exp.amount), 0);
+                          const percentage = total > 0 ? (amount / total) * 100 : 0;
+                          const colors = ['bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-blue-500', 'bg-cyan-500'];
+                          
+                          return (
+                            <div key={category} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
+                                  <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{category}</span>
+                                </div>
+                                <span className="font-semibold text-purple-700 dark:text-purple-300">KES {amount.toLocaleString()}</span>
+                              </div>
+                              <div className="w-full bg-purple-100 dark:bg-purple-900/30 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${colors[index % colors.length]}`} 
+                                  style={{width: `${Math.max(percentage, 5)}%`}}
+                                ></div>
+                              </div>
+                              <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                                {percentage.toFixed(1)}% of total expenses
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {monthlyExpenses.length === 0 && (
+                          <div className="text-center py-8">
+                            <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-3">
+                              <BarChart3 className="h-6 w-6 text-purple-400" />
+                            </div>
+                            <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">No expense data</h4>
+                            <p className="text-sm text-purple-600 dark:text-purple-400">Expense categories will appear here once data is available.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                {/* Contribution Types */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Contribution Types</CardTitle>
-                    <CardDescription>Distribution by contribution types</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Object.entries(
-                        contributions.reduce((acc, contribution) => {
-                          acc[contribution.contribution_type] = (acc[contribution.contribution_type] || 0) + Number(contribution.amount);
-                          return acc;
-                        }, {} as Record<string, number>)
-                      ).map(([type, amount]) => (
-                        <div key={type} className="flex justify-between items-center">
-                          <span className="text-sm capitalize">{type}</span>
-                          <span className="font-medium">KES {amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                      {contributions.length === 0 && (
-                        <div className="text-center py-4 text-muted-foreground">No contribution data available</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Enhanced Contribution Types */}
+                  <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-800">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        Contribution Types
+                      </CardTitle>
+                      <CardDescription className="text-emerald-700 dark:text-emerald-300">
+                        Revenue streams and contribution patterns
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {Object.entries(
+                          contributions.reduce((acc, contribution) => {
+                            acc[contribution.contribution_type] = (acc[contribution.contribution_type] || 0) + Number(contribution.amount);
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).map(([type, amount], index) => {
+                          const total = contributions.reduce((total, contrib) => total + Number(contrib.amount), 0);
+                          const percentage = total > 0 ? (amount / total) * 100 : 0;
+                          const colors = ['bg-emerald-500', 'bg-teal-500', 'bg-green-500', 'bg-lime-500', 'bg-cyan-500'];
+                          
+                          return (
+                            <div key={type} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
+                                  <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300">{type}</span>
+                                </div>
+                                <span className="font-semibold text-emerald-700 dark:text-emerald-300">KES {amount.toLocaleString()}</span>
+                              </div>
+                              <div className="w-full bg-emerald-100 dark:bg-emerald-900/30 rounded-full h-2">
+                                <div 
+                                  className={`h-2 rounded-full ${colors[index % colors.length]}`} 
+                                  style={{width: `${Math.max(percentage, 5)}%`}}
+                                ></div>
+                              </div>
+                              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                                {percentage.toFixed(1)}% of total contributions
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {contributions.length === 0 && (
+                          <div className="text-center py-8">
+                            <div className="mx-auto w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-3">
+                              <TrendingUp className="h-6 w-6 text-emerald-400" />
+                            </div>
+                            <h4 className="font-medium text-emerald-900 dark:text-emerald-100 mb-1">No contribution data</h4>
+                            <p className="text-sm text-emerald-600 dark:text-emerald-400">Contribution types will appear here once data is available.</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
               {/* Detailed Reports Section */}
@@ -1415,44 +1799,155 @@ const AdminPortal = () => {
               
               <ExpensesReport />
 
-              {/* Export Actions */}
-              <Card>
+              {/* Enhanced Export Actions */}
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800">
                 <CardHeader>
-                  <CardTitle>Treasurer Report Downloads</CardTitle>
-                  <CardDescription>
-                    Generate detailed financial reports for analysis and record keeping
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleTreasurerExport('csv')}
-                      className="flex items-center space-x-2"
-                    >
-                      <File className="h-4 w-4" />
-                      <span>Download CSV Report</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleTreasurerExport('excel')}
-                      className="flex items-center space-x-2"
-                    >
-                      <FileSpreadsheet className="h-4 w-4" />
-                      <span>Download Excel Report</span>
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleTreasurerExport('pdf')}
-                      className="flex items-center space-x-2"
-                    >
-                      <FileText className="h-4 w-4" />
-                      <span>Download PDF Report</span>
-                    </Button>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                        <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                          <Download className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        Comprehensive Report Downloads
+                      </CardTitle>
+                      <CardDescription className="text-amber-700 dark:text-amber-300">
+                        Generate detailed financial reports with advanced analytics, visual charts, and executive summaries for stakeholders and regulatory compliance.
+                      </CardDescription>
+                    </div>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                      Professional Reports
+                    </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-3">
-                    Reports include financial summaries, monthly trends, expense analysis, and recommendations for financial management.
-                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Report Types Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm hover:shadow-md transition-shadow group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full group-hover:scale-110 transition-transform">
+                          <File className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <Badge variant="outline" className="text-xs">CSV Format</Badge>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Spreadsheet Data Export</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Raw financial data in CSV format for advanced analysis in Excel or Google Sheets</p>
+                      <Button 
+                        onClick={() => handleTreasurerExport('csv')}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                      >
+                        <File className="h-4 w-4 mr-2" />
+                        Download CSV
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm hover:shadow-md transition-shadow group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform">
+                          <FileSpreadsheet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <Badge variant="outline" className="text-xs">Excel Format</Badge>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Professional Excel Report</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Formatted Excel workbook with charts, formulas, and professional styling</p>
+                      <Button 
+                        onClick={() => handleTreasurerExport('excel')}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                      >
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        Download Excel
+                      </Button>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-amber-200 dark:border-amber-800 shadow-sm hover:shadow-md transition-shadow group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full group-hover:scale-110 transition-transform">
+                          <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <Badge variant="outline" className="text-xs">PDF Format</Badge>
+                      </div>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Executive PDF Report</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Professionally formatted PDF with executive summary and visual charts</p>
+                      <Button 
+                        onClick={() => handleTreasurerExport('pdf')}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white"
+                        size="sm"
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Download PDF
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Report Features */}
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                      Report Features & Analytics
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="p-1 bg-green-100 dark:bg-green-900/30 rounded">
+                          <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">Financial Summaries</div>
+                          <div className="text-gray-600 dark:text-gray-400">Complete income & expense analysis</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
+                          <PieChart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">Visual Charts</div>
+                          <div className="text-gray-600 dark:text-gray-400">Interactive graphs & analytics</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-1 bg-purple-100 dark:bg-purple-900/30 rounded">
+                          <Calculator className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">Trend Analysis</div>
+                          <div className="text-gray-600 dark:text-gray-400">Monthly & yearly comparisons</div>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="p-1 bg-orange-100 dark:bg-orange-900/30 rounded">
+                          <Shield className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-gray-100">Compliance Ready</div>
+                          <div className="text-gray-600 dark:text-gray-400">Audit & regulatory standards</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Additional Info */}
+                  <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-3">
+                      <div className="p-1 bg-amber-200 dark:bg-amber-800 rounded-full mt-0.5">
+                        <FileText className="h-4 w-4 text-amber-800 dark:text-amber-200" />
+                      </div>
+                      <div className="space-y-1">
+                        <h5 className="font-medium text-amber-900 dark:text-amber-100">Comprehensive Financial Intelligence</h5>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          Generated reports include detailed financial summaries, monthly trend analysis, expense categorization, 
+                          revenue stream breakdowns, member contribution patterns, disbursement tracking, and strategic recommendations 
+                          for improved financial management and organizational growth.
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">Real-time Data</Badge>
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">Professional Format</Badge>
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">Audit Trail</Badge>
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300">Executive Summary</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -1495,6 +1990,7 @@ const AdminPortal = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </div>
   );
