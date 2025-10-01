@@ -968,7 +968,7 @@ const AdminPortal = () => {
                                       Alt: {member.alternative_phone}
                                     </div>
                                   )}
-                                </div>
+                                </div> 
                               </div>
                             </TableCell>
                             <TableCell>
