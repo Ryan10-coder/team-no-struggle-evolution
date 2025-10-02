@@ -182,6 +182,26 @@ const AdminPortal = () => {
     checkAdminAccess();
   }, [user, staffUser, navigate]);
 
+  // Realtime subscriptions to reflect MPESA payments and contributions instantly
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-admin-portal')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mpesa_payments' }, () => {
+        fetchPendingRegistrations();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mpesa_payments' }, () => {
+        fetchPendingRegistrations();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contributions' }, () => {
+        fetchPendingRegistrations();
+      })
+      .subscribe();
+
+    return () => {
+      try { supabase.removeChannel(channel); } catch (_) {}
+    };
+  }, []);
+
   const checkAdminAccess = async () => {
     try {
       // If logged in via staff auth, check if they have admin/treasurer role
