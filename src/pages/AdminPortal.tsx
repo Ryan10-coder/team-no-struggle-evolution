@@ -23,7 +23,7 @@ import { ExpenditureForm } from "@/components/ExpenditureForm";
 import { ContributionsReport } from "@/components/ContributionsReport";
 import { DisbursementsReport } from "@/components/DisbursementsReport";
 import { ExpensesReport } from "@/components/ExpensesReport";
-import { MemberMPESAPayment } from "@/components/MemberMPESAPayment";
+import { MPESAPayment } from "@/components/MPESAPayment";
 
 interface MemberRegistration {
   id: string;
@@ -1674,7 +1674,7 @@ const AdminPortal = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
-                      <ManualPaymentEntry onSuccess={fetchPendingRegistrations} />
+                      <ManualPaymentEntry />
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <DisbursementForm onSuccess={fetchPendingRegistrations} />
@@ -1685,17 +1685,6 @@ const AdminPortal = () => {
                   </div>
                 </CardContent>
               </Card>
-              
-              {/* Member MPESA Payment Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Member Payment Processing</h3>
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">
-                    Paybill: 4148511
-                  </Badge>
-                </div>
-                <MemberMPESAPayment />
-              </div>
               
               {/* Enhanced Financial Summary Cards */}
               <div className="space-y-4">
