@@ -229,7 +229,6 @@ export type Database = {
           marital_status: string | null
           maturity_status: string | null
           membership_type: string
-          mpesa_payment_reference: string | null
           payment_status: string | null
           phone: string
           probation_end_date: string | null
@@ -259,7 +258,6 @@ export type Database = {
           marital_status?: string | null
           maturity_status?: string | null
           membership_type: string
-          mpesa_payment_reference?: string | null
           payment_status?: string | null
           phone: string
           probation_end_date?: string | null
@@ -289,7 +287,6 @@ export type Database = {
           marital_status?: string | null
           maturity_status?: string | null
           membership_type?: string
-          mpesa_payment_reference?: string | null
           payment_status?: string | null
           phone?: string
           probation_end_date?: string | null
