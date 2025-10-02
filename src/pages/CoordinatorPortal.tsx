@@ -40,6 +40,7 @@ interface Member {
   user_id?: string;
   created_at?: string;
   updated_at?: string;
+  mpesa_payment_reference?: string;
 }
 
 interface MemberBalance {
@@ -141,7 +142,8 @@ const CoordinatorPortal = () => {
           marital_status,
           profile_picture_url,
           maturity_status,
-          tns_number
+          tns_number,
+          mpesa_payment_reference
         `)
         .in("registration_status", ["approved", "pending"]);
 
@@ -379,7 +381,7 @@ const CoordinatorPortal = () => {
           <CardContent>
             <div className="rounded-md border">
               <Table>
-                 <TableHeader>
+                <TableHeader>
                   <TableRow>
                     <TableHead>Photo</TableHead>
                     <TableHead>Name</TableHead>
@@ -395,6 +397,7 @@ const CoordinatorPortal = () => {
                     <TableHead>Membership Type</TableHead>
                     <TableHead>Registration Status</TableHead>
                     <TableHead>Payment Status</TableHead>
+                    <TableHead>MPESA Receipt</TableHead>
                     <TableHead>Maturity Status</TableHead>
                     <TableHead>Balance</TableHead>
                     <TableHead>Total Contributions</TableHead>
@@ -449,20 +452,23 @@ const CoordinatorPortal = () => {
                            {member.registration_status}
                          </Badge>
                        </TableCell>
-                       <TableCell>
-                         <Badge 
-                           variant={member.payment_status === 'paid' ? 'default' : 'destructive'}
-                         >
-                           {member.payment_status}
-                         </Badge>
-                       </TableCell>
-                       <TableCell>
-                         <Badge 
-                           variant={member.maturity_status === 'mature' ? 'default' : 'secondary'}
-                         >
-                           {member.maturity_status}
-                         </Badge>
-                       </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={member.payment_status === 'paid' ? 'default' : 'destructive'}
+                          >
+                            {member.payment_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {member.mpesa_payment_reference || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={member.maturity_status === 'mature' ? 'default' : 'secondary'}
+                          >
+                            {member.maturity_status}
+                          </Badge>
+                        </TableCell>
                        <TableCell>
                          {formatCurrency(memberBalances[member.id]?.current_balance || 0)}
                        </TableCell>
