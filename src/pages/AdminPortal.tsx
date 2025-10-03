@@ -23,7 +23,7 @@ import { ExpenditureForm } from "@/components/ExpenditureForm";
 import { ContributionsReport } from "@/components/ContributionsReport";
 import { DisbursementsReport } from "@/components/DisbursementsReport";
 import { ExpensesReport } from "@/components/ExpensesReport";
-import { MPESAPayment } from "@/components/MPESAPayment";
+import { MemberMPESAPayment } from "@/components/MemberMPESAPayment";
 
 interface MemberRegistration {
   id: string;
@@ -50,6 +50,7 @@ interface MemberRegistration {
   maturity_status?: string;
   days_to_maturity?: number;
   probation_end_date?: string;
+  mpesa_payment_reference?: string;
 }
 
 interface StaffRegistration {
@@ -1217,6 +1218,7 @@ const AdminPortal = () => {
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">ID Number</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Emergency Contact</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Membership Type</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">MPESA Ref</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Registration Date</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300 text-center">Actions</TableHead>
                         </TableRow>
@@ -1312,6 +1314,11 @@ const AdminPortal = () => {
                                 >
                                   {member.payment_status}
                                 </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-mono text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                {member.mpesa_payment_reference || '—'}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1412,6 +1419,7 @@ const AdminPortal = () => {
                         <TableHead>Membership</TableHead>
                         <TableHead>Maturity Status</TableHead>
                         <TableHead>TNS Number</TableHead>
+                        <TableHead>MPESA Ref</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead className="text-center">Actions</TableHead>
@@ -1480,6 +1488,11 @@ const AdminPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell>{member.tns_number || "Not assigned"}</TableCell>
+                          <TableCell>
+                            <div className="font-mono text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {member.mpesa_payment_reference || '—'}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge 
                               variant={
@@ -1674,7 +1687,7 @@ const AdminPortal = () => {
                 <CardContent>
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
-                      <ManualPaymentEntry />
+                      <ManualPaymentEntry onSuccess={fetchPendingRegistrations} />
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <DisbursementForm onSuccess={fetchPendingRegistrations} />
@@ -1685,6 +1698,17 @@ const AdminPortal = () => {
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Member MPESA Payment Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Member Payment Processing</h3>
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">
+                    Paybill: 4148511
+                  </Badge>
+                </div>
+                <MemberMPESAPayment />
+              </div>
               
               {/* Enhanced Financial Summary Cards */}
               <div className="space-y-4">
