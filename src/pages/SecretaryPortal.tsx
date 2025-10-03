@@ -28,6 +28,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { DocumentList } from "@/components/DocumentList";
+import { CommunicationCenter } from "@/components/CommunicationCenter";
 
 interface ContactSubmission {
   id: string;
@@ -216,61 +217,7 @@ const SecretaryPortal = () => {
 
           {/* Communications Tab */}
           <TabsContent value="communications" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">New Inquiries</CardTitle>
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-chart-1">12</div>
-                  <p className="text-xs text-muted-foreground">Pending responses</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Responded Today</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-chart-2">8</div>
-                  <p className="text-xs text-muted-foreground">Communications sent</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Follow-ups</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-chart-3">5</div>
-                  <p className="text-xs text-muted-foreground">Require attention</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Contact Management</CardTitle>
-                <CardDescription>
-                  Manage member inquiries and communications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Contact Submissions</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Contact submission management requires additional database permissions. 
-                    Please contact your administrator to enable this feature.
-                  </p>
-                  <Button variant="outline">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Request Access
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CommunicationCenter />
           </TabsContent>
 
           {/* Member Directory Tab */}
@@ -329,11 +276,19 @@ const SecretaryPortal = () => {
                           <TableCell>{member.city}, {member.state}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.open(`tel:${member.phone}`)}
+                              >
                                 <Phone className="h-4 w-4 mr-1" />
                                 Call
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.open(`mailto:${member.email}`)}
+                              >
                                 <Mail className="h-4 w-4 mr-1" />
                                 Email
                               </Button>
@@ -379,11 +334,37 @@ const SecretaryPortal = () => {
                     </Button>
                   </div>
                   
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No upcoming events scheduled.</p>
-                    <Button variant="outline" className="mt-4">
-                      Create First Event
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <Card className="border-dashed">
+                      <CardContent className="flex items-center justify-center p-6">
+                        <div className="text-center">
+                          <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <h4 className="font-semibold mb-1">Monthly Meeting</h4>
+                          <p className="text-sm text-muted-foreground mb-2">Coming Soon</p>
+                          <Badge variant="outline">Planned</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="border-dashed">
+                      <CardContent className="flex items-center justify-center p-6">
+                        <div className="text-center">
+                          <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <h4 className="font-semibold mb-1">Member Training</h4>
+                          <p className="text-sm text-muted-foreground mb-2">TBD</p>
+                          <Badge variant="outline">Planned</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground mb-4">
+                      Event management system coming soon. Contact your administrator for event scheduling.
+                    </p>
+                    <Button variant="outline">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Request Event Feature
                     </Button>
                   </div>
                 </div>
