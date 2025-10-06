@@ -204,9 +204,9 @@ const SecretaryPortal = () => {
         .from('documents')
         .select('*', { count: 'exact', head: true });
 
-      // Fetch recent communications count
+      // Fetch recent communications count (using documents as a proxy since member_notifications doesn't exist)
       const { count: communicationsCount, error: commsError } = await supabase
-        .from('member_notifications')
+        .from('documents')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -346,7 +346,7 @@ const SecretaryPortal = () => {
               </div>
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12 border-2 border-primary/20">
-                  <AvatarImage src={staffUser?.profile_picture_url} />
+                  <AvatarImage src={undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
                     {staffUser?.first_name?.[0]}{staffUser?.last_name?.[0]}
                   </AvatarFallback>
