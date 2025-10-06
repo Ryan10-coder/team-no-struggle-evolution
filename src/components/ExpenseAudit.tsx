@@ -521,18 +521,7 @@ export const ExpenseAudit = () => {
                                       <p className="text-sm">{selectedExpense.approved_by || 'Pending'}</p>
                                     </div>
                                   </div>
-                                  {selectedExpense.notes && (
-                                    <div>
-                                      <label className="text-sm font-medium">Notes</label>
-                                      <p className="text-sm mt-1">{selectedExpense.notes}</p>
-                                    </div>
-                                  )}
-                                  {selectedExpense.receipt_url && (
-                                    <div>
-                                      <label className="text-sm font-medium">Receipt</label>
-                                      <p className="text-sm mt-1 text-blue-600">{selectedExpense.receipt_url}</p>
-                                    </div>
-                                  )}
+                                  {/* Notes and receipt removed - columns don't exist yet */}
                                 </div>
                               )}
                             </DialogContent>

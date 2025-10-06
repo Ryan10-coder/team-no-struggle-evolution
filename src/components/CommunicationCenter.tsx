@@ -98,30 +98,15 @@ export const CommunicationCenter = () => {
       if (memberError) throw memberError;
       setMembers(memberData || []);
 
-      // Fetch notifications with member details
-      const { data: notificationData, error: notificationError } = await supabase
-        .from('member_notifications')
-        .select(`
-          *,
-          member:membership_registrations(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (notificationError) throw notificationError;
-      setNotifications(notificationData || []);
-
-      // Calculate stats
-      const total = notificationData?.length || 0;
-      const unread = notificationData?.filter(n => !n.is_read).length || 0;
-      const today = notificationData?.filter(n => 
-        format(new Date(n.created_at), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-      ).length || 0;
+      // TODO: Implement notifications system - table not yet created
+      // For now, set empty notifications
+      setNotifications([]);
 
       setStats({
-        total_notifications: total,
-        unread_count: unread,
-        today_sent: today,
-        pending_responses: unread // For now, using unread as pending
+        total_notifications: 0,
+        unread_count: 0,
+        today_sent: 0,
+        pending_responses: 0
       });
 
     } catch (error) {
@@ -151,87 +136,14 @@ export const CommunicationCenter = () => {
   });
 
   const handleBulkMessage = async () => {
-    if (!bulkMessage.title.trim() || !bulkMessage.message.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (bulkMessage.recipient_type === "individual" && (!bulkMessage.selected_members || bulkMessage.selected_members.length === 0)) {
-      toast.error("Please select at least one member");
-      return;
-    }
-
-    if (bulkMessage.recipient_type === "area" && !bulkMessage.selected_area) {
-      toast.error("Please select an area");
-      return;
-    }
-
-    try {
-      setSendingBulk(true);
-      
-      let targetMembers: string[] = [];
-      
-      if (bulkMessage.recipient_type === "all") {
-        targetMembers = members.map(m => m.id);
-      } else if (bulkMessage.recipient_type === "area") {
-        targetMembers = members
-          .filter(m => `${m.city}, ${m.state}` === bulkMessage.selected_area)
-          .map(m => m.id);
-      } else {
-        targetMembers = bulkMessage.selected_members || [];
-      }
-
-      // Create notifications for all target members
-      const notifications = targetMembers.map(memberId => ({
-        member_id: memberId,
-        notification_type: 'general',
-        title: bulkMessage.title,
-        message: bulkMessage.message
-      }));
-
-      const { error } = await supabase
-        .from('member_notifications')
-        .insert(notifications);
-
-      if (error) throw error;
-
-      toast.success(`Message sent to ${targetMembers.length} member${targetMembers.length > 1 ? 's' : ''}`);
-      setBulkMessageModal(false);
-      setBulkMessage({
-        title: "",
-        message: "",
-        recipient_type: "all",
-        selected_members: []
-      });
-      fetchData(); // Refresh data
-    } catch (error) {
-      console.error('Error sending bulk message:', error);
-      toast.error('Failed to send message');
-    } finally {
-      setSendingBulk(false);
-    }
+    // TODO: Implement bulk messaging when member_notifications table is created
+    toast.info("Bulk messaging feature coming soon");
+    setBulkMessageModal(false);
   };
 
   const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('member_notifications')
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-      
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId 
-            ? { ...n, is_read: true, read_at: new Date().toISOString() } 
-            : n
-        )
-      );
-    } catch (error) {
-      console.error('Error marking as read:', error);
-      toast.error('Failed to mark as read');
-    }
+    // TODO: Implement when member_notifications table is created
+    toast.info("Mark as read feature coming soon");
   };
 
   const areas = [...new Set(members.map(m => `${m.city}, ${m.state}`))].sort();

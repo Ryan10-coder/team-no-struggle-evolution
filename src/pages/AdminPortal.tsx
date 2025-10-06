@@ -1304,11 +1304,18 @@ const AdminPortal = () => {
                                     )}
                                   </div>
                                 )}
-                                {(member as any).children_data && JSON.parse((member as any).children_data || '[]').length > 0 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {JSON.parse((member as any).children_data).length} Children
-                                  </Badge>
-                                )}
+                                {(member as any).children_data && (() => {
+                                  try {
+                                    const childrenArray = JSON.parse((member as any).children_data);
+                                    return childrenArray.length > 0 && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {childrenArray.length} Children
+                                      </Badge>
+                                    );
+                                  } catch {
+                                    return null;
+                                  }
+                                })()}
                                 {(member as any).parent2_name && (
                                   <div className="text-xs text-gray-600">
                                     Parent 2: {(member as any).parent2_name}
