@@ -564,11 +564,40 @@ const AdminPortal = () => {
       return;
     }
 
-    // Validate phone number format (basic check)
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(editFormData.phone!.replace(/\s+/g, ''))) {
-      toast.error("Please enter a valid phone number");
+    // Validate phone number format - more flexible validation
+    const phoneClean = editFormData.phone!.replace(/[\s\-\(\)\.]/g, ''); // Remove spaces, dashes, parentheses, dots
+    const phoneRegex = /^[\+]?[0-9]{7,15}$/; // Allow +, 7-15 digits, more flexible
+    
+    console.log('Phone validation:', {
+      original: editFormData.phone,
+      cleaned: phoneClean,
+      passes: phoneRegex.test(phoneClean)
+    });
+    
+    if (!phoneRegex.test(phoneClean)) {
+      toast.error(
+        `Please enter a valid phone number (7-15 digits, optionally starting with +). You entered: "${editFormData.phone}"`,
+        { duration: 8000 }
+      );
       return;
+    }
+
+    // Validate emergency contact phone number if provided
+    if (editFormData.emergency_contact_phone?.trim()) {
+      const emergencyPhoneClean = editFormData.emergency_contact_phone.replace(/[\s\-\(\)\.]/g, '');
+      if (!phoneRegex.test(emergencyPhoneClean)) {
+        toast.error("Please enter a valid emergency contact phone number (7-15 digits, optionally starting with +)");
+        return;
+      }
+    }
+
+    // Validate alternative phone number if provided
+    if (editFormData.alternative_phone?.trim()) {
+      const altPhoneClean = editFormData.alternative_phone.replace(/[\s\-\(\)\.]/g, '');
+      if (!phoneRegex.test(altPhoneClean)) {
+        toast.error("Please enter a valid alternative phone number (7-15 digits, optionally starting with +)");
+        return;
+      }
     }
 
     setIsUpdating(true);
@@ -2761,8 +2790,11 @@ const AdminPortal = () => {
                       id="edit-phone"
                       value={editFormData.phone || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
-                      placeholder="Enter phone number"
+                      placeholder="e.g., +254712345678, 0712345678, or 712345678"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Accepts formats: +country-code-number, 0712345678, or 712345678
+                    </p>
                   </div>
                   
                   <div className="space-y-2">
@@ -2771,7 +2803,7 @@ const AdminPortal = () => {
                       id="edit-alt-phone"
                       value={editFormData.alternative_phone || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, alternative_phone: e.target.value })}
-                      placeholder="Enter alternative phone"
+                      placeholder="e.g., +254712345678, 0712345678 (optional)"
                     />
                   </div>
                   
@@ -2840,7 +2872,7 @@ const AdminPortal = () => {
                       id="edit-emergency-phone"
                       value={editFormData.emergency_contact_phone || ''}
                       onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })}
-                      placeholder="Enter emergency contact phone"
+                      placeholder="e.g., +254712345678, 0712345678"
                     />
                   </div>
                 </div>
