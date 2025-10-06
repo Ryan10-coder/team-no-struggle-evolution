@@ -10,7 +10,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator, Trash2, AlertTriangle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator, Trash2, AlertTriangle, Edit, Save, X, UserMinus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,6 +21,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 import { ManualPaymentEntry } from "@/components/ManualPaymentEntry";
 import { DisbursementForm } from "@/components/DisbursementForm";
+import { EnhancedDisbursementForm } from "@/components/EnhancedDisbursementForm";
 import { ExpenditureForm } from "@/components/ExpenditureForm";
 import { ContributionsReport } from "@/components/ContributionsReport";
 import { DisbursementsReport } from "@/components/DisbursementsReport";
@@ -130,6 +133,12 @@ const AdminPortal = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  
+  // Member editing states
+  const [memberToEdit, setMemberToEdit] = useState<MemberRegistration | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editFormData, setEditFormData] = useState<Partial<MemberRegistration>>({});
 
   // Group MPESA payments by member to show contributions under one row per member
   const groupedMpesaPayments = useMemo(() => {
@@ -468,6 +477,129 @@ const AdminPortal = () => {
         description: "Please refresh the page and try again.",
         duration: 7000
       });
+    }
+  };
+
+  const openEditDialog = (member: MemberRegistration) => {
+    // Additional safety check - only allow admins to edit members
+    if (staffUser && staffUser.staff_role !== "Admin" && !user) {
+      toast.error("Access denied. Only Admins can edit members.", {
+        description: "This action requires Administrator privileges.",
+        duration: 5000
+      });
+      return;
+    }
+    
+    setMemberToEdit(member);
+    setEditFormData({ ...member });
+    setIsEditDialogOpen(true);
+  };
+
+  const updateMember = async () => {
+    if (!memberToEdit || !editFormData) return;
+
+    // Validate required fields
+    if (!editFormData.first_name?.trim() || !editFormData.last_name?.trim() || 
+        !editFormData.email?.trim() || !editFormData.phone?.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editFormData.email!)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    // Validate phone number format (basic check)
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(editFormData.phone!.replace(/\s+/g, ''))) {
+      toast.error("Please enter a valid phone number");
+      return;
+    }
+
+    setIsUpdating(true);
+    
+    try {
+      // Prepare update data
+      const updateData = {
+        first_name: editFormData.first_name?.trim(),
+        last_name: editFormData.last_name?.trim(),
+        email: editFormData.email?.trim(),
+        phone: editFormData.phone?.trim(),
+        alternative_phone: editFormData.alternative_phone?.trim() || null,
+        address: editFormData.address?.trim(),
+        city: editFormData.city?.trim(),
+        state: editFormData.state?.trim(),
+        zip_code: editFormData.zip_code?.trim(),
+        id_number: editFormData.id_number?.trim() || null,
+        emergency_contact_name: editFormData.emergency_contact_name?.trim(),
+        emergency_contact_phone: editFormData.emergency_contact_phone?.trim(),
+        sex: editFormData.sex || null,
+        marital_status: editFormData.marital_status || null,
+        membership_type: editFormData.membership_type,
+        registration_status: editFormData.registration_status,
+        payment_status: editFormData.payment_status,
+        maturity_status: editFormData.maturity_status || null,
+        mpesa_payment_reference: editFormData.mpesa_payment_reference?.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log(`Updating member: ${editFormData.first_name} ${editFormData.last_name} (ID: ${memberToEdit.id})`);
+
+      // Update member in database with automatic sync across all portals
+      const { error: updateError, data } = await supabase
+        .from("membership_registrations")
+        .update(updateData)
+        .eq("id", memberToEdit.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      console.log(`Successfully updated member: ${editFormData.first_name} ${editFormData.last_name}`);
+
+      // Show success message
+      toast.success(
+        `✅ Member ${editFormData.first_name} ${editFormData.last_name} updated successfully!`,
+        {
+          description: `All changes have been synced across the system.`,
+          duration: 5000
+        }
+      );
+
+      // Close dialog and reset form
+      setIsEditDialogOpen(false);
+      setMemberToEdit(null);
+      setEditFormData({});
+      
+      // Refresh all data to ensure UI is updated across all components
+      console.log('Refreshing all system data after member update...');
+      await fetchPendingRegistrations(); // This refreshes all lists and triggers real-time sync
+      
+      // Log the update for audit purposes
+      console.log(`Audit: Member ${editFormData.first_name} ${editFormData.last_name} (${editFormData.email}) updated by admin`);
+      
+    } catch (error: any) {
+      console.error("Error updating member:", error);
+      
+      let errorMessage = "Failed to update member.";
+      if (error.message?.includes('duplicate key')) {
+        errorMessage = "Email or phone number already exists for another member.";
+      } else if (error.message?.includes('permission')) {
+        errorMessage = "You don't have permission to update this member.";
+      } else if (error.message?.includes('not found')) {
+        errorMessage = "Member not found - may have been deleted.";
+      }
+      
+      toast.error(errorMessage, {
+        description: "Please try again or contact technical support.",
+        duration: 7000
+      });
+      
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -1214,9 +1346,8 @@ const AdminPortal = () => {
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300 py-4">Profile</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Member Details</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Contact Info</TableHead>
-                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Address & Country</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Address</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">ID Number</TableHead>
-                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Family Info</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Emergency Contact</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Membership Type</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">MPESA Ref</TableHead>
@@ -1278,50 +1409,14 @@ const AdminPortal = () => {
                               <div className="space-y-1 text-sm">
                                 <div className="font-medium text-gray-900 dark:text-gray-100">{member.address}</div>
                                 <div className="text-gray-600 dark:text-gray-400">
-                                  {member.city}, {member.state}
+                                  {member.city}, {member.state} {member.zip_code}
                                 </div>
-                                {(member as any).country && (
-                                  <Badge variant="outline" className="text-xs mt-1">
-                                    {(member as any).country}
-                                  </Badge>
-                                )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="font-mono text-xs">
                                 {member.id_number || 'N/A'}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-2">
-                                {(member as any).spouse_name && (
-                                  <div className="space-y-1">
-                                    <Badge variant="secondary" className="bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400 text-xs">
-                                      Spouse: {(member as any).spouse_name}
-                                    </Badge>
-                                    {(member as any).spouse_phone && (
-                                      <div className="text-xs text-gray-600">{(member as any).spouse_phone}</div>
-                                    )}
-                                  </div>
-                                )}
-                                {(member as any).children_data && (() => {
-                                  try {
-                                    const childrenArray = JSON.parse((member as any).children_data);
-                                    return childrenArray.length > 0 && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {childrenArray.length} Children
-                                      </Badge>
-                                    );
-                                  } catch {
-                                    return null;
-                                  }
-                                })()}
-                                {(member as any).parent2_name && (
-                                  <div className="text-xs text-gray-600">
-                                    Parent 2: {(member as any).parent2_name}
-                                  </div>
-                                )}
-                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">
@@ -1331,11 +1426,6 @@ const AdminPortal = () => {
                                 <div className="text-sm text-gray-600 dark:text-gray-400">
                                   {member.emergency_contact_phone}
                                 </div>
-                                {(member as any).parent1_name && (member as any).parent1_name !== member.emergency_contact_name && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Alt: {(member as any).parent1_name}
-                                  </div>
-                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -1549,17 +1639,28 @@ const AdminPortal = () => {
                             {new Date(member.registration_date).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <div className="flex justify-center">
+                            <div className="flex justify-center space-x-2">
                               {(staffUser?.staff_role === "Admin" || (user && !staffUser)) ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openDeleteDialog(member)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20 transition-colors"
-                                  title={`Delete ${member.first_name} ${member.last_name}`}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openEditDialog(member)}
+                                    className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/20 transition-colors"
+                                    title={`Edit ${member.first_name} ${member.last_name}`}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => openDeleteDialog(member)}
+                                    className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/20 transition-colors"
+                                    title={`Delete ${member.first_name} ${member.last_name}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
                               ) : (
                                 <span className="text-xs text-gray-400 dark:text-gray-600">
                                   Admin Only
@@ -1732,11 +1833,26 @@ const AdminPortal = () => {
                       <ManualPaymentEntry onSuccess={fetchPendingRegistrations} />
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
-                      <DisbursementForm onSuccess={fetchPendingRegistrations} />
-                    </div>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <ExpenditureForm onSuccess={fetchPendingRegistrations} />
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Enhanced Disbursement Management */}
+              <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
+                <CardHeader>
+                  <CardTitle className="text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                    <UserMinus className="h-5 w-5" />
+                    Enhanced Disbursement Management
+                  </CardTitle>
+                  <CardDescription className="text-indigo-700 dark:text-indigo-300">
+                    Advanced disbursement processing with bereavement form generation and document management
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-sm">
+                    <EnhancedDisbursementForm onSuccess={fetchPendingRegistrations} />
                   </div>
                 </CardContent>
               </Card>
@@ -2389,6 +2505,309 @@ const AdminPortal = () => {
                 <UserCheck className="h-4 w-4 mr-2" />
                 Approve & Assign Password
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Member Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5 text-blue-600" />
+                Edit Member: {memberToEdit?.first_name} {memberToEdit?.last_name}
+              </DialogTitle>
+              <DialogDescription>
+                Update member information. Changes will be automatically synced across all portals and systems.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Personal Information */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Personal Information
+                  </h4>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-first-name">First Name *</Label>
+                    <Input
+                      id="edit-first-name"
+                      value={editFormData.first_name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, first_name: e.target.value })}
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-last-name">Last Name *</Label>
+                    <Input
+                      id="edit-last-name"
+                      value={editFormData.last_name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, last_name: e.target.value })}
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-sex">Gender</Label>
+                      <Select value={editFormData.sex || ''} onValueChange={(value) => setEditFormData({ ...editFormData, sex: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-marital-status">Marital Status</Label>
+                      <Select value={editFormData.marital_status || ''} onValueChange={(value) => setEditFormData({ ...editFormData, marital_status: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="single">Single</SelectItem>
+                          <SelectItem value="married">Married</SelectItem>
+                          <SelectItem value="divorced">Divorced</SelectItem>
+                          <SelectItem value="widowed">Widowed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-id-number">ID Number</Label>
+                    <Input
+                      id="edit-id-number"
+                      value={editFormData.id_number || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, id_number: e.target.value })}
+                      placeholder="Enter ID number"
+                    />
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">Contact Information</h4>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email Address *</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editFormData.email || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone Number *</Label>
+                    <Input
+                      id="edit-phone"
+                      value={editFormData.phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-alt-phone">Alternative Phone</Label>
+                    <Input
+                      id="edit-alt-phone"
+                      value={editFormData.alternative_phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, alternative_phone: e.target.value })}
+                      placeholder="Enter alternative phone"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-address">Address *</Label>
+                    <Textarea
+                      id="edit-address"
+                      value={editFormData.address || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                      placeholder="Enter full address"
+                      rows={2}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-city">City *</Label>
+                      <Input
+                        id="edit-city"
+                        value={editFormData.city || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                        placeholder="Enter city"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-state">State *</Label>
+                      <Input
+                        id="edit-state"
+                        value={editFormData.state || ''}
+                        onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
+                        placeholder="Enter state"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-zip">ZIP Code *</Label>
+                    <Input
+                      id="edit-zip"
+                      value={editFormData.zip_code || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, zip_code: e.target.value })}
+                      placeholder="Enter ZIP code"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Emergency Contact */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100">Emergency Contact</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-emergency-name">Emergency Contact Name *</Label>
+                    <Input
+                      id="edit-emergency-name"
+                      value={editFormData.emergency_contact_name || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_name: e.target.value })}
+                      placeholder="Enter emergency contact name"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-emergency-phone">Emergency Contact Phone *</Label>
+                    <Input
+                      id="edit-emergency-phone"
+                      value={editFormData.emergency_contact_phone || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, emergency_contact_phone: e.target.value })}
+                      placeholder="Enter emergency contact phone"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Membership Details */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100">Membership Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-membership-type">Membership Type *</Label>
+                    <Select value={editFormData.membership_type || ''} onValueChange={(value) => setEditFormData({ ...editFormData, membership_type: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="family">Family</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-registration-status">Registration Status</Label>
+                    <Select value={editFormData.registration_status || ''} onValueChange={(value) => setEditFormData({ ...editFormData, registration_status: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-payment-status">Payment Status</Label>
+                    <Select value={editFormData.payment_status || ''} onValueChange={(value) => setEditFormData({ ...editFormData, payment_status: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="overdue">Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-maturity-status">Maturity Status</Label>
+                    <Select value={editFormData.maturity_status || ''} onValueChange={(value) => setEditFormData({ ...editFormData, maturity_status: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="probation">Probation</SelectItem>
+                        <SelectItem value="mature">Mature</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-mpesa-ref">MPESA Payment Reference</Label>
+                    <Input
+                      id="edit-mpesa-ref"
+                      value={editFormData.mpesa_payment_reference || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, mpesa_payment_reference: e.target.value })}
+                      placeholder="Enter MPESA reference"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="flex justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  Changes sync automatically
+                </Badge>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setMemberToEdit(null);
+                    setEditFormData({});
+                  }}
+                  disabled={isUpdating}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={updateMember}
+                  disabled={isUpdating || !editFormData.first_name?.trim() || !editFormData.last_name?.trim()}
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
