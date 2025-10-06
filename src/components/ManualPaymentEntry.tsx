@@ -16,13 +16,30 @@ interface Member {
   email: string;
 }
 
+// Define allowed payment types as constants for consistency
+const PAYMENT_TYPES = {
+  MONTHLY: 'monthly_contribution',
+  CASES: 'cases',
+  PROJECTS: 'projects', 
+  REGISTRATION: 'registration',
+  OTHERS: 'others'
+} as const;
+
+const PAYMENT_TYPE_LABELS = {
+  [PAYMENT_TYPES.MONTHLY]: 'Monthly contribution',
+  [PAYMENT_TYPES.CASES]: 'Cases',
+  [PAYMENT_TYPES.PROJECTS]: 'Projects',
+  [PAYMENT_TYPES.REGISTRATION]: 'Registration',
+  [PAYMENT_TYPES.OTHERS]: 'Others'
+} as const;
+
 export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [amount, setAmount] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [paymentType, setPaymentType] = useState("monthly");
+  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES.MONTHLY);
   const [referenceNumber, setReferenceNumber] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -48,7 +65,7 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedMember || !amount || !paymentDate) {
+    if (!selectedMember || !amount || !paymentDate || !paymentType) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -58,54 +75,87 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
       return;
     }
 
+    // Validate payment type is one of the allowed types
+    const allowedPaymentTypes = Object.values(PAYMENT_TYPES);
+    if (!allowedPaymentTypes.includes(paymentType as any)) {
+      toast.error("Invalid payment type selected");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Add to contributions table
-      const { error: contributionError } = await supabase
-        .from('contributions')
-        .insert({
-          member_id: selectedMember,
+      // Call secure edge function to bypass RLS safely
+      const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/record-transaction", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
+          'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
+        },
+        body: JSON.stringify({
+          action: 'manual_payment',
+          memberId: selectedMember,
           amount: parseFloat(amount),
-          contribution_date: paymentDate,
-          contribution_type: paymentType,
-          status: 'confirmed'
-        });
+          paymentType,
+          paymentDate,
+          referenceNumber
+        })
+      });
 
-      if (contributionError) throw contributionError;
+      if (!response.ok) {
+        // Fallback to direct insert if function is not deployed or errors
+        const { error: contributionError } = await supabase
+          .from('contributions')
+          .insert({
+            member_id: selectedMember,
+            amount: parseFloat(amount),
+            contribution_date: paymentDate,
+            contribution_type: paymentType,
+            status: 'confirmed'
+          });
+        if (contributionError) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.error || contributionError.message || 'Failed to record payment');
+        }
+        // Best-effort MPESA audit
+        // Fetch member snapshot
+        const { data: memberData } = await supabase
+          .from('membership_registrations')
+          .select('id, first_name, last_name, email, phone, tns_number, profile_picture_url, registration_status, payment_status, address, city, state, zip_code, id_number, emergency_contact_name, emergency_contact_phone, sex, marital_status')
+          .eq('id', selectedMember)
+          .single();
 
-      // Also add to MPESA payments table for record keeping
-      const { error: mpesaError } = await supabase
-        .from('mpesa_payments')
-        .insert({
-          member_id: selectedMember,
-          amount: parseFloat(amount),
-          phone_number: 'Manual Entry',
-          mpesa_receipt_number: referenceNumber || 'Manual Entry',
-          status: 'completed',
-          result_code: '0',
-          result_desc: 'Manual payment entry',
-          transaction_date: new Date(paymentDate).toISOString()
-        });
-
-      if (mpesaError) throw mpesaError;
+        await supabase
+          .from('mpesa_payments')
+          .insert({
+            member_id: selectedMember,
+            amount: parseFloat(amount),
+            phone_number: 'Manual Entry',
+            mpesa_receipt_number: referenceNumber || 'Manual Entry',
+            status: 'completed',
+            result_code: '0',
+            result_desc: 'Manual payment entry',
+            transaction_date: new Date(paymentDate).toISOString(),
+            member_snapshot: memberData ? memberData : null
+          });
+      }
 
       toast.success("Payment recorded successfully!");
-      
-      // Trigger parent refresh if callback provided
-      if (onSuccess) {
-        await onSuccess();
-      }
       
       // Reset form
       setAmount("");
       setSelectedMember("");
       setReferenceNumber("");
       setPaymentDate(new Date().toISOString().split('T')[0]);
-      setPaymentType("monthly");
-    } catch (error) {
+      setPaymentType(PAYMENT_TYPES.MONTHLY);
+      
+      if (onSuccess) onSuccess();
+    } catch (error: any) {
       console.error('Payment entry error:', error);
-      toast.error("Failed to record payment");
+      toast.error("Failed to record payment", {
+        description: typeof error?.message === 'string' ? error.message : undefined,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -120,6 +170,10 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
         </CardTitle>
         <CardDescription>
           Record paybill or cash payments manually
+          <br />
+          <span className="text-xs font-medium text-green-600 dark:text-green-400">
+            Restricted to: Monthly contribution • Cases • Projects • Registration • Others
+          </span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -161,19 +215,22 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="paymentType">Payment Type</Label>
+            <Label htmlFor="paymentType">Payment Type *</Label>
             <Select value={paymentType} onValueChange={setPaymentType}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Select payment type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="monthly">Monthly Contribution</SelectItem>
-                <SelectItem value="registration">Registration Fee</SelectItem>
-                <SelectItem value="penalty">Penalty Payment</SelectItem>
-                <SelectItem value="loan_repayment">Loan Repayment</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                {Object.entries(PAYMENT_TYPES).map(([key, value]) => (
+                  <SelectItem key={value} value={value}>
+                    {PAYMENT_TYPE_LABELS[value]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Only these payment types are allowed for manual entry
+            </p>
           </div>
 
           <div className="space-y-2">
