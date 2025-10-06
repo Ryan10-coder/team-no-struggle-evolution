@@ -10,6 +10,7 @@ import { Loader2, Download, Search, ArrowLeft, Users, DollarSign } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useCrossPortalSync } from "@/hooks/useCrossPortalSync";
 
 interface Member {
   id: string;
@@ -66,6 +67,16 @@ const CoordinatorPortal = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [assignedArea, setAssignedArea] = useState("");
+  
+  // Set up cross-portal synchronization for member data
+  useCrossPortalSync({
+    onRefreshRequired: (source: string, reason: string) => {
+      console.log(`CoordinatorPortal: Refreshing data due to: ${reason} (from: ${source})`);
+      fetchCoordinatorData();
+    },
+    portalName: 'CoordinatorPortal',
+    autoRefresh: true
+  });
 
   useEffect(() => {
     if (!staffUser) {
