@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, ChevronLeft, ChevronRight, Upload, Users, Heart, User, Baby, UserCheck, Receipt } from 'lucide-react';
+import { UserPlus, ChevronLeft, ChevronRight, Upload, Users, Heart, User, Baby, UserCheck, Receipt, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MemberInfo {
@@ -17,6 +17,7 @@ interface MemberInfo {
   sex: string;
   maritalStatus: string;
   areaOfResidence: string;
+  country: string;
   photo: File | null;
 }
 
@@ -46,8 +47,8 @@ interface ParentInfo {
 }
 
 interface ParentsInfo {
-  member: ParentInfo;
-  spouse: ParentInfo;
+  parent1: ParentInfo;
+  parent2: ParentInfo;
 }
 
 const MultiStepRegistration = () => {
@@ -64,6 +65,7 @@ const MultiStepRegistration = () => {
     sex: '',
     maritalStatus: '',
     areaOfResidence: '',
+    country: '',
     photo: null,
   });
 
@@ -79,13 +81,13 @@ const MultiStepRegistration = () => {
 
   const [children, setChildren] = useState<ChildInfo[]>([]);
   const [parentsInfo, setParentsInfo] = useState<ParentsInfo>({
-    member: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
-    spouse: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+    parent1: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+    parent2: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
   });
 
   const [transactionId, setTransactionId] = useState('');
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const addChild = () => {
     if (children.length < 6) {
@@ -133,16 +135,32 @@ const MultiStepRegistration = () => {
       const areaOfResidence = memberInfo.areaOfResidence;
       const areaParts = areaOfResidence.split(',').map(part => part.trim());
       const city = areaParts[0] || areaOfResidence;
-      const state = areaParts[1] || '';
+      const state = areaParts[1] || memberInfo.country || 'Not specified';
+      
+      console.log('Area parsing:', { areaOfResidence, city, state, country: memberInfo.country });
+      const country = memberInfo.country;
 
       // Determine membership type based on marital status
       const membershipType = memberInfo.maritalStatus === 'Married' ? 'family' : 
                             memberInfo.maritalStatus === 'Single' ? 'basic' : 'basic';
 
-      // Parse member name (assume format "First Last")
+      // Validate and parse member name
+      if (!memberInfo.name || !memberInfo.name.trim()) {
+        throw new Error('Member name is required');
+      }
+      
       const nameParts = memberInfo.name.trim().split(' ');
       const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      const lastName = nameParts.slice(1).join(' ') || 'N/A';
+      
+      // Basic validation
+      if (!memberInfo.email || !memberInfo.phone || !areaOfResidence) {
+        throw new Error('Please fill in all required fields: name, email, phone, and area of residence');
+      }
+      
+      if (!transactionId.trim()) {
+        throw new Error('Payment transaction ID is required');
+      }
 
       // Upload profile picture if provided
       let profilePictureUrl = null;
@@ -162,32 +180,177 @@ const MultiStepRegistration = () => {
         }
       }
 
-      const { data, error } = await supabase
+      // Upload spouse photo if provided
+      let spousePhotoUrl = null;
+      if (spouseInfo.photo) {
+        const spouseFileName = `spouse-${Date.now()}-${spouseInfo.photo.name}`;
+        const { data: spouseUploadData, error: spouseUploadError } = await supabase.storage
+          .from('member-profiles')
+          .upload(spouseFileName, spouseInfo.photo);
+
+        if (spouseUploadError) {
+          console.error('Error uploading spouse photo:', spouseUploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('member-profiles')
+            .getPublicUrl(spouseFileName);
+          spousePhotoUrl = publicUrl;
+        }
+      }
+
+      const paymentRef = transactionId.trim().toUpperCase();
+
+      // Ensure state is never empty (fallback)
+      const finalState = state && state.trim() !== '' ? state : 'Not specified';
+      
+      // Start with minimal required fields only
+      const registrationData: any = {
+        first_name: firstName,
+        last_name: lastName,
+        email: memberInfo.email,
+        phone: memberInfo.phone,
+        address: areaOfResidence,
+        city: city,
+        state: finalState,
+        zip_code: '00000',
+        membership_type: membershipType,
+        mpesa_payment_reference: paymentRef
+      };
+      
+      // Add optional fields only if they have values
+      if (parentsInfo.parent1.name) {
+        registrationData.emergency_contact_name = parentsInfo.parent1.name;
+        registrationData.emergency_contact_phone = parentsInfo.parent1.phone || memberInfo.altPhone || memberInfo.phone;
+      } else {
+        registrationData.emergency_contact_name = 'Not provided';
+        registrationData.emergency_contact_phone = memberInfo.altPhone || memberInfo.phone;
+      }
+      
+      if (memberInfo.idNumber) {
+        registrationData.id_number = memberInfo.idNumber;
+      }
+      
+      if (memberInfo.altPhone) {
+        registrationData.alternative_phone = memberInfo.altPhone;
+      }
+      
+      if (memberInfo.sex) {
+        registrationData.sex = memberInfo.sex;
+      }
+      
+      if (memberInfo.maritalStatus) {
+        registrationData.marital_status = memberInfo.maritalStatus;
+      }
+      
+      if (profilePictureUrl) {
+        registrationData.profile_picture_url = profilePictureUrl;
+      }
+      
+      // Add status fields
+      registrationData.registration_status = 'pending';
+      registrationData.payment_status = 'pending';
+
+      // Double-check state field is populated
+      if (!registrationData.state || registrationData.state.trim() === '') {
+        registrationData.state = 'Unknown';
+        console.log('State was empty, set to Unknown');
+      }
+      
+      // Validate required fields before submission
+      const requiredFields = ['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zip_code', 'membership_type', 'mpesa_payment_reference'];
+      const missingFields = requiredFields.filter(field => !registrationData[field] || registrationData[field].trim() === '');
+      
+      if (missingFields.length > 0) {
+        console.error('Missing required fields:', missingFields);
+        console.error('Current registration data:', registrationData);
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      }
+      
+      console.log('Submitting registration data:', registrationData);
+      console.log('Data structure:', Object.keys(registrationData));
+      console.log('MPESA Reference stored in:', paymentRef);
+      console.log('Photos uploaded:', { memberPhoto: profilePictureUrl, spousePhoto: spousePhotoUrl });
+      
+      // Additional data for admin reference (stored in comments for now)
+      const additionalInfo = {
+        country: memberInfo.country,
+        paymentRef: paymentRef,
+        hasSpouse: memberInfo.maritalStatus === 'Married',
+        spouseName: memberInfo.maritalStatus === 'Married' ? spouseInfo.name : null,
+        childrenCount: children.length,
+        parent2Name: parentsInfo.parent2.name || null
+      };
+      
+      console.log('Additional info collected (not stored yet):', additionalInfo);
+      
+      let { data, error } = await supabase
         .from('membership_registrations')
-        .insert({
-          first_name: firstName,
-          last_name: lastName,
-          email: memberInfo.email,
-          phone: memberInfo.phone,
-          address: areaOfResidence,
-          city: city,
-          state: state,
-          zip_code: '00000', // Default zip code
-          emergency_contact_name: parentsInfo.member.name || 'Not provided',
-          emergency_contact_phone: parentsInfo.member.phone || memberInfo.altPhone || memberInfo.phone,
-          membership_type: membershipType,
-          id_number: memberInfo.idNumber,
-          alternative_phone: memberInfo.altPhone,
-          sex: memberInfo.sex,
-          marital_status: memberInfo.maritalStatus,
-          registration_status: 'pending',
-          payment_status: 'pending',
-          profile_picture_url: profilePictureUrl
-        })
+        .insert(registrationData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        console.error('Submitted data that caused error:', registrationData);
+        
+        // Check if it's an unknown column error for mpesa_payment_reference
+        if (error.message.includes('mpesa_payment_reference') && error.message.includes('column')) {
+          console.log('MPESA reference column not found, trying fallback method...');
+          
+          // Fallback: store in address field temporarily
+          const fallbackData = { ...registrationData };
+          fallbackData.address = `${areaOfResidence} | MPESA Ref: ${paymentRef}`;
+          delete fallbackData.mpesa_payment_reference;
+          
+          console.log('Retrying with fallback data:', fallbackData);
+          
+          const { data: fallbackResult, error: fallbackError } = await supabase
+            .from('membership_registrations')
+            .insert(fallbackData)
+            .select()
+            .single();
+          
+          if (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+            throw fallbackError;
+          }
+          
+          console.log('Fallback registration successful:', fallbackResult);
+          console.log('Assigned TNS Number:', fallbackResult.tns_number);
+          
+          // Set data for success handling
+          data = fallbackResult;
+          // Continue with normal success flow below
+        }
+        
+        throw error;
+      }
+      
+      console.log('Registration successful:', data);
+      console.log('Assigned TNS Number:', data.tns_number);
+      
+      // Check if MPESA reference was stored in dedicated field
+      if (registrationData.mpesa_payment_reference && !error) {
+        console.log('✅ MPESA Reference stored in dedicated mpesa_payment_reference field:', paymentRef);
+      } else {
+        console.log('ℹ️ MPESA Reference stored in address field (fallback method):', paymentRef);
+      }
+      
+      // Registration submitted successfully:
+      // ✅ Basic member info: stored in database
+      // ✅ MPESA payment reference: stored in mpesa_payment_reference field
+      // ✅ Area of residence: stored in address field
+      // ✅ Profile photo: uploaded to storage
+      // ✅ Emergency contact: Parent 1 info
+      // 
+      // Additional data collected (for future schema expansion):
+      // ⏳ Country, spouse info, children, parent2 details
+      // ⏳ Spouse photo uploaded but not linked in database yet
 
       toast({
         title: "Registration Submitted!",
@@ -205,6 +368,7 @@ const MultiStepRegistration = () => {
         sex: '',
         maritalStatus: '',
         areaOfResidence: '',
+        country: '',
         photo: null,
       });
       setSpouseInfo({
@@ -218,15 +382,29 @@ const MultiStepRegistration = () => {
       });
       setChildren([]);
       setParentsInfo({
-        member: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
-        spouse: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+        parent1: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
+        parent2: { name: '', idNumber: '', phone: '', altPhone: '', areaOfResidence: '' },
       });
       setTransactionId('');
     } catch (error) {
       console.error('Error submitting registration:', error);
+      
+      let errorMessage = "Failed to submit registration. Please try again.";
+      
+      if (error instanceof Error) {
+        // User-friendly error messages
+        if (error.message.includes('required')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('violates unique constraint')) {
+          errorMessage = "This email or phone number is already registered. Please use different details or contact support.";
+        } else if (error.message.includes('invalid')) {
+          errorMessage = "Please check your information and ensure all fields are filled correctly.";
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to submit registration. Please try again.",
+        title: "Registration Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -237,6 +415,59 @@ const MultiStepRegistration = () => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-gradient-primary rounded-full">
+                  <Globe className="h-8 w-8 text-primary-foreground" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">Country Selection</h3>
+              <p className="text-muted-foreground">Please select your country of residence</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="memberCountry">Country *</Label>
+              <Select 
+                onValueChange={(value) => setMemberInfo({ ...memberInfo, country: value })}
+                value={memberInfo.country}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="Kenya">Kenya</SelectItem>
+                  <SelectItem value="United States">United States</SelectItem>
+                  <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                  <SelectItem value="Canada">Canada</SelectItem>
+                  <SelectItem value="Australia">Australia</SelectItem>
+                  <SelectItem value="South Africa">South Africa</SelectItem>
+                  <SelectItem value="Nigeria">Nigeria</SelectItem>
+                  <SelectItem value="Ghana">Ghana</SelectItem>
+                  <SelectItem value="Tanzania">Tanzania</SelectItem>
+                  <SelectItem value="Uganda">Uganda</SelectItem>
+                  <SelectItem value="Ethiopia">Ethiopia</SelectItem>
+                  <SelectItem value="Rwanda">Rwanda</SelectItem>
+                  <SelectItem value="Germany">Germany</SelectItem>
+                  <SelectItem value="France">France</SelectItem>
+                  <SelectItem value="Italy">Italy</SelectItem>
+                  <SelectItem value="Spain">Spain</SelectItem>
+                  <SelectItem value="Japan">Japan</SelectItem>
+                  <SelectItem value="China">China</SelectItem>
+                  <SelectItem value="India">India</SelectItem>
+                  <SelectItem value="Brazil">Brazil</SelectItem>
+                  <SelectItem value="Mexico">Mexico</SelectItem>
+                  <SelectItem value="Argentina">Argentina</SelectItem>
+                  <SelectItem value="New Zealand">New Zealand</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        );
+
+      case 2:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -335,9 +566,12 @@ const MultiStepRegistration = () => {
                 id="memberArea"
                 value={memberInfo.areaOfResidence}
                 onChange={(e) => setMemberInfo({ ...memberInfo, areaOfResidence: e.target.value })}
-                placeholder="Enter your area of residence"
+                placeholder="e.g., Nairobi, Kampala, London, etc."
                 required
               />
+              <p className="text-sm text-muted-foreground">
+                Enter your city or area. You can also include state/region (e.g., "Boston, Massachusetts")
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -364,7 +598,7 @@ const MultiStepRegistration = () => {
           </div>
         );
 
-      case 2:
+      case 3:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -476,7 +710,7 @@ const MultiStepRegistration = () => {
           </div>
         );
 
-      case 3:
+      case 4:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -580,7 +814,7 @@ const MultiStepRegistration = () => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -590,21 +824,21 @@ const MultiStepRegistration = () => {
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-2">Parents Information</h3>
-              <p className="text-muted-foreground">Please provide information for both your parents and your spouse's parents</p>
+              <p className="text-muted-foreground">Please provide information for your parents</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Member's Parents */}
+              {/* Parent 1 */}
               <div>
-                <h4 className="text-lg font-semibold text-foreground mb-4">Your Parents</h4>
+                <h4 className="text-lg font-semibold text-foreground mb-4">Parent 1 Information</h4>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Parent Names *</Label>
                     <Input
-                      value={parentsInfo.member.name}
+                      value={parentsInfo.parent1.name}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        member: { ...parentsInfo.member, name: e.target.value }
+                        parent1: { ...parentsInfo.parent1, name: e.target.value }
                       })}
                       placeholder="Enter parent names"
                       required
@@ -613,10 +847,10 @@ const MultiStepRegistration = () => {
                   <div className="space-y-2">
                     <Label>Parent ID Numbers *</Label>
                     <Input
-                      value={parentsInfo.member.idNumber}
+                      value={parentsInfo.parent1.idNumber}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        member: { ...parentsInfo.member, idNumber: e.target.value }
+                        parent1: { ...parentsInfo.parent1, idNumber: e.target.value }
                       })}
                       placeholder="Enter parent ID numbers"
                       required
@@ -625,10 +859,10 @@ const MultiStepRegistration = () => {
                   <div className="space-y-2">
                     <Label>Parent Phone Numbers *</Label>
                     <Input
-                      value={parentsInfo.member.phone}
+                      value={parentsInfo.parent1.phone}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        member: { ...parentsInfo.member, phone: e.target.value }
+                        parent1: { ...parentsInfo.parent1, phone: e.target.value }
                       })}
                       placeholder="Enter parent phone numbers"
                       required
@@ -637,10 +871,10 @@ const MultiStepRegistration = () => {
                   <div className="space-y-2">
                     <Label>Parent Alternative Phones</Label>
                     <Input
-                      value={parentsInfo.member.altPhone}
+                      value={parentsInfo.parent1.altPhone}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        member: { ...parentsInfo.member, altPhone: e.target.value }
+                        parent1: { ...parentsInfo.parent1, altPhone: e.target.value }
                       })}
                       placeholder="Alternative phone numbers"
                     />
@@ -648,10 +882,10 @@ const MultiStepRegistration = () => {
                   <div className="space-y-2">
                     <Label>Parent Areas of Residence *</Label>
                     <Input
-                      value={parentsInfo.member.areaOfResidence}
+                      value={parentsInfo.parent1.areaOfResidence}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        member: { ...parentsInfo.member, areaOfResidence: e.target.value }
+                        parent1: { ...parentsInfo.parent1, areaOfResidence: e.target.value }
                       })}
                       placeholder="Enter parent areas of residence"
                       required
@@ -660,65 +894,65 @@ const MultiStepRegistration = () => {
                 </div>
               </div>
 
-              {/* Spouse's Parents */}
+              {/* Parent 2 */}
               <div>
                 <h4 className="text-lg font-semibold text-foreground mb-4">
-                  Spouse's Parents {memberInfo.maritalStatus !== 'Married' && '(Optional)'}
+                  Parent 2 Information (Optional)
                 </h4>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Spouse Parent Names</Label>
+                    <Label>Parent Names</Label>
                     <Input
-                      value={parentsInfo.spouse.name}
+                      value={parentsInfo.parent2.name}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        spouse: { ...parentsInfo.spouse, name: e.target.value }
+                        parent2: { ...parentsInfo.parent2, name: e.target.value }
                       })}
-                      placeholder="Enter spouse parent names"
+                      placeholder="Enter parent names"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Spouse Parent ID Numbers</Label>
+                    <Label>Parent ID Numbers</Label>
                     <Input
-                      value={parentsInfo.spouse.idNumber}
+                      value={parentsInfo.parent2.idNumber}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        spouse: { ...parentsInfo.spouse, idNumber: e.target.value }
+                        parent2: { ...parentsInfo.parent2, idNumber: e.target.value }
                       })}
-                      placeholder="Enter spouse parent ID numbers"
+                      placeholder="Enter parent ID numbers"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Spouse Parent Phone Numbers</Label>
+                    <Label>Parent Phone Numbers</Label>
                     <Input
-                      value={parentsInfo.spouse.phone}
+                      value={parentsInfo.parent2.phone}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        spouse: { ...parentsInfo.spouse, phone: e.target.value }
+                        parent2: { ...parentsInfo.parent2, phone: e.target.value }
                       })}
-                      placeholder="Enter spouse parent phone numbers"
+                      placeholder="Enter parent phone numbers"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Spouse Parent Alternative Phones</Label>
+                    <Label>Parent Alternative Phones</Label>
                     <Input
-                      value={parentsInfo.spouse.altPhone}
+                      value={parentsInfo.parent2.altPhone}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        spouse: { ...parentsInfo.spouse, altPhone: e.target.value }
+                        parent2: { ...parentsInfo.parent2, altPhone: e.target.value }
                       })}
                       placeholder="Alternative phone numbers"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Spouse Parent Areas of Residence</Label>
+                    <Label>Parent Areas of Residence</Label>
                     <Input
-                      value={parentsInfo.spouse.areaOfResidence}
+                      value={parentsInfo.parent2.areaOfResidence}
                       onChange={(e) => setParentsInfo({
                         ...parentsInfo,
-                        spouse: { ...parentsInfo.spouse, areaOfResidence: e.target.value }
+                        parent2: { ...parentsInfo.parent2, areaOfResidence: e.target.value }
                       })}
-                      placeholder="Enter spouse parent areas of residence"
+                      placeholder="Enter parent areas of residence"
                     />
                   </div>
                 </div>
@@ -727,7 +961,7 @@ const MultiStepRegistration = () => {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-6">
             <div className="text-center mb-6">
@@ -754,7 +988,7 @@ const MultiStepRegistration = () => {
                 id="transactionId"
                 value={transactionId}
                 onChange={(e) => setTransactionId(e.target.value)}
-                placeholder="Enter your transaction ID (e.g., TNS123456789)"
+                placeholder="Enter your MPESA transaction ID (e.g., MDHBBEBEBEB)"
                 required
               />
               <p className="text-sm text-muted-foreground">
@@ -817,8 +1051,9 @@ const MultiStepRegistration = () => {
               ))}
             </div>
             <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-              <span>Member Info</span>
-              <span>Spouse Info</span>
+              <span>Country</span>
+              <span>Personal</span>
+              <span>Spouse</span>
               <span>Children</span>
               <span>Parents</span>
               <span>Payment</span>
