@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { DocumentList } from "@/components/DocumentList";
 import { CommunicationCenter } from "@/components/CommunicationCenter";
+import { useCrossPortalSync } from "@/hooks/useCrossPortalSync";
 
 interface ContactSubmission {
   id: string;
@@ -62,6 +63,16 @@ const SecretaryPortal = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
   const [responseMessage, setResponseMessage] = useState("");
+  
+  // Set up cross-portal synchronization for member data
+  useCrossPortalSync({
+    onRefreshRequired: (source: string, reason: string) => {
+      console.log(`SecretaryPortal: Refreshing data due to: ${reason} (from: ${source})`);
+      fetchData();
+    },
+    portalName: 'SecretaryPortal',
+    autoRefresh: true
+  });
 
   useEffect(() => {
     if (!staffUser) {
