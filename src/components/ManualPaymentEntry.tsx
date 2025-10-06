@@ -16,7 +16,7 @@ interface Member {
   email: string;
 }
 
-export const ManualPaymentEntry = () => {
+export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [amount, setAmount] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
@@ -91,6 +91,11 @@ export const ManualPaymentEntry = () => {
       if (mpesaError) throw mpesaError;
 
       toast.success("Payment recorded successfully!");
+      
+      // Trigger parent refresh if callback provided
+      if (onSuccess) {
+        await onSuccess();
+      }
       
       // Reset form
       setAmount("");

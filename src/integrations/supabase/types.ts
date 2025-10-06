@@ -216,7 +216,9 @@ export type Database = {
         Row: {
           address: string
           alternative_phone: string | null
+          children_data: Json | null
           city: string
+          country: string | null
           created_at: string
           days_to_maturity: number | null
           email: string
@@ -230,6 +232,16 @@ export type Database = {
           maturity_status: string | null
           membership_type: string
           mpesa_payment_reference: string | null
+          parent1_alt_phone: string | null
+          parent1_area: string | null
+          parent1_id_number: string | null
+          parent1_name: string | null
+          parent1_phone: string | null
+          parent2_alt_phone: string | null
+          parent2_area: string | null
+          parent2_id_number: string | null
+          parent2_name: string | null
+          parent2_phone: string | null
           payment_status: string | null
           phone: string
           probation_end_date: string | null
@@ -237,6 +249,13 @@ export type Database = {
           registration_date: string | null
           registration_status: string | null
           sex: string | null
+          spouse_alt_phone: string | null
+          spouse_area_of_residence: string | null
+          spouse_id_number: string | null
+          spouse_name: string | null
+          spouse_phone: string | null
+          spouse_photo_url: string | null
+          spouse_sex: string | null
           state: string
           tns_number: string | null
           updated_at: string
@@ -246,7 +265,9 @@ export type Database = {
         Insert: {
           address: string
           alternative_phone?: string | null
+          children_data?: Json | null
           city: string
+          country?: string | null
           created_at?: string
           days_to_maturity?: number | null
           email: string
@@ -260,6 +281,16 @@ export type Database = {
           maturity_status?: string | null
           membership_type: string
           mpesa_payment_reference?: string | null
+          parent1_alt_phone?: string | null
+          parent1_area?: string | null
+          parent1_id_number?: string | null
+          parent1_name?: string | null
+          parent1_phone?: string | null
+          parent2_alt_phone?: string | null
+          parent2_area?: string | null
+          parent2_id_number?: string | null
+          parent2_name?: string | null
+          parent2_phone?: string | null
           payment_status?: string | null
           phone: string
           probation_end_date?: string | null
@@ -267,6 +298,13 @@ export type Database = {
           registration_date?: string | null
           registration_status?: string | null
           sex?: string | null
+          spouse_alt_phone?: string | null
+          spouse_area_of_residence?: string | null
+          spouse_id_number?: string | null
+          spouse_name?: string | null
+          spouse_phone?: string | null
+          spouse_photo_url?: string | null
+          spouse_sex?: string | null
           state: string
           tns_number?: string | null
           updated_at?: string
@@ -276,7 +314,9 @@ export type Database = {
         Update: {
           address?: string
           alternative_phone?: string | null
+          children_data?: Json | null
           city?: string
+          country?: string | null
           created_at?: string
           days_to_maturity?: number | null
           email?: string
@@ -290,6 +330,16 @@ export type Database = {
           maturity_status?: string | null
           membership_type?: string
           mpesa_payment_reference?: string | null
+          parent1_alt_phone?: string | null
+          parent1_area?: string | null
+          parent1_id_number?: string | null
+          parent1_name?: string | null
+          parent1_phone?: string | null
+          parent2_alt_phone?: string | null
+          parent2_area?: string | null
+          parent2_id_number?: string | null
+          parent2_name?: string | null
+          parent2_phone?: string | null
           payment_status?: string | null
           phone?: string
           probation_end_date?: string | null
@@ -297,6 +347,13 @@ export type Database = {
           registration_date?: string | null
           registration_status?: string | null
           sex?: string | null
+          spouse_alt_phone?: string | null
+          spouse_area_of_residence?: string | null
+          spouse_id_number?: string | null
+          spouse_name?: string | null
+          spouse_phone?: string | null
+          spouse_photo_url?: string | null
+          spouse_sex?: string | null
           state?: string
           tns_number?: string | null
           updated_at?: string

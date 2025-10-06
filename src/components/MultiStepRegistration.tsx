@@ -203,7 +203,7 @@ const MultiStepRegistration = () => {
       // Ensure state is never empty (fallback)
       const finalState = state && state.trim() !== '' ? state : 'Not specified';
       
-      // Start with minimal required fields only
+      // Build complete registration data with all collected fields
       const registrationData: any = {
         first_name: firstName,
         last_name: lastName,
@@ -214,18 +214,17 @@ const MultiStepRegistration = () => {
         state: finalState,
         zip_code: '00000',
         membership_type: membershipType,
-        mpesa_payment_reference: paymentRef
+        mpesa_payment_reference: paymentRef,
+        registration_status: 'pending',
+        payment_status: 'pending'
       };
       
-      // Add optional fields only if they have values
-      if (parentsInfo.parent1.name) {
-        registrationData.emergency_contact_name = parentsInfo.parent1.name;
-        registrationData.emergency_contact_phone = parentsInfo.parent1.phone || memberInfo.altPhone || memberInfo.phone;
-      } else {
-        registrationData.emergency_contact_name = 'Not provided';
-        registrationData.emergency_contact_phone = memberInfo.altPhone || memberInfo.phone;
+      // Add country
+      if (country) {
+        registrationData.country = country;
       }
       
+      // Add optional member fields
       if (memberInfo.idNumber) {
         registrationData.id_number = memberInfo.idNumber;
       }
@@ -246,9 +245,48 @@ const MultiStepRegistration = () => {
         registrationData.profile_picture_url = profilePictureUrl;
       }
       
-      // Add status fields
-      registrationData.registration_status = 'pending';
-      registrationData.payment_status = 'pending';
+      // Add spouse information if married
+      if (memberInfo.maritalStatus === 'Married' && spouseInfo.name) {
+        registrationData.spouse_name = spouseInfo.name;
+        registrationData.spouse_id_number = spouseInfo.idNumber || null;
+        registrationData.spouse_phone = spouseInfo.phone || null;
+        registrationData.spouse_alt_phone = spouseInfo.altPhone || null;
+        registrationData.spouse_sex = spouseInfo.sex || null;
+        registrationData.spouse_area_of_residence = spouseInfo.areaOfResidence || null;
+        registrationData.spouse_photo_url = spousePhotoUrl;
+      }
+      
+      // Add children data as JSON
+      if (children.length > 0) {
+        registrationData.children_data = children.map(child => ({
+          name: child.name,
+          dob: child.dob,
+          age: child.age
+        }));
+      }
+      
+      // Add parent 1 information
+      if (parentsInfo.parent1.name) {
+        registrationData.parent1_name = parentsInfo.parent1.name;
+        registrationData.parent1_id_number = parentsInfo.parent1.idNumber || null;
+        registrationData.parent1_phone = parentsInfo.parent1.phone || null;
+        registrationData.parent1_alt_phone = parentsInfo.parent1.altPhone || null;
+        registrationData.parent1_area = parentsInfo.parent1.areaOfResidence || null;
+        registrationData.emergency_contact_name = parentsInfo.parent1.name;
+        registrationData.emergency_contact_phone = parentsInfo.parent1.phone || memberInfo.altPhone || memberInfo.phone;
+      } else {
+        registrationData.emergency_contact_name = 'Not provided';
+        registrationData.emergency_contact_phone = memberInfo.altPhone || memberInfo.phone;
+      }
+      
+      // Add parent 2 information
+      if (parentsInfo.parent2.name) {
+        registrationData.parent2_name = parentsInfo.parent2.name;
+        registrationData.parent2_id_number = parentsInfo.parent2.idNumber || null;
+        registrationData.parent2_phone = parentsInfo.parent2.phone || null;
+        registrationData.parent2_alt_phone = parentsInfo.parent2.altPhone || null;
+        registrationData.parent2_area = parentsInfo.parent2.areaOfResidence || null;
+      }
 
       // Double-check state field is populated
       if (!registrationData.state || registrationData.state.trim() === '') {
@@ -266,22 +304,11 @@ const MultiStepRegistration = () => {
         throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
       
-      console.log('Submitting registration data:', registrationData);
-      console.log('Data structure:', Object.keys(registrationData));
-      console.log('MPESA Reference stored in:', paymentRef);
-      console.log('Photos uploaded:', { memberPhoto: profilePictureUrl, spousePhoto: spousePhotoUrl });
-      
-      // Additional data for admin reference (stored in comments for now)
-      const additionalInfo = {
-        country: memberInfo.country,
-        paymentRef: paymentRef,
-        hasSpouse: memberInfo.maritalStatus === 'Married',
-        spouseName: memberInfo.maritalStatus === 'Married' ? spouseInfo.name : null,
-        childrenCount: children.length,
-        parent2Name: parentsInfo.parent2.name || null
-      };
-      
-      console.log('Additional info collected (not stored yet):', additionalInfo);
+      console.log('Submitting complete registration data:', registrationData);
+      console.log('All fields:', Object.keys(registrationData));
+      console.log('Spouse info:', spouseInfo.name ? 'Included' : 'Not applicable');
+      console.log('Children count:', children.length);
+      console.log('Parents info:', { parent1: parentsInfo.parent1.name, parent2: parentsInfo.parent2.name });
       
       let { data, error } = await supabase
         .from('membership_registrations')
@@ -331,26 +358,16 @@ const MultiStepRegistration = () => {
         throw error;
       }
       
-      console.log('Registration successful:', data);
-      console.log('Assigned TNS Number:', data.tns_number);
-      
-      // Check if MPESA reference was stored in dedicated field
-      if (registrationData.mpesa_payment_reference && !error) {
-        console.log('✅ MPESA Reference stored in dedicated mpesa_payment_reference field:', paymentRef);
-      } else {
-        console.log('ℹ️ MPESA Reference stored in address field (fallback method):', paymentRef);
-      }
-      
-      // Registration submitted successfully:
-      // ✅ Basic member info: stored in database
-      // ✅ MPESA payment reference: stored in mpesa_payment_reference field
-      // ✅ Area of residence: stored in address field
-      // ✅ Profile photo: uploaded to storage
-      // ✅ Emergency contact: Parent 1 info
-      // 
-      // Additional data collected (for future schema expansion):
-      // ⏳ Country, spouse info, children, parent2 details
-      // ⏳ Spouse photo uploaded but not linked in database yet
+      console.log('✅ Registration successful:', data);
+      console.log('✅ Assigned TNS Number:', data.tns_number);
+      console.log('✅ All form data saved to database including:');
+      console.log('  - Member information (name, contact, ID, sex, marital status)');
+      console.log('  - Country:', country);
+      console.log('  - Spouse information:', spouseInfo.name ? 'Saved' : 'N/A');
+      console.log('  - Children data:', children.length > 0 ? `${children.length} children saved` : 'N/A');
+      console.log('  - Parent 1 information:', parentsInfo.parent1.name || 'N/A');
+      console.log('  - Parent 2 information:', parentsInfo.parent2.name || 'N/A');
+      console.log('  - Photos:', { member: !!profilePictureUrl, spouse: !!spousePhotoUrl });
 
       toast({
         title: "Registration Submitted!",

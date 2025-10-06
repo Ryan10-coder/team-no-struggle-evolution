@@ -1214,8 +1214,9 @@ const AdminPortal = () => {
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300 py-4">Profile</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Member Details</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Contact Info</TableHead>
-                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Address</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Address & Country</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">ID Number</TableHead>
+                          <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Family Info</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Emergency Contact</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">Membership Type</TableHead>
                           <TableHead className="font-semibold text-orange-800 dark:text-orange-300">MPESA Ref</TableHead>
@@ -1277,14 +1278,43 @@ const AdminPortal = () => {
                               <div className="space-y-1 text-sm">
                                 <div className="font-medium text-gray-900 dark:text-gray-100">{member.address}</div>
                                 <div className="text-gray-600 dark:text-gray-400">
-                                  {member.city}, {member.state} {member.zip_code}
+                                  {member.city}, {member.state}
                                 </div>
+                                {(member as any).country && (
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    {(member as any).country}
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="font-mono text-xs">
                                 {member.id_number || 'N/A'}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-2">
+                                {(member as any).spouse_name && (
+                                  <div className="space-y-1">
+                                    <Badge variant="secondary" className="bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400 text-xs">
+                                      Spouse: {(member as any).spouse_name}
+                                    </Badge>
+                                    {(member as any).spouse_phone && (
+                                      <div className="text-xs text-gray-600">{(member as any).spouse_phone}</div>
+                                    )}
+                                  </div>
+                                )}
+                                {(member as any).children_data && JSON.parse((member as any).children_data || '[]').length > 0 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {JSON.parse((member as any).children_data).length} Children
+                                  </Badge>
+                                )}
+                                {(member as any).parent2_name && (
+                                  <div className="text-xs text-gray-600">
+                                    Parent 2: {(member as any).parent2_name}
+                                  </div>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1">
@@ -1294,6 +1324,11 @@ const AdminPortal = () => {
                                 <div className="text-sm text-gray-600 dark:text-gray-400">
                                   {member.emergency_contact_phone}
                                 </div>
+                                {(member as any).parent1_name && (member as any).parent1_name !== member.emergency_contact_name && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Alt: {(member as any).parent1_name}
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
