@@ -33,6 +33,7 @@ import { BalanceVerification } from "@/components/BalanceVerification";
 import { ExpenseAudit } from "@/components/ExpenseAudit";
 import { AuditReports } from "@/components/AuditReports";
 import { AuditTrail } from "@/components/AuditTrail";
+import { useCrossPortalSync } from "@/hooks/useCrossPortalSync";
 
 interface AuditMetrics {
   totalContributions: number;
@@ -72,6 +73,16 @@ const AuditorPortal = () => {
     warning: 0,
     info: 0,
     resolved: 0
+  });
+  
+  // Set up cross-portal synchronization for member data
+  useCrossPortalSync({
+    onRefreshRequired: (source: string, reason: string) => {
+      console.log(`AuditorPortal: Refreshing data due to: ${reason} (from: ${source})`);
+      fetchAuditData();
+    },
+    portalName: 'AuditorPortal',
+    autoRefresh: true
   });
 
   useEffect(() => {
