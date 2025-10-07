@@ -86,7 +86,7 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone">Phone Number</Label> 
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
