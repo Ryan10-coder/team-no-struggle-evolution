@@ -20,18 +20,41 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     if (req.method === 'POST') {
-      const { action, ...data } = await req.json();
-      
-      if (action === 'stk_push') {
-        return await handleSTKPush(data, supabase);
-      } else if (action === 'callback') {
-        return await handleSTKCallback(data, supabase);
-      } else {
+      // Read raw body first to support Safaricom callbacks (which won't send an 'action')
+      const raw = await req.text();
+      let json: any = null;
+      try {
+        json = raw ? JSON.parse(raw) : null;
+      } catch (_e) {
+        json = null;
+      }
+
+      // If the request contains our client-initiated action format
+      if (json && typeof json === 'object' && 'action' in json) {
+        const { action, ...data } = json;
+        if (action === 'stk_push') {
+          return await handleSTKPush(data, supabase);
+        }
+        if (action === 'callback') {
+          return await handleSTKCallback(data, supabase);
+        }
         return new Response(
           JSON.stringify({ error: 'Invalid action' }), 
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Otherwise, detect a Safaricom STK callback payload
+      if (json && json.Body && json.Body.stkCallback) {
+        return await handleSTKCallback(json, supabase);
+      }
+
+      // Fallback: if no recognizable shape, acknowledge to avoid retries but log for inspection
+      console.warn('Unrecognized POST payload to mpesa-stk-push:', raw);
+      return new Response(
+        JSON.stringify({ message: 'Unrecognized payload' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
@@ -54,23 +77,41 @@ async function handleSTKPush(data: any, supabase: any) {
   const consumerKey = Deno.env.get('MPESA_CONSUMER_KEY')!;
   const consumerSecret = Deno.env.get('MPESA_CONSUMER_SECRET')!;
   const passkey = Deno.env.get('MPESA_PASSKEY')!;
-  const shortcode = '4148511';
+  // Use sandbox shortcode for testing - change to your production shortcode when going live
+  const shortcode = Deno.env.get('MPESA_SHORTCODE') || '174379';
   
   try {
+    // Validate credentials are set
+    if (!consumerKey || !consumerSecret || !passkey) {
+      throw new Error('MPESA credentials not configured. Please set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, and MPESA_PASSKEY environment variables.');
+    }
+    
     // Get OAuth token
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
-    const tokenResponse = await fetch('https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
+    console.log('Requesting OAuth token...');
+    
+    const tokenResponse = await fetch('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
       method: 'GET',
       headers: {
-        'Authorization': `Basic ${auth}`
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json'
       }
     });
     
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('OAuth token request failed:', tokenResponse.status, errorText);
+      throw new Error(`OAuth request failed: ${tokenResponse.status} - ${errorText}`);
+    }
+    
     const tokenData = await tokenResponse.json();
+    console.log('Token response:', tokenData);
+    
     const accessToken = tokenData.access_token;
     
     if (!accessToken) {
-      throw new Error('Failed to get access token');
+      console.error('No access token in response:', tokenData);
+      throw new Error(`Failed to get access token: ${tokenData.error_description || 'Unknown error'}`);
     }
     
     // Generate timestamp
@@ -99,7 +140,9 @@ async function handleSTKPush(data: any, supabase: any) {
       TransactionDesc: "Membership Payment"
     };
     
-    const stkResponse = await fetch('https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+    console.log('Sending STK Push request:', stkPushData);
+    
+    const stkResponse = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -108,9 +151,27 @@ async function handleSTKPush(data: any, supabase: any) {
       body: JSON.stringify(stkPushData)
     });
     
+    if (!stkResponse.ok) {
+      const errorText = await stkResponse.text();
+      console.error('STK Push request failed:', stkResponse.status, errorText);
+      throw new Error(`STK Push request failed: ${stkResponse.status} - ${errorText}`);
+    }
+    
     const stkResult = await stkResponse.json();
+    console.log('STK Push response:', stkResult);
     
     if (stkResult.ResponseCode === '0') {
+      // For testing, create a dummy member snapshot
+      const memberData = {
+        id: memberId,
+        first_name: 'Test',
+        last_name: 'Member',
+        email: 'test@example.com',
+        phone: formattedPhone,
+        tns_number: 'TNS001',
+        registration_status: 'approved'
+      };
+
       // Save payment record to database
       const { error: dbError } = await supabase
         .from('mpesa_payments')
@@ -125,7 +186,8 @@ async function handleSTKPush(data: any, supabase: any) {
       
       if (dbError) {
         console.error('Database error:', dbError);
-        throw new Error('Failed to save payment record');
+        console.error('Full error details:', JSON.stringify(dbError, null, 2));
+        throw new Error(`Failed to save payment record: ${dbError.message}`);
       }
       
       return new Response(
