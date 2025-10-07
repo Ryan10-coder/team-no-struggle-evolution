@@ -59,7 +59,7 @@ async function handleSTKPush(data: any, supabase: any) {
   try {
     // Get OAuth token
     const auth = btoa(`${consumerKey}:${consumerSecret}`);
-    const tokenResponse = await fetch('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
+    const tokenResponse = await fetch('https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
       method: 'GET',
       headers: {
         'Authorization': `Basic ${auth}`
@@ -99,7 +99,7 @@ async function handleSTKPush(data: any, supabase: any) {
       TransactionDesc: "Membership Payment"
     };
     
-    const stkResponse = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+    const stkResponse = await fetch('https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
