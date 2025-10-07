@@ -197,12 +197,22 @@ const AdminPortal = () => {
     const channel = supabase
       .channel('realtime-admin-portal')
       // MPESA payments and contributions
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mpesa_payments' }, () => {
-        console.log('Real-time: MPESA payment inserted');
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'mpesa_payments',
+        filter: 'status=eq.completed'
+      }, () => {
+        console.log('Real-time: Completed MPESA payment inserted');
         fetchPendingRegistrations();
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mpesa_payments' }, () => {
-        console.log('Real-time: MPESA payment updated');
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'mpesa_payments',
+        filter: 'status=eq.completed'
+      }, (payload) => {
+        console.log('Real-time: MPESA payment completed', payload);
         fetchPendingRegistrations();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contributions' }, () => {
@@ -339,10 +349,11 @@ const AdminPortal = () => {
 
       if (allStaffError) throw allStaffError;
 
-      // Fetch MPESA payments
+      // Fetch MPESA payments - only show completed payments to admin
       const { data: mpesaData, error: mpesaError } = await supabase
         .from("mpesa_payments")
         .select("*")
+        .eq("status", "completed")
         .order("created_at", { ascending: false });
 
       if (mpesaError) throw mpesaError;
@@ -2178,8 +2189,8 @@ const AdminPortal = () => {
                         </div>
                         Recent MPESA Payments
                       </CardTitle>
-<CardDescription className="text-slate-600 dark:text-slate-400">
-                        Real-time payment transactions from members via Paybill 4148511 • Showing latest {Math.min(groupedMpesaPayments.length, 10)} of {groupedMpesaPayments.length} members with payments
+                      <CardDescription className="text-slate-600 dark:text-slate-400">
+                        Completed payment transactions from members via Paybill 174379 • Showing latest {Math.min(groupedMpesaPayments.length, 10)} of {groupedMpesaPayments.length} members with successful payments
                       </CardDescription>
                     </div>
                     {mpesaPayments.length > 10 && (
@@ -2195,10 +2206,10 @@ const AdminPortal = () => {
                       <div className="mx-auto w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                         <DollarSign className="h-8 w-8 text-gray-400" />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No MPESA payments yet</h3>
-                      <p className="text-gray-500 dark:text-gray-400 mb-3">MPESA payment transactions will appear here once members start making payments.</p>
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No completed MPESA payments yet</h3>
+                      <p className="text-gray-500 dark:text-gray-400 mb-3">Only successful MPESA payment transactions will appear here once members complete their payments.</p>
                       <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 px-4 py-2 rounded-lg text-sm">
-                        <strong>Paybill Number:</strong> 4148511 • Payments are processed via STK Push
+                        <strong>Paybill Number:</strong> 174379 • Payments are processed via STK Push • Only completed transactions shown
                       </div>
                     </div>
                   ) : (
@@ -3091,7 +3102,7 @@ const AdminPortal = () => {
                   </>
                 ) : (
                   <>
-                    <Trash2 className="mr-2 h-4 w-4" /> 
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete Permanently
                   </>
                 )}
