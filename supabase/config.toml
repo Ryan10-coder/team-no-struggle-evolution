@@ -5,7 +5,7 @@ enabled = true
 
 [functions.export-audit-report]
 verify_jwt = false
-
+ 
 [functions.export-excel]
 verify_jwt = false
 
