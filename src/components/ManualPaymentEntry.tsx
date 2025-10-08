@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Plus, DollarSign } from "lucide-react";
+import { useStaffAuth } from "@/hooks/useStaffAuth";
 
 interface Member {
   id: string;
@@ -34,6 +35,62 @@ const PAYMENT_TYPE_LABELS = {
 } as const;
 
 export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) => {
+  const { staffUser } = useStaffAuth();
+  
+  // Test authentication and permissions function
+  const testAuth = async () => {
+    console.log('=== Testing Authentication ===');
+    console.log('Staff user from context:', staffUser);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('Auth user:', {
+      id: user?.id,
+      email: user?.email,
+      aud: user?.aud,
+      role: user?.role
+    });
+    
+    // Test RLS by trying to read contributions
+    const { data: contribData, error: contribError } = await supabase
+      .from('contributions')
+      .select('count')
+      .limit(1);
+    
+    console.log('Can read contributions:', !contribError, contribError?.message);
+    
+    // Test RLS by trying to read mpesa_payments
+    const { data: mpesaData, error: mpesaError } = await supabase
+      .from('mpesa_payments')
+      .select('count')
+      .limit(1);
+    
+    console.log('Can read mpesa_payments:', !mpesaError, mpesaError?.message);
+    
+    // Test if we can insert to contributions
+    console.log('Testing contribution insert permissions...');
+    const testInsert = {
+      member_id: '00000000-0000-0000-0000-000000000000', // Fake UUID for test
+      amount: 1000,
+      contribution_date: new Date().toISOString().split('T')[0],
+      contribution_type: 'monthly_contribution',
+      status: 'confirmed'
+    };
+    
+    const { data: insertTest, error: insertError } = await supabase
+      .from('contributions')
+      .insert(testInsert)
+      .select();
+    
+    console.log('Insert test result:', insertTest, 'Error:', insertError?.message);
+    
+    if (insertTest) {
+      // Clean up test record
+      await supabase.from('contributions').delete().eq('id', insertTest[0].id);
+      console.log('Test record cleaned up');
+    }
+    
+    console.log('=== End Authentication Test ===');
+  };
   const [amount, setAmount] = useState("");
   const [selectedMember, setSelectedMember] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
@@ -84,6 +141,21 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
 
     setIsLoading(true);
     
+    // Debug: Check staff authentication
+    console.log('Staff user from context:', staffUser);
+    
+    if (!staffUser) {
+      toast.error('Staff authentication required. Please log in through staff portal.');
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!['Admin', 'Treasurer', 'Auditor'].includes(staffUser.staff_role)) {
+      toast.error(`Insufficient permissions. Your role: ${staffUser.staff_role}. Required: Admin/Treasurer/Auditor.`);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       console.log('Recording manual payment:', {
         memberId: selectedMember,
@@ -93,103 +165,82 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
         referenceNumber
       });
 
-      let edgeFunctionSuccess = false;
+      // Use direct database insert for reliability
+      console.log('Inserting contribution directly to database...');
       
-      // Try edge function first (with timeout)
+      const contributionData = {
+        member_id: selectedMember,
+        amount: parseFloat(amount),
+        contribution_date: paymentDate,
+        contribution_type: paymentType,
+        status: 'confirmed'
+      };
+      
+      console.log('Contribution data:', contributionData);
+      
+      const { data: contributionResult, error: contributionError } = await supabase
+        .from('contributions')
+        .insert(contributionData)
+        .select()
+        .single();
+        
+      if (contributionError) {
+        console.error('Contribution insertion failed:', contributionError);
+        throw new Error(`Failed to record contribution: ${contributionError.message}`);
+      }
+      
+      console.log('Contribution recorded successfully:', contributionResult);
+      
+      // Create MPESA audit record
+      console.log('Creating MPESA audit record...');
+      
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        // Fetch member snapshot
+        const { data: memberData, error: memberError } = await supabase
+          .from('membership_registrations')
+          .select('id, first_name, last_name, email, phone, tns_number, profile_picture_url, registration_status, payment_status, address, city, state, zip_code, id_number, emergency_contact_name, emergency_contact_phone, sex, marital_status')
+          .eq('id', selectedMember)
+          .single();
         
-        const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/record-transaction", {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
-            'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
-          },
-          body: JSON.stringify({
-            action: 'manual_payment',
-            memberId: selectedMember,
-            amount: parseFloat(amount),
-            paymentType,
-            paymentDate,
-            referenceNumber
-          })
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            edgeFunctionSuccess = true;
-            console.log('Edge function succeeded');
-          }
-        } else {
-          console.log('Edge function returned error status:', response.status);
+        if (memberError) {
+          console.warn('Failed to fetch member data:', memberError);
         }
-      } catch (edgeError) {
-        console.log('Edge function failed, using fallback:', edgeError.message);
-        // Continue to fallback logic
-      }
-      
-      if (!edgeFunctionSuccess) {
-        console.log('Using direct database fallback');
         
-        // Fallback: Direct database insert
-        const { error: contributionError } = await supabase
-          .from('contributions')
-          .insert({
-            member_id: selectedMember,
-            amount: parseFloat(amount),
-            contribution_date: paymentDate,
-            contribution_type: paymentType,
-            status: 'confirmed'
-          });
+        const mpesaData = {
+          member_id: selectedMember,
+          amount: parseFloat(amount),
+          phone_number: 'Manual Entry',
+          mpesa_receipt_number: referenceNumber || 'Manual Entry',
+          status: 'completed',
+          result_code: '0',
+          result_desc: 'Manual payment entry',
+          transaction_date: new Date(paymentDate).toISOString(),
+          member_snapshot: memberData || null
+        };
+        
+        console.log('MPESA audit data:', mpesaData);
+
+        const { data: mpesaResult, error: mpesaError } = await supabase
+          .from('mpesa_payments')
+          .insert(mpesaData)
+          .select()
+          .single();
           
-        if (contributionError) {
-          throw new Error(`Failed to record contribution: ${contributionError.message}`);
+        if (mpesaError) {
+          console.warn('MPESA audit record failed:', mpesaError);
+          // Don't throw - this is non-critical but log the error
+        } else {
+          console.log('MPESA audit record created successfully:', mpesaResult);
         }
-        
-        console.log('Contribution recorded successfully');
-        
-        // Best-effort MPESA audit record
-        try {
-          // Fetch member snapshot
-          const { data: memberData } = await supabase
-            .from('membership_registrations')
-            .select('id, first_name, last_name, email, phone, tns_number, profile_picture_url, registration_status, payment_status, address, city, state, zip_code, id_number, emergency_contact_name, emergency_contact_phone, sex, marital_status')
-            .eq('id', selectedMember)
-            .single();
-
-          const { error: mpesaError } = await supabase
-            .from('mpesa_payments')
-            .insert({
-              member_id: selectedMember,
-              amount: parseFloat(amount),
-              phone_number: 'Manual Entry',
-              mpesa_receipt_number: referenceNumber || 'Manual Entry',
-              status: 'completed',
-              result_code: '0',
-              result_desc: 'Manual payment entry (fallback)',
-              transaction_date: new Date(paymentDate).toISOString(),
-              member_snapshot: memberData || null
-            });
-            
-          if (mpesaError) {
-            console.warn('MPESA audit record failed:', mpesaError.message);
-            // Don't throw - this is non-critical
-          } else {
-            console.log('MPESA audit record created successfully');
-          }
-        } catch (auditError) {
-          console.warn('MPESA audit failed:', auditError.message);
-          // Don't throw - audit is non-critical
-        }
+      } catch (auditError) {
+        console.warn('MPESA audit failed with exception:', auditError);
+        // Don't throw - audit is non-critical
       }
 
-      toast.success("Payment recorded successfully!");
+      toast.success("Payment recorded successfully!", {
+        description: `Amount: KES ${parseFloat(amount).toLocaleString()}`,
+        duration: 5000
+      });
       
       // Reset form
       setAmount("");
@@ -198,7 +249,10 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
       setPaymentDate(new Date().toISOString().split('T')[0]);
       setPaymentType(PAYMENT_TYPES.MONTHLY);
       
-      if (onSuccess) onSuccess();
+      if (onSuccess) {
+        console.log('Calling onSuccess callback to refresh data...');
+        onSuccess();
+      }
     } catch (error: any) {
       console.error('Payment entry error:', error);
       let errorMessage = "Failed to record payment";
@@ -235,6 +289,16 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
           <span className="text-xs font-medium text-green-600 dark:text-green-400">
             Restricted to: Monthly contribution • Cases • Projects • Registration • Others
           </span>
+          <br />
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={testAuth}
+            className="mt-2 text-xs"
+          >
+            Test Auth (Debug)
+          </Button>
         </CardDescription>
       </CardHeader>
       <CardContent>
