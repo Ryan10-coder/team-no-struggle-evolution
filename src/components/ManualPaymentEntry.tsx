@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,7 +39,7 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [paymentType, setPaymentType] = useState(PAYMENT_TYPES.MONTHLY);
+  const [paymentType, setPaymentType] = useState<string>(PAYMENT_TYPES.MONTHLY);
   const [referenceNumber, setReferenceNumber] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -216,7 +216,7 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
 
           <div className="space-y-2">
             <Label htmlFor="paymentType">Payment Type *</Label>
-            <Select value={paymentType} onValueChange={setPaymentType}>
+            <Select value={paymentType} onValueChange={(value: string) => setPaymentType(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select payment type" />
               </SelectTrigger>
