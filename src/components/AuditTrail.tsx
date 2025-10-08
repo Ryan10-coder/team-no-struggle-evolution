@@ -31,6 +31,9 @@ import {
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { ReportGenerator, AuditTrailData } from "@/utils/reportGenerator";
+import { toast } from "sonner";
+import { FileSpreadsheet } from "lucide-react";
 
 interface AuditLogEntry {
   id: string;
@@ -73,6 +76,48 @@ export const AuditTrail = () => {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
   const [selectedTab, setSelectedTab] = useState("recent");
+  const [exportLoading, setExportLoading] = useState<string>("");
+
+  const exportToExcel = async () => {
+    try {
+      setExportLoading("excel");
+      
+      const reportData: AuditTrailData[] = filteredLogs.map(log => ({
+        id: log.id,
+        action: log.action,
+        table_name: log.resource_type,
+        record_id: log.resource_id,
+        user_email: log.user_name,
+        timestamp: log.timestamp,
+        ip_address: log.ip_address
+      }));
+
+      const workbook = ReportGenerator.generateAuditTrailExcel(reportData, {
+        startDate: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+        endDate: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+      });
+
+      ReportGenerator.downloadExcel(workbook, 'audit_trail_report');
+      toast.success('Excel report generated successfully!');
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error('Failed to generate Excel report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      setExportLoading("pdf");
+      toast.info('PDF export feature for audit trail will be implemented soon');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF report');
+    } finally {
+      setExportLoading("");
+    }
+  };
 
   // Fetch audit trail data from system changes and activities
   useEffect(() => {
