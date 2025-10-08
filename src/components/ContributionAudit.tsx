@@ -18,9 +18,11 @@ import {
   CheckCircle,
   User,
   DollarSign,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
+import { ReportGenerator, ContributionReportData } from "@/utils/reportGenerator";
 
 interface Contribution {
   id: string;
@@ -65,10 +67,71 @@ export const ContributionAudit = () => {
     lastContributionDate: ""
   });
   const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState<string>("");
 
   useEffect(() => {
     fetchContributions();
   }, [statusFilter, typeFilter, dateFrom, dateTo]);
+
+  const exportToExcel = async () => {
+    try {
+      setExportLoading("excel");
+      
+      const reportData: ContributionReportData[] = filteredContributions.map(c => ({
+        id: c.id,
+        member_id: c.member_id,
+        member_name: c.member ? `${c.member.first_name} ${c.member.last_name}` : 'Unknown Member',
+        tns_number: c.member?.tns_number,
+        amount: Number(c.amount),
+        contribution_date: c.contribution_date,
+        contribution_type: c.contribution_type,
+        status: c.status
+      }));
+
+      const workbook = ReportGenerator.generateContributionsExcel(reportData, {
+        startDate: dateFrom,
+        endDate: dateTo
+      });
+
+      ReportGenerator.downloadExcel(workbook, 'contributions_audit_report');
+      toast.success('Excel report generated successfully!');
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error('Failed to generate Excel report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      setExportLoading("pdf");
+      
+      const reportData: ContributionReportData[] = filteredContributions.map(c => ({
+        id: c.id,
+        member_id: c.member_id,
+        member_name: c.member ? `${c.member.first_name} ${c.member.last_name}` : 'Unknown Member',
+        tns_number: c.member?.tns_number,
+        amount: Number(c.amount),
+        contribution_date: c.contribution_date,
+        contribution_type: c.contribution_type,
+        status: c.status
+      }));
+
+      const pdf = ReportGenerator.generateContributionsPDF(reportData, {
+        startDate: dateFrom,
+        endDate: dateTo
+      });
+
+      ReportGenerator.downloadPDF(pdf, 'contributions_audit_report');
+      toast.success('PDF report generated successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF report');
+    } finally {
+      setExportLoading("");
+    }
+  };
 
   const fetchContributions = async () => {
     try {
@@ -281,10 +344,38 @@ export const ContributionAudit = () => {
           <h2 className="text-2xl font-bold">Contribution Audit</h2>
           <p className="text-muted-foreground">Detailed analysis and verification of member contributions</p>
         </div>
-        <Button onClick={exportContributions} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export Report
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={exportToExcel} 
+            className="flex items-center gap-2" 
+            variant="outline"
+            disabled={exportLoading === "excel"}
+          >
+            {exportLoading === "excel" ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4" />
+            )}
+            Export Excel
+          </Button>
+          <Button 
+            onClick={exportToPDF} 
+            className="flex items-center gap-2" 
+            variant="outline"
+            disabled={exportLoading === "pdf"}
+          >
+            {exportLoading === "pdf" ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+            Export PDF
+          </Button>
+          <Button onClick={exportContributions} className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
