@@ -241,7 +241,7 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
       // Update disbursement record with document URL
       const { error: updateError } = await supabase
         .from('disbursements')
-        .update({ bereavement_form_url: publicUrl })
+        .update({ bereavement_form_url: publicUrl } as any)
         .eq('id', disbursementId);
 
       if (updateError) throw updateError;

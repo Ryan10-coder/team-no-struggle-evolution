@@ -294,10 +294,10 @@ export class ReportGenerator {
     worksheetData.push(
       [],
       ['SUMMARY'],
-      ['Total Audit Records:', data.length],
-      ['Unique Actions:', uniqueActions.size],
-      ['Tables Affected:', uniqueTables.size],
-      ['Active Users:', uniqueUsers.size]
+      ['Total Audit Records:', data.length.toString()],
+      ['Unique Actions:', uniqueActions.size.toString()],
+      ['Tables Affected:', uniqueTables.size.toString()],
+      ['Active Users:', uniqueUsers.size.toString()]
     );
     
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
