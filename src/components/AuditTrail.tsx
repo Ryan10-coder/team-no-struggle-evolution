@@ -570,7 +570,7 @@ export const AuditTrail = () => {
                             {format(new Date(log.timestamp), 'MMM dd, HH:mm:ss')}
                           </TableCell>
                           <TableCell>
-                            <div>
+                            <div> 
                               <p className="font-medium">{log.user_name}</p>
                               <p className="text-sm text-muted-foreground">{log.user_role}</p>
                             </div>
