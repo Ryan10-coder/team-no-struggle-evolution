@@ -442,7 +442,7 @@ export const DisbursementAudit = () => {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </Table> 
               </div>
               
               {filteredDisbursements.length === 0 && (
