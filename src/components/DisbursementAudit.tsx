@@ -9,8 +9,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Search, Filter, AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Download, Search, Filter, AlertTriangle, CheckCircle, XCircle, Clock, FileSpreadsheet, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { ReportGenerator, DisbursementReportData } from "@/utils/reportGenerator";
+import { toast } from "sonner";
 
 interface Disbursement {
   id: string;
@@ -40,6 +42,9 @@ export const DisbursementAudit = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [urgencyFilter, setUrgencyFilter] = useState("all");
   const [selectedTab, setSelectedTab] = useState("all");
+  const [exportLoading, setExportLoading] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   // Fetch real data from Supabase
   useEffect(() => {
@@ -186,6 +191,66 @@ export const DisbursementAudit = () => {
       disbursedAmount: disbursements.filter(d => d.status === 'disbursed').reduce((sum, d) => sum + d.amount, 0)
     };
     return stats;
+  };
+
+  const exportToExcel = async () => {
+    try {
+      setExportLoading("excel");
+      
+      const reportData: DisbursementReportData[] = filteredDisbursements.map(d => ({
+        id: d.id,
+        member_id: d.member_id,
+        member_name: d.member_name,
+        tns_number: d.member?.tns_number,
+        amount: d.amount,
+        disbursement_date: d.disbursement_date,
+        reason: d.reason,
+        status: d.status
+      }));
+
+      const workbook = ReportGenerator.generateDisbursementsExcel(reportData, {
+        startDate: dateFrom,
+        endDate: dateTo
+      });
+
+      ReportGenerator.downloadExcel(workbook, 'disbursements_audit_report');
+      toast.success('Excel report generated successfully!');
+    } catch (error) {
+      console.error('Excel export error:', error);
+      toast.error('Failed to generate Excel report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      setExportLoading("pdf");
+      
+      const reportData: DisbursementReportData[] = filteredDisbursements.map(d => ({
+        id: d.id,
+        member_id: d.member_id,
+        member_name: d.member_name,
+        tns_number: d.member?.tns_number,
+        amount: d.amount,
+        disbursement_date: d.disbursement_date,
+        reason: d.reason,
+        status: d.status
+      }));
+
+      const pdf = ReportGenerator.generateDisbursementsPDF(reportData, {
+        startDate: dateFrom,
+        endDate: dateTo
+      });
+
+      ReportGenerator.downloadPDF(pdf, 'disbursements_audit_report');
+      toast.success('PDF report generated successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF report');
+    } finally {
+      setExportLoading("");
+    }
   };
 
   const exportToCSV = () => {
