@@ -85,26 +85,59 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
     setIsLoading(true);
     
     try {
-      // Call secure edge function to bypass RLS safely
-      const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/record-transaction", {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
-          'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
-        },
-        body: JSON.stringify({
-          action: 'manual_payment',
-          memberId: selectedMember,
-          amount: parseFloat(amount),
-          paymentType,
-          paymentDate,
-          referenceNumber
-        })
+      console.log('Recording manual payment:', {
+        memberId: selectedMember,
+        amount: parseFloat(amount),
+        paymentType,
+        paymentDate,
+        referenceNumber
       });
 
-      if (!response.ok) {
-        // Fallback to direct insert if function is not deployed or errors
+      let edgeFunctionSuccess = false;
+      
+      // Try edge function first (with timeout)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/record-transaction", {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
+            'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
+          },
+          body: JSON.stringify({
+            action: 'manual_payment',
+            memberId: selectedMember,
+            amount: parseFloat(amount),
+            paymentType,
+            paymentDate,
+            referenceNumber
+          })
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            edgeFunctionSuccess = true;
+            console.log('Edge function succeeded');
+          }
+        } else {
+          console.log('Edge function returned error status:', response.status);
+        }
+      } catch (edgeError) {
+        console.log('Edge function failed, using fallback:', edgeError.message);
+        // Continue to fallback logic
+      }
+      
+      if (!edgeFunctionSuccess) {
+        console.log('Using direct database fallback');
+        
+        // Fallback: Direct database insert
         const { error: contributionError } = await supabase
           .from('contributions')
           .insert({
@@ -114,31 +147,46 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
             contribution_type: paymentType,
             status: 'confirmed'
           });
+          
         if (contributionError) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(err?.error || contributionError.message || 'Failed to record payment');
+          throw new Error(`Failed to record contribution: ${contributionError.message}`);
         }
-        // Best-effort MPESA audit
-        // Fetch member snapshot
-        const { data: memberData } = await supabase
-          .from('membership_registrations')
-          .select('id, first_name, last_name, email, phone, tns_number, profile_picture_url, registration_status, payment_status, address, city, state, zip_code, id_number, emergency_contact_name, emergency_contact_phone, sex, marital_status')
-          .eq('id', selectedMember)
-          .single();
+        
+        console.log('Contribution recorded successfully');
+        
+        // Best-effort MPESA audit record
+        try {
+          // Fetch member snapshot
+          const { data: memberData } = await supabase
+            .from('membership_registrations')
+            .select('id, first_name, last_name, email, phone, tns_number, profile_picture_url, registration_status, payment_status, address, city, state, zip_code, id_number, emergency_contact_name, emergency_contact_phone, sex, marital_status')
+            .eq('id', selectedMember)
+            .single();
 
-        await supabase
-          .from('mpesa_payments')
-          .insert({
-            member_id: selectedMember,
-            amount: parseFloat(amount),
-            phone_number: 'Manual Entry',
-            mpesa_receipt_number: referenceNumber || 'Manual Entry',
-            status: 'completed',
-            result_code: '0',
-            result_desc: 'Manual payment entry',
-            transaction_date: new Date(paymentDate).toISOString(),
-            member_snapshot: memberData ? memberData : null
-          });
+          const { error: mpesaError } = await supabase
+            .from('mpesa_payments')
+            .insert({
+              member_id: selectedMember,
+              amount: parseFloat(amount),
+              phone_number: 'Manual Entry',
+              mpesa_receipt_number: referenceNumber || 'Manual Entry',
+              status: 'completed',
+              result_code: '0',
+              result_desc: 'Manual payment entry (fallback)',
+              transaction_date: new Date(paymentDate).toISOString(),
+              member_snapshot: memberData || null
+            });
+            
+          if (mpesaError) {
+            console.warn('MPESA audit record failed:', mpesaError.message);
+            // Don't throw - this is non-critical
+          } else {
+            console.log('MPESA audit record created successfully');
+          }
+        } catch (auditError) {
+          console.warn('MPESA audit failed:', auditError.message);
+          // Don't throw - audit is non-critical
+        }
       }
 
       toast.success("Payment recorded successfully!");
@@ -153,8 +201,21 @@ export const ManualPaymentEntry = ({ onSuccess }: { onSuccess?: () => void }) =>
       if (onSuccess) onSuccess();
     } catch (error: any) {
       console.error('Payment entry error:', error);
-      toast.error("Failed to record payment", {
-        description: typeof error?.message === 'string' ? error.message : undefined,
+      let errorMessage = "Failed to record payment";
+      
+      if (error.message) {
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = "Network error - please check your connection and try again";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "Request timed out - please try again";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage, {
+        description: "If the problem persists, please contact support",
+        duration: 6000
       });
     } finally {
       setIsLoading(false);
