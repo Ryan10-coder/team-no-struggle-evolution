@@ -294,10 +294,10 @@ export class ReportGenerator {
     worksheetData.push(
       [],
       ['SUMMARY'],
-      ['Total Audit Records:', data.length.toString()],
-      ['Unique Actions:', uniqueActions.size.toString()],
-      ['Tables Affected:', uniqueTables.size.toString()],
-      ['Active Users:', uniqueUsers.size.toString()]
+      ['Total Audit Records:', data.length],
+      ['Unique Actions:', uniqueActions.size],
+      ['Tables Affected:', uniqueTables.size],
+      ['Active Users:', uniqueUsers.size]
     );
     
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -551,5 +551,502 @@ export class ReportGenerator {
   // Download PDF file
   static downloadPDF(doc: jsPDF, filename: string) {
     doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  }
+
+  // Comprehensive Financial Summary Report
+  static generateFinancialSummaryPDF(data: {
+    contributions: ContributionReportData[];
+    disbursements: DisbursementReportData[];
+    balances: BalanceReportData[];
+    expenses: ExpenseReportData[];
+    period: { startDate?: string; endDate?: string };
+  }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('COMPREHENSIVE FINANCIAL SUMMARY REPORT', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 8;
+    
+    if (data.period.startDate || data.period.endDate) {
+      doc.text(`Period: ${data.period.startDate || 'All'} to ${data.period.endDate || 'All'}`, 105, yPosition, { align: 'center' });
+      yPosition += 15;
+    }
+
+    // Executive Summary
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('EXECUTIVE SUMMARY', 10, yPosition);
+    yPosition += 10;
+    
+    const totalContributions = data.contributions.reduce((sum, c) => sum + c.amount, 0);
+    const totalDisbursements = data.disbursements.reduce((sum, d) => sum + d.amount, 0);
+    const totalExpenses = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+    const netPosition = totalContributions - totalDisbursements - totalExpenses;
+    const totalBalance = data.balances.reduce((sum, b) => sum + b.current_balance, 0);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Total Contributions: KES ${totalContributions.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Disbursements: KES ${totalDisbursements.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Expenses: KES ${totalExpenses.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Net Financial Position: KES ${netPosition.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Member Balances: KES ${totalBalance.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Active Members: ${new Set(data.contributions.map(c => c.member_id)).size}`, 15, yPosition);
+    yPosition += 15;
+
+    // Financial Health Indicators
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('FINANCIAL HEALTH INDICATORS', 10, yPosition);
+    yPosition += 8;
+    
+    const disbursementRatio = totalContributions > 0 ? (totalDisbursements / totalContributions * 100) : 0;
+    const expenseRatio = totalContributions > 0 ? (totalExpenses / totalContributions * 100) : 0;
+    const participationRate = data.balances.length > 0 ? (new Set(data.contributions.map(c => c.member_id)).size / data.balances.length * 100) : 0;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Disbursement Ratio: ${disbursementRatio.toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Expense Ratio: ${expenseRatio.toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Member Participation Rate: ${participationRate.toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    
+    const negativeBalances = data.balances.filter(b => b.current_balance < 0).length;
+    doc.text(`• Members with Negative Balances: ${negativeBalances}`, 15, yPosition);
+    yPosition += 15;
+
+    // Risk Assessment
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('RISK ASSESSMENT', 10, yPosition);
+    yPosition += 8;
+    
+    let riskScore = 100;
+    if (disbursementRatio > 80) riskScore -= 20;
+    if (expenseRatio > 10) riskScore -= 15;
+    if (negativeBalances > data.balances.length * 0.1) riskScore -= 25;
+    if (participationRate < 70) riskScore -= 20;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Overall Risk Score: ${riskScore}/100`, 15, yPosition);
+    yPosition += 6;
+    
+    let riskLevel = 'Low';
+    if (riskScore < 50) riskLevel = 'High';
+    else if (riskScore < 70) riskLevel = 'Medium';
+    
+    doc.text(`• Risk Level: ${riskLevel}`, 15, yPosition);
+    yPosition += 15;
+
+    // Recommendations
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('RECOMMENDATIONS', 10, yPosition);
+    yPosition += 8;
+    
+    const recommendations = [];
+    if (disbursementRatio > 80) recommendations.push('Monitor high disbursement ratio');
+    if (expenseRatio > 10) recommendations.push('Review and optimize expenses');
+    if (negativeBalances > 0) recommendations.push('Address negative member balances');
+    if (participationRate < 80) recommendations.push('Improve member participation');
+    if (recommendations.length === 0) recommendations.push('Continue current practices');
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    recommendations.forEach(rec => {
+      doc.text(`• ${rec}`, 15, yPosition);
+      yPosition += 6;
+    });
+
+    return doc;
+  }
+
+  // Member Activity Report
+  static generateMemberActivityPDF(data: {
+    contributions: ContributionReportData[];
+    disbursements: DisbursementReportData[];
+    balances: BalanceReportData[];
+    period: { startDate?: string; endDate?: string };
+  }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('MEMBER ACTIVITY REPORT', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Member Statistics
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('MEMBER STATISTICS', 10, yPosition);
+    yPosition += 10;
+    
+    const activeMembers = new Set(data.contributions.map(c => c.member_id)).size;
+    const totalMembers = data.balances.length;
+    const avgContribution = data.contributions.length > 0 ? data.contributions.reduce((sum, c) => sum + c.amount, 0) / data.contributions.length : 0;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Total Registered Members: ${totalMembers}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Active Contributors: ${activeMembers}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Participation Rate: ${totalMembers > 0 ? (activeMembers / totalMembers * 100).toFixed(1) : 0}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Average Contribution per Transaction: KES ${avgContribution.toFixed(0)}`, 15, yPosition);
+    yPosition += 15;
+
+    // Activity Analysis
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('ACTIVITY ANALYSIS', 10, yPosition);
+    yPosition += 8;
+    
+    const contributorActivity = new Map();
+    data.contributions.forEach(c => {
+      const key = c.member_name;
+      if (!contributorActivity.has(key)) {
+        contributorActivity.set(key, { contributions: 0, amount: 0 });
+      }
+      const current = contributorActivity.get(key);
+      contributorActivity.set(key, {
+        contributions: current.contributions + 1,
+        amount: current.amount + c.amount
+      });
+    });
+    
+    const topContributors = Array.from(contributorActivity.entries())
+      .sort((a, b) => b[1].amount - a[1].amount)
+      .slice(0, 5);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Top 5 Contributors by Amount:', 15, yPosition);
+    yPosition += 6;
+    
+    topContributors.forEach(([name, stats], index) => {
+      doc.text(`${index + 1}. ${name}: KES ${stats.amount.toLocaleString()} (${stats.contributions} transactions)`, 20, yPosition);
+      yPosition += 5;
+    });
+
+    return doc;
+  }
+
+  // Compliance Audit Report
+  static generateCompliancePDF(data: {
+    contributions: ContributionReportData[];
+    disbursements: DisbursementReportData[];
+    auditTrail: AuditTrailData[];
+    period: { startDate?: string; endDate?: string };
+  }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('COMPLIANCE AUDIT REPORT', 105, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Compliance Checklist
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('COMPLIANCE ASSESSMENT', 10, yPosition);
+    yPosition += 10;
+    
+    const confirmedContributions = data.contributions.filter(c => c.status === 'confirmed').length;
+    const approvedDisbursements = data.disbursements.filter(d => d.status === 'approved').length;
+    
+    const complianceScore = (
+      (confirmedContributions / data.contributions.length * 25) +
+      (approvedDisbursements / data.disbursements.length * 25) +
+      (data.auditTrail.length > 0 ? 25 : 0) +
+      25 // Base compliance score
+    );
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Overall Compliance Score: ${complianceScore.toFixed(0)}/100`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Confirmed Contributions: ${confirmedContributions}/${data.contributions.length}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Approved Disbursements: ${approvedDisbursements}/${data.disbursements.length}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Audit Trail Records: ${data.auditTrail.length}`, 15, yPosition);
+    yPosition += 15;
+
+    // Risk Factors
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('IDENTIFIED RISKS', 10, yPosition);
+    yPosition += 8;
+    
+    const pendingContributions = data.contributions.filter(c => c.status === 'pending').length;
+    const pendingDisbursements = data.disbursements.filter(d => d.status === 'pending').length;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    
+    if (pendingContributions > 0) {
+      doc.text(`• ${pendingContributions} pending contributions require attention`, 15, yPosition);
+      yPosition += 6;
+    }
+    
+    if (pendingDisbursements > 0) {
+      doc.text(`• ${pendingDisbursements} pending disbursements require approval`, 15, yPosition);
+      yPosition += 6;
+    }
+    
+    if (pendingContributions === 0 && pendingDisbursements === 0) {
+      doc.text('• No immediate compliance risks identified', 15, yPosition);
+      yPosition += 6;
+    }
+
+    return doc;
+  }
+
+  // Risk Assessment Report
+  static generateRiskAssessmentPDF(data: {
+    contributions: ContributionReportData[];
+    disbursements: DisbursementReportData[];
+    balances: BalanceReportData[];
+    expenses: ExpenseReportData[];
+    period: { startDate?: string; endDate?: string };
+  }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('RISK ASSESSMENT REPORT', 105, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Risk Analysis
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('RISK ANALYSIS', 10, yPosition);
+    yPosition += 10;
+    
+    const totalContributions = data.contributions.reduce((sum, c) => sum + c.amount, 0);
+    const totalDisbursements = data.disbursements.reduce((sum, d) => sum + d.amount, 0);
+    const totalExpenses = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+    const negativeBalances = data.balances.filter(b => b.current_balance < 0);
+    
+    // Calculate risk factors
+    const riskFactors = {
+      financialRatio: totalContributions > 0 ? (totalDisbursements + totalExpenses) / totalContributions : 0,
+      negativeBalanceRatio: data.balances.length > 0 ? negativeBalances.length / data.balances.length : 0,
+      largeTransactions: data.disbursements.filter(d => d.amount > 50000).length,
+      pendingItems: data.contributions.filter(c => c.status === 'pending').length + data.disbursements.filter(d => d.status === 'pending').length
+    };
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Financial Outflow Ratio: ${(riskFactors.financialRatio * 100).toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Negative Balance Rate: ${(riskFactors.negativeBalanceRatio * 100).toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Large Transactions (>50k): ${riskFactors.largeTransactions}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Pending Items: ${riskFactors.pendingItems}`, 15, yPosition);
+    yPosition += 15;
+
+    // Risk Score Calculation
+    let riskScore = 0;
+    if (riskFactors.financialRatio > 0.9) riskScore += 30;
+    else if (riskFactors.financialRatio > 0.7) riskScore += 15;
+    
+    if (riskFactors.negativeBalanceRatio > 0.2) riskScore += 25;
+    else if (riskFactors.negativeBalanceRatio > 0.1) riskScore += 10;
+    
+    if (riskFactors.largeTransactions > 5) riskScore += 20;
+    if (riskFactors.pendingItems > 10) riskScore += 15;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('RISK LEVEL ASSESSMENT', 10, yPosition);
+    yPosition += 8;
+    
+    let riskLevel = 'Low';
+    let riskColor = 'Green';
+    if (riskScore > 60) {
+      riskLevel = 'High';
+      riskColor = 'Red';
+    } else if (riskScore > 30) {
+      riskLevel = 'Medium';
+      riskColor = 'Yellow';
+    }
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Risk Score: ${riskScore}/100`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Risk Level: ${riskLevel} (${riskColor})`, 15, yPosition);
+    yPosition += 15;
+
+    // Recommendations
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('RISK MITIGATION RECOMMENDATIONS', 10, yPosition);
+    yPosition += 8;
+    
+    const recommendations = [];
+    if (riskFactors.financialRatio > 0.8) recommendations.push('Monitor cash flow closely');
+    if (riskFactors.negativeBalanceRatio > 0.1) recommendations.push('Address negative member balances');
+    if (riskFactors.largeTransactions > 3) recommendations.push('Review large transaction approvals');
+    if (riskFactors.pendingItems > 5) recommendations.push('Clear pending items promptly');
+    if (recommendations.length === 0) recommendations.push('Continue monitoring current risk levels');
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    recommendations.forEach(rec => {
+      doc.text(`• ${rec}`, 15, yPosition);
+      yPosition += 6;
+    });
+
+    return doc;
+  }
+
+  // Treasury Summary Report
+  static generateTreasurySummaryPDF(data: {
+    contributions: ContributionReportData[];
+    disbursements: DisbursementReportData[];
+    balances: BalanceReportData[];
+    expenses: ExpenseReportData[];
+    period: { startDate?: string; endDate?: string };
+  }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('TREASURY SUMMARY REPORT', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Prepared for: Treasurer Review`, 105, yPosition, { align: 'center' });
+    yPosition += 5;
+    doc.text(`Generated on: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Financial Summary
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('FINANCIAL POSITION', 10, yPosition);
+    yPosition += 10;
+    
+    const totalContributions = data.contributions.reduce((sum, c) => sum + c.amount, 0);
+    const totalDisbursements = data.disbursements.reduce((sum, d) => sum + d.amount, 0);
+    const totalExpenses = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+    const netCashFlow = totalContributions - totalDisbursements - totalExpenses;
+    const totalMemberBalances = data.balances.reduce((sum, b) => sum + b.current_balance, 0);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Total Contributions Received: KES ${totalContributions.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Disbursements Made: KES ${totalDisbursements.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Operating Expenses: KES ${totalExpenses.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Net Cash Flow: KES ${netCashFlow.toLocaleString()}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Total Member Account Balances: KES ${totalMemberBalances.toLocaleString()}`, 15, yPosition);
+    yPosition += 15;
+
+    // Key Performance Indicators
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('KEY PERFORMANCE INDICATORS', 10, yPosition);
+    yPosition += 8;
+    
+    const activeMembers = new Set(data.contributions.map(c => c.member_id)).size;
+    const avgContribution = activeMembers > 0 ? totalContributions / activeMembers : 0;
+    const expenseRatio = totalContributions > 0 ? (totalExpenses / totalContributions * 100) : 0;
+    const liquidityRatio = totalMemberBalances > 0 ? (netCashFlow / totalMemberBalances * 100) : 0;
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`• Active Contributing Members: ${activeMembers}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Average Contribution per Member: KES ${avgContribution.toFixed(0)}`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Operating Expense Ratio: ${expenseRatio.toFixed(1)}%`, 15, yPosition);
+    yPosition += 6;
+    doc.text(`• Liquidity Ratio: ${liquidityRatio.toFixed(1)}%`, 15, yPosition);
+    yPosition += 15;
+
+    // Treasury Recommendations
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('TREASURER RECOMMENDATIONS', 10, yPosition);
+    yPosition += 8;
+    
+    const recommendations = [];
+    if (netCashFlow < 0) recommendations.push('Address negative cash flow situation');
+    if (expenseRatio > 15) recommendations.push('Review and optimize operating expenses');
+    if (liquidityRatio < 20) recommendations.push('Improve liquidity position');
+    if (activeMembers < data.balances.length * 0.8) recommendations.push('Encourage member participation');
+    if (recommendations.length === 0) recommendations.push('Maintain current financial management practices');
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    recommendations.forEach(rec => {
+      doc.text(`• ${rec}`, 15, yPosition);
+      yPosition += 6;
+    });
+    
+    yPosition += 10;
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(9);
+    doc.text('This report is confidential and intended for treasury use only.', 105, yPosition, { align: 'center' });
+
+    return doc;
   }
 }
