@@ -34,6 +34,17 @@ interface DisbursementRecord {
   created_at: string;
 }
 
+interface DocumentRecord {
+  id: string;
+  disbursement_id: string;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  file_data: string;
+  uploaded_by: string;
+  uploaded_at: string;
+}
+
 export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState("");
@@ -47,6 +58,8 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
   const [disbursements, setDisbursements] = useState<DisbursementRecord[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedDisbursementId, setSelectedDisbursementId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [documents, setDocuments] = useState<Record<string, DocumentRecord>>({});
 
   // Bereavement form fields
   const [deceasedName, setDeceasedName] = useState("");
@@ -93,6 +106,31 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
 
       if (error) throw error;
       setDisbursements(data || []);
+      
+      // Fetch associated documents
+      if (data && data.length > 0) {
+        const disbursementIds = data.map(d => d.id);
+        const { data: docsData, error: docsError } = await supabase
+          .from("disbursement_documents")
+          .select("*")
+          .in("disbursement_id", disbursementIds);
+        
+        if (docsError) {
+          if (docsError.message?.includes('does not exist') || docsError.message?.includes('schema cache')) {
+            console.warn('Document storage table not found. Document features will be limited.');
+            // Set empty documents map but don't show error to user
+            setDocuments({});
+          } else {
+            console.error('Error fetching documents:', docsError);
+          }
+        } else if (docsData) {
+          const docsMap: Record<string, DocumentRecord> = {};
+          docsData.forEach(doc => {
+            docsMap[doc.disbursement_id] = doc;
+          });
+          setDocuments(docsMap);
+        }
+      }
     } catch (error) {
       console.error("Error fetching disbursements:", error);
     }
@@ -225,34 +263,185 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
       return;
     }
 
+    // File size validation (5MB limit for database storage)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes (reduced for database storage)
+    if (uploadedFile.size > maxSize) {
+      toast.error("File size must be less than 5MB for database storage");
+      return;
+    }
+
+    // File type validation
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(uploadedFile.type)) {
+      toast.error("Please upload a valid file type (PDF, DOC, DOCX, JPG, PNG)");
+      return;
+    }
+
+    setIsUploading(true);
     try {
-      const fileName = `disbursement_${disbursementId}_${Date.now()}_${uploadedFile.name}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('disbursement-documents')
-        .upload(fileName, uploadedFile);
+      console.log('Starting file upload to database...', {
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size,
+        fileType: uploadedFile.type,
+        disbursementId
+      });
 
-      if (uploadError) throw uploadError;
+      // Convert file to base64
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            // Remove the data:mime;base64, prefix
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+          } else {
+            reject(new Error('Failed to convert file to base64'));
+          }
+        };
+        reader.onerror = () => reject(new Error('File reading failed'));
+        reader.readAsDataURL(uploadedFile);
+      });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('disbursement-documents')
-        .getPublicUrl(fileName);
+      console.log('File converted to base64, length:', fileBase64.length);
 
-      // Update disbursement record with document URL
-      const { error: updateError } = await supabase
+      // Check if a document already exists for this disbursement
+      const { data: existingDocs, error: checkError } = await supabase
+        .from('disbursement_documents')
+        .select('id')
+        .eq('disbursement_id', disbursementId);
+
+      if (checkError) {
+        console.error('Error checking existing documents:', checkError);
+        if (checkError.message?.includes('does not exist') || checkError.message?.includes('schema cache')) {
+          throw new Error('Database table not found. Please contact your administrator to set up the document storage table.');
+        }
+        throw checkError;
+      }
+
+      const staffInfo = localStorage.getItem('staff_user');
+      const staffUser = staffInfo ? JSON.parse(staffInfo) : null;
+      const uploadedBy = staffUser ? `${staffUser.first_name} ${staffUser.last_name} (${staffUser.staff_role})` : 'Unknown';
+
+      if (existingDocs && existingDocs.length > 0) {
+        // Update existing document
+        console.log('Updating existing document...');
+        const { error: updateError } = await supabase
+          .from('disbursement_documents')
+          .update({
+            filename: uploadedFile.name,
+            file_type: uploadedFile.type,
+            file_size: uploadedFile.size,
+            file_data: fileBase64,
+            uploaded_by: uploadedBy,
+            uploaded_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('disbursement_id', disbursementId);
+
+        if (updateError) {
+          console.error('Error updating document:', updateError);
+          throw updateError;
+        }
+      } else {
+        // Insert new document
+        console.log('Inserting new document...');
+        const { error: insertError } = await supabase
+          .from('disbursement_documents')
+          .insert({
+            disbursement_id: disbursementId,
+            filename: uploadedFile.name,
+            file_type: uploadedFile.type,
+            file_size: uploadedFile.size,
+            file_data: fileBase64,
+            uploaded_by: uploadedBy
+          });
+
+        if (insertError) {
+          console.error('Error inserting document:', insertError);
+          throw insertError;
+        }
+      }
+
+      // Update disbursement record to indicate a document has been uploaded
+      const { error: disbursementUpdateError } = await supabase
         .from('disbursements')
-        .update({ bereavement_form_url: publicUrl } as any)
+        .update({ bereavement_form_url: 'database_stored' })
         .eq('id', disbursementId);
 
-      if (updateError) throw updateError;
+      if (disbursementUpdateError) {
+        console.error('Error updating disbursement:', disbursementUpdateError);
+        // Don't throw error here as the document was uploaded successfully
+      }
 
+      console.log('Document uploaded successfully to database');
       toast.success("Document uploaded successfully!");
       setIsUploadModalOpen(false);
       setUploadedFile(null);
-      fetchDisbursements();
-    } catch (error) {
+      await fetchDisbursements(); // Refresh the list
+    } catch (error: any) {
       console.error("Error uploading document:", error);
-      toast.error("Failed to upload document");
+      
+      let errorMessage = "Failed to upload document";
+      if (error.message?.includes('Database table not found')) {
+        errorMessage = "Document storage not set up. Please ask your administrator to run the database setup script.";
+      } else if (error.message?.includes('File reading failed')) {
+        errorMessage = "Could not read the file. Please try again.";
+      } else if (error.message?.includes('base64')) {
+        errorMessage = "File conversion failed. Please try a different file.";
+      } else if (error.message?.includes('permission')) {
+        errorMessage = "Permission denied. Please check your access rights.";
+      } else if (error.message?.includes('size')) {
+        errorMessage = "File is too large. Please upload a file smaller than 5MB.";
+      } else if (error.message?.includes('type')) {
+        errorMessage = "Unsupported file type. Please upload PDF, DOC, DOCX, JPG, or PNG files.";
+      } else if (error.message?.includes('does not exist') || error.message?.includes('schema cache')) {
+        errorMessage = "Document storage table not found. Please contact your administrator.";
+      } else if (error.message) {
+        errorMessage = `Upload failed: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const viewDatabaseDocument = (disbursementId: string) => {
+    const doc = documents[disbursementId];
+    if (!doc) {
+      toast.error("Document not found");
+      return;
+    }
+
+    try {
+      // Convert base64 back to blob
+      const byteCharacters = atob(doc.file_data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: doc.file_type });
+      
+      // Create download URL and open in new tab
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.filename;
+      
+      // For PDFs and images, open in new tab; for others, download
+      if (doc.file_type === 'application/pdf' || doc.file_type.startsWith('image/')) {
+        window.open(url, '_blank');
+      } else {
+        link.click();
+      }
+      
+      // Clean up
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      toast.success("Document opened successfully");
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      toast.error("Failed to open document");
     }
   };
 
@@ -490,35 +679,71 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
-                              {disbursement.bereavement_form_url ? (
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                  <span className="text-sm text-green-600">Document uploaded</span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => window.open(disbursement.bereavement_form_url, '_blank')}
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    View
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2">
-                                  <AlertCircle className="h-4 w-4 text-orange-500" />
-                                  <span className="text-sm text-orange-600">No document</span>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedDisbursementId(disbursement.id);
-                                      setIsUploadModalOpen(true);
-                                    }}
-                                  >
-                                    <Upload className="h-4 w-4 mr-1" />
-                                    Upload
-                                  </Button>
-                                </div>
-                              )}
+                              {(() => {
+                                const hasDoc = documents[disbursement.id] || (disbursement.bereavement_form_url && disbursement.bereavement_form_url !== 'database_stored');
+                                const databaseDoc = documents[disbursement.id];
+                                
+                                if (hasDoc) {
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-600" />
+                                      <div className="flex flex-col">
+                                        <span className="text-sm text-green-600">Document uploaded</span>
+                                        {databaseDoc && (
+                                          <span className="text-xs text-gray-500">
+                                            {databaseDoc.filename} • {(databaseDoc.file_size / 1024 / 1024).toFixed(2)} MB
+                                          </span>
+                                        )}
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          if (databaseDoc) {
+                                            viewDatabaseDocument(disbursement.id);
+                                          } else if (disbursement.bereavement_form_url) {
+                                            window.open(disbursement.bereavement_form_url, '_blank');
+                                          }
+                                        }}
+                                      >
+                                        <FileText className="h-4 w-4 mr-1" />
+                                        View
+                                      </Button>
+                                      {databaseDoc && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => {
+                                            setSelectedDisbursementId(disbursement.id);
+                                            setIsUploadModalOpen(true);
+                                          }}
+                                          title="Replace document"
+                                        >
+                                          <Upload className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                                      <span className="text-sm text-orange-600">No document</span>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          setSelectedDisbursementId(disbursement.id);
+                                          setIsUploadModalOpen(true);
+                                        }}
+                                      >
+                                        <Upload className="h-4 w-4 mr-1" />
+                                        Upload
+                                      </Button>
+                                    </div>
+                                  );
+                                }
+                              })()
+                              }
                             </div>
                           </div>
                         </div>
@@ -549,28 +774,52 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
                 type="file"
                 accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                 onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                disabled={isUploading}
               />
               <p className="text-xs text-muted-foreground">
-                Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 5MB)
               </p>
+              {uploadedFile && (
+                <div className="text-sm text-green-600 bg-green-50 p-2 rounded">
+                  Selected: {uploadedFile.name} ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </div>
+              )}
+              {isUploading && (
+                <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading document... Please wait.
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
-                setIsUploadModalOpen(false);
-                setUploadedFile(null);
+                if (!isUploading) {
+                  setIsUploadModalOpen(false);
+                  setUploadedFile(null);
+                }
               }}
+              disabled={isUploading}
             >
               Cancel
             </Button>
             <Button
               onClick={() => selectedDisbursementId && handleFileUpload(selectedDisbursementId)}
-              disabled={!uploadedFile}
+              disabled={!uploadedFile || isUploading}
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Document
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
