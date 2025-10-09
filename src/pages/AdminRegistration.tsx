@@ -25,12 +25,12 @@ const AdminRegistration = () => {
   const roles = [
     { value: 'Advisory Committee', label: 'Advisory Committee' },
     { value: 'General Coordinator', label: 'General Coordinator' },
-    { value: 'Area Coordinator', label: 'Area Coordinator' },
-    { value: 'Secretary', label: 'Secretary' },
+    { value: 'Area Coordinator', label: '☑️ Area Coordinator' },
+    { value: 'Secretary', label: '☑️ Secretary' },
     { value: 'Customer Service', label: 'Customer Service Personnel' },
     { value: 'Organizing Secretary', label: 'Organizing Secretary' },
-    { value: 'Treasurer', label: 'Treasurer' },
-    { value: 'Auditor', label: 'Auditor' },
+    { value: 'Treasurer', label: '☑️ Treasurer' },
+    { value: 'Auditor', label: '☑️ Auditor' },
   ];
 
   const handleInputChange = (field: string, value: string) => {
