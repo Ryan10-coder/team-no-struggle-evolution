@@ -878,6 +878,116 @@ export class ReportGenerator {
     return doc;
   }
 
+  // Audit Trail PDF
+  static generateAuditTrailPDF(data: AuditTrailData[], filters?: { startDate?: string; endDate?: string; action?: string }) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('Audit Trail Report', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    if (filters?.startDate || filters?.endDate) {
+      doc.text(`Period: ${filters?.startDate || 'Start'} to ${filters?.endDate || 'Present'}`, 105, yPosition, { align: 'center' });
+      yPosition += 10;
+    }
+    
+    // Summary Statistics
+    const uniqueActions = new Set(data.map(item => item.action));
+    const uniqueTables = new Set(data.map(item => item.table_name));
+    const uniqueUsers = new Set(data.map(item => item.user_email).filter(Boolean));
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Audit Records: ${data.length}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Unique Actions: ${uniqueActions.size}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Tables Affected: ${uniqueTables.size}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Active Users: ${uniqueUsers.size}`, 14, yPosition);
+    yPosition += 12;
+    
+    // Action Breakdown
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Action Breakdown', 14, yPosition);
+    yPosition += 8;
+    
+    const actionCounts: Record<string, number> = {};
+    data.forEach(item => {
+      actionCounts[item.action] = (actionCounts[item.action] || 0) + 1;
+    });
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    Object.entries(actionCounts).slice(0, 5).forEach(([action, count]) => {
+      doc.text(`${action}: ${count} actions`, 14, yPosition);
+      yPosition += 5;
+    });
+    
+    yPosition += 8;
+    
+    // Table headers
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Timestamp', 14, yPosition);
+    doc.text('Action', 55, yPosition);
+    doc.text('Table', 90, yPosition);
+    doc.text('User', 120, yPosition);
+    doc.text('IP Address', 165, yPosition);
+    yPosition += 7;
+    
+    doc.line(14, yPosition, 200, yPosition);
+    yPosition += 5;
+    
+    // Data rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    
+    data.forEach((item) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      const timestamp = format(new Date(item.timestamp), 'MM/dd HH:mm');
+      doc.text(timestamp, 14, yPosition);
+      doc.text(item.action.substring(0, 15), 55, yPosition);
+      doc.text(item.table_name.substring(0, 12), 90, yPosition);
+      doc.text((item.user_email || 'System').substring(0, 20), 120, yPosition);
+      doc.text((item.ip_address || 'N/A').substring(0, 15), 165, yPosition);
+      yPosition += 6;
+    });
+    
+    // Footer
+    yPosition += 10;
+    doc.line(14, yPosition, 200, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text('This report contains sensitive audit information - Handle with care', 105, yPosition, { align: 'center' });
+    
+    return doc;
+  }
+
   // Comprehensive Financial Summary Report
   static generateFinancialSummaryPDF(data: {
     contributions: ContributionReportData[];

@@ -27,13 +27,13 @@ import {
   XCircle,
   Edit,
   Trash2,
-  Plus
+  Plus,
+  FileSpreadsheet as FileSpreadsheetIcon
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ReportGenerator, AuditTrailData } from "@/utils/reportGenerator";
 import { toast } from "sonner";
-import { FileSpreadsheet } from "lucide-react";
 
 interface AuditLogEntry {
   id: string;
@@ -110,7 +110,25 @@ export const AuditTrail = () => {
   const exportToPDF = async () => {
     try {
       setExportLoading("pdf");
-      toast.info('PDF export feature for audit trail will be implemented soon');
+      
+      const reportData: AuditTrailData[] = filteredLogs.map(log => ({
+        id: log.id,
+        action: log.action,
+        table_name: log.resource_type,
+        record_id: log.resource_id,
+        user_email: log.user_name,
+        timestamp: log.timestamp,
+        ip_address: log.ip_address
+      }));
+
+      const pdf = ReportGenerator.generateAuditTrailPDF(reportData, {
+        startDate: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+        endDate: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+        action: actionFilter !== 'all' ? actionFilter : undefined
+      });
+
+      ReportGenerator.downloadPDF(pdf, 'audit_trail_report');
+      toast.success('PDF report generated successfully!');
     } catch (error) {
       console.error('PDF export error:', error);
       toast.error('Failed to generate PDF report');
@@ -484,10 +502,34 @@ export const AuditTrail = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Audit Trail</span>
-            <Button onClick={exportToCSV} className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Export CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={exportToPDF}
+                variant="default"
+                disabled={exportLoading === "pdf"}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                {exportLoading === "pdf" ? "Generating..." : "Export PDF"}
+              </Button>
+              <Button 
+                onClick={exportToExcel}
+                variant="outline"
+                disabled={exportLoading === "excel"}
+                className="flex items-center gap-2"
+              >
+                <FileSpreadsheetIcon className="w-4 h-4" />
+                {exportLoading === "excel" ? "Generating..." : "Export Excel"}
+              </Button>
+              <Button 
+                onClick={exportToCSV}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
