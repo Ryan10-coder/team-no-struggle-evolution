@@ -18,8 +18,11 @@ import {
   BarChart3,
   Target,
   Eye,
-  Download
+  Download,
+  FileText,
+  FileSpreadsheet
 } from "lucide-react";
+import { ReportGenerator } from "@/utils/reportGenerator";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 
@@ -62,6 +65,7 @@ export const AuditDashboard = ({ metrics, auditSummary }: AuditDashboardProps) =
   const [monthlyTrends, setMonthlyTrends] = useState<MonthlyTrend[]>([]);
   const [loading, setLoading] = useState(false);
   const [riskAreas, setRiskAreas] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState<string>("");
 
   useEffect(() => {
     fetchTrendData();
@@ -179,14 +183,8 @@ export const AuditDashboard = ({ metrics, auditSummary }: AuditDashboardProps) =
 
   const exportDashboardReport = async () => {
     try {
-      const reportData = {
-        generatedAt: new Date().toISOString(),
-        metrics,
-        auditSummary,
-        monthlyTrends,
-        riskAreas
-      };
-
+      setExportLoading("csv");
+      
       const csvContent = [
         ['Audit Dashboard Report'],
         ['Generated At', new Date().toLocaleString()],
@@ -227,6 +225,48 @@ export const AuditDashboard = ({ metrics, auditSummary }: AuditDashboardProps) =
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export dashboard report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
+  const exportDashboardPDF = async () => {
+    try {
+      setExportLoading("pdf");
+      
+      const pdf = ReportGenerator.generateDashboardPDF(metrics, monthlyTrends, riskAreas);
+      ReportGenerator.downloadPDF(pdf, 'audit_dashboard_report');
+      
+      toast.success('PDF report generated successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
+  const exportAnomaliesPDF = async () => {
+    try {
+      setExportLoading("anomalies");
+      
+      // Generate anomalies from risk areas and compliance issues
+      const anomalies = riskAreas.map(risk => ({
+        type: risk.type,
+        severity: risk.impact === 'Critical' ? 'critical' : 'warning',
+        description: risk.description,
+        recommendation: risk.recommendation
+      }));
+      
+      const pdf = ReportGenerator.generateAnomaliesPDF(anomalies, metrics);
+      ReportGenerator.downloadPDF(pdf, 'anomalies_detection_report');
+      
+      toast.success('Anomalies report generated successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate anomalies report');
+    } finally {
+      setExportLoading("");
     }
   };
 
@@ -244,10 +284,35 @@ export const AuditDashboard = ({ metrics, auditSummary }: AuditDashboardProps) =
           <h2 className="text-2xl font-bold">Financial Audit Dashboard</h2>
           <p className="text-muted-foreground">Comprehensive treasury oversight and analysis</p>
         </div>
-        <Button onClick={exportDashboardReport} className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export Report
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={exportAnomaliesPDF} 
+            variant="destructive"
+            disabled={exportLoading === "anomalies"}
+            className="flex items-center gap-2"
+          >
+            <AlertCircle className="h-4 w-4" />
+            {exportLoading === "anomalies" ? "Generating..." : "Anomalies Report"}
+          </Button>
+          <Button 
+            onClick={exportDashboardPDF} 
+            variant="default"
+            disabled={exportLoading === "pdf"}
+            className="flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" />
+            {exportLoading === "pdf" ? "Generating..." : "Export PDF"}
+          </Button>
+          <Button 
+            onClick={exportDashboardReport} 
+            variant="outline"
+            disabled={exportLoading === "csv"}
+            className="flex items-center gap-2"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            {exportLoading === "csv" ? "Generating..." : "Export CSV"}
+          </Button>
+        </div>
       </div>
 
       {/* Health Score Cards */}

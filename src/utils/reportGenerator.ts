@@ -294,10 +294,10 @@ export class ReportGenerator {
     worksheetData.push(
       [],
       ['SUMMARY'],
-      ['Total Audit Records:', data.length],
-      ['Unique Actions:', uniqueActions.size],
-      ['Tables Affected:', uniqueTables.size],
-      ['Active Users:', uniqueUsers.size]
+      ['Total Audit Records:', data.length.toString()],
+      ['Unique Actions:', uniqueActions.size.toString()],
+      ['Tables Affected:', uniqueTables.size.toString()],
+      ['Active Users:', uniqueUsers.size.toString()]
     );
     
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -551,6 +551,331 @@ export class ReportGenerator {
   // Download PDF file
   static downloadPDF(doc: jsPDF, filename: string) {
     doc.save(`${filename}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  }
+
+  // Expenses Report PDF
+  static generateExpensesPDF(data: any[], options: { startDate?: string; endDate?: string } = {}) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('Expense Audit Report', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    if (options.startDate || options.endDate) {
+      doc.text(`Period: ${options.startDate || 'Start'} to ${options.endDate || 'Present'}`, 105, yPosition, { align: 'center' });
+      yPosition += 10;
+    }
+    
+    // Summary Statistics
+    const totalExpenses = data.length;
+    const totalAmount = data.reduce((sum, e) => sum + e.amount, 0);
+    const approvedCount = data.filter(e => e.approved_by).length;
+    const pendingAmount = data.filter(e => !e.approved_by).reduce((sum, e) => sum + e.amount, 0);
+    
+    // Category breakdown
+    const categoryTotals = data.reduce((acc, e) => {
+      acc[e.expense_category] = (acc[e.expense_category] || 0) + e.amount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 14, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Expenses: ${totalExpenses}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Total Amount: KES ${totalAmount.toLocaleString()}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Approved: ${approvedCount} (${((approvedCount/totalExpenses)*100).toFixed(1)}%)`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Pending Amount: KES ${pendingAmount.toLocaleString()}`, 14, yPosition);
+    yPosition += 10;
+    
+    // Category breakdown
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Category Breakdown', 14, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    Object.entries(categoryTotals).forEach(([category, amount]) => {
+      doc.text(`${category}: KES ${amount.toLocaleString()}`, 14, yPosition);
+      yPosition += 6;
+    });
+    
+    // Table headers
+    yPosition += 5;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Description', 14, yPosition);
+    doc.text('Amount', 90, yPosition);
+    doc.text('Category', 130, yPosition);
+    doc.text('Status', 180, yPosition);
+    yPosition += 7;
+    
+    doc.line(14, yPosition, 200, yPosition);
+    yPosition += 5;
+    
+    // Data rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    data.forEach((expense) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      const desc = (expense.description || 'N/A').substring(0, 30);
+      doc.text(desc, 14, yPosition);
+      doc.text(`KES ${expense.amount.toLocaleString()}`, 90, yPosition);
+      doc.text(expense.expense_category.substring(0, 15), 130, yPosition);
+      doc.text(expense.approved_by ? 'Approved' : 'Pending', 180, yPosition);
+      yPosition += 6;
+    });
+    
+    return doc;
+  }
+
+  // Anomalies Detection PDF
+  static generateAnomaliesPDF(anomalies: any[], metrics: any) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('Audit Anomalies Report', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 8;
+    doc.text(`Risk Score: ${metrics.riskScore}% | Compliance: ${metrics.complianceScore}%`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Executive Summary
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Executive Summary', 14, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Anomalies Detected: ${anomalies.length}`, 14, yPosition);
+    yPosition += 6;
+    
+    const criticalCount = anomalies.filter(a => a.severity === 'critical').length;
+    const warningCount = anomalies.filter(a => a.severity === 'warning').length;
+    const infoCount = anomalies.filter(a => a.severity === 'info').length;
+    
+    doc.text(`Critical: ${criticalCount} | Warning: ${warningCount} | Info: ${infoCount}`, 14, yPosition);
+    yPosition += 12;
+    
+    // Financial Health Indicators
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Financial Health', 14, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Net Position: KES ${metrics.netPosition.toLocaleString()}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Discrepancies Found: ${metrics.discrepanciesFound}`, 14, yPosition);
+    yPosition += 6;
+    
+    const disbursementRatio = ((metrics.totalDisbursements / metrics.totalContributions) * 100).toFixed(1);
+    const expenseRatio = ((metrics.totalExpenses / metrics.totalContributions) * 100).toFixed(1);
+    
+    doc.text(`Disbursement Ratio: ${disbursementRatio}%`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Expense Ratio: ${expenseRatio}%`, 14, yPosition);
+    yPosition += 12;
+    
+    // Anomalies Table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detected Anomalies', 14, yPosition);
+    yPosition += 10;
+    
+    // Table headers
+    doc.setFontSize(9);
+    doc.text('Type', 14, yPosition);
+    doc.text('Severity', 50, yPosition);
+    doc.text('Description', 80, yPosition);
+    yPosition += 7;
+    
+    doc.line(14, yPosition, 200, yPosition);
+    yPosition += 5;
+    
+    // Data rows
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    
+    anomalies.forEach((anomaly) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      doc.text(anomaly.type.substring(0, 20), 14, yPosition);
+      doc.text(anomaly.severity, 50, yPosition);
+      
+      const desc = (anomaly.description || 'N/A').substring(0, 60);
+      doc.text(desc, 80, yPosition);
+      yPosition += 6;
+      
+      if (anomaly.recommendation) {
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Rec: ${anomaly.recommendation.substring(0, 80)}`, 80, yPosition);
+        doc.setFont('helvetica', 'normal');
+        yPosition += 6;
+      }
+    });
+    
+    return doc;
+  }
+
+  // Dashboard Summary PDF
+  static generateDashboardPDF(metrics: any, trends: any[], risks: any[]) {
+    const doc = new jsPDF();
+    let yPosition = 20;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(16);
+    doc.text('Audit Dashboard Report', 105, yPosition, { align: 'center' });
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 105, yPosition, { align: 'center' });
+    yPosition += 15;
+    
+    // Key Metrics
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Key Financial Metrics', 14, yPosition);
+    yPosition += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const metricsData = [
+      ['Total Contributions', `KES ${metrics.totalContributions.toLocaleString()}`],
+      ['Total Disbursements', `KES ${metrics.totalDisbursements.toLocaleString()}`],
+      ['Total Expenses', `KES ${metrics.totalExpenses.toLocaleString()}`],
+      ['Net Position', `KES ${metrics.netPosition.toLocaleString()}`],
+      ['Member Count', metrics.memberCount.toString()],
+      ['Active Members', metrics.activeMembers.toString()],
+      ['Risk Score', `${metrics.riskScore}%`],
+      ['Compliance Score', `${metrics.complianceScore}%`]
+    ];
+    
+    metricsData.forEach(([label, value]) => {
+      doc.text(`${label}: ${value}`, 14, yPosition);
+      yPosition += 6;
+    });
+    
+    // Risk Areas
+    if (risks.length > 0) {
+      yPosition += 10;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Risk Areas', 14, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      risks.forEach((risk) => {
+        if (yPosition > 260) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${risk.type} (${risk.impact}):`, 14, yPosition);
+        yPosition += 6;
+        
+        doc.setFont('helvetica', 'normal');
+        const desc = (risk.description || 'N/A').substring(0, 80);
+        doc.text(desc, 14, yPosition);
+        yPosition += 6;
+        
+        if (risk.recommendation) {
+          doc.setFont('helvetica', 'italic');
+          doc.text(`→ ${risk.recommendation.substring(0, 80)}`, 14, yPosition);
+          doc.setFont('helvetica', 'normal');
+          yPosition += 8;
+        }
+      });
+    }
+    
+    // Monthly Trends
+    if (trends.length > 0) {
+      yPosition += 10;
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Monthly Trends', 14, yPosition);
+      yPosition += 10;
+      
+      // Table headers
+      doc.setFontSize(9);
+      doc.text('Month', 14, yPosition);
+      doc.text('Contributions', 50, yPosition);
+      doc.text('Disbursements', 100, yPosition);
+      doc.text('Expenses', 150, yPosition);
+      doc.text('Net', 180, yPosition);
+      yPosition += 7;
+      
+      doc.line(14, yPosition, 200, yPosition);
+      yPosition += 5;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      
+      trends.forEach((trend) => {
+        if (yPosition > 270) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        doc.text(trend.month, 14, yPosition);
+        doc.text(trend.contributions.toLocaleString(), 50, yPosition);
+        doc.text(trend.disbursements.toLocaleString(), 100, yPosition);
+        doc.text(trend.expenses.toLocaleString(), 150, yPosition);
+        doc.text(trend.net.toLocaleString(), 180, yPosition);
+        yPosition += 6;
+      });
+    }
+    
+    return doc;
   }
 
   // Comprehensive Financial Summary Report

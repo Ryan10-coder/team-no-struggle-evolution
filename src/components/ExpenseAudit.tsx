@@ -10,9 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Search, Filter, AlertTriangle, CheckCircle, XCircle, Clock, DollarSign, Eye, PieChart } from "lucide-react";
+import { Download, Search, Filter, AlertTriangle, CheckCircle, XCircle, Clock, DollarSign, Eye, PieChart, FileText, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ReportGenerator } from "@/utils/reportGenerator";
+import { toast } from "sonner";
 
 interface MonthlyExpense {
   id: string;
@@ -46,6 +48,7 @@ export const ExpenseAudit = () => {
   const [monthFilter, setMonthFilter] = useState("all");
   const [selectedTab, setSelectedTab] = useState("overview");
   const [selectedExpense, setSelectedExpense] = useState<MonthlyExpense | null>(null);
+  const [exportLoading, setExportLoading] = useState<string>("");
 
   // Fetch real data from Supabase
   useEffect(() => {
@@ -211,6 +214,22 @@ export const ExpenseAudit = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = async () => {
+    try {
+      setExportLoading("pdf");
+      
+      const pdf = ReportGenerator.generateExpensesPDF(filteredExpenses);
+      ReportGenerator.downloadPDF(pdf, 'expense_audit_report');
+      
+      toast.success('PDF report generated successfully!');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast.error('Failed to generate PDF report');
+    } finally {
+      setExportLoading("");
+    }
+  };
+
   const stats = getExpenseStats();
   const categories = [...new Set(expenses.map(e => e.expense_category))];
   const months = [...new Set(expenses.map(e => e.month_year))];
@@ -364,10 +383,21 @@ export const ExpenseAudit = () => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Expense Audit</span>
-            <Button onClick={exportToCSV} className="flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Export CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                onClick={exportToPDF} 
+                variant="default"
+                disabled={exportLoading === "pdf"}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                {exportLoading === "pdf" ? "Generating..." : "Export PDF"}
+              </Button>
+              <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                Export CSV
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
