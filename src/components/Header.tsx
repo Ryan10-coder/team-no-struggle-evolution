@@ -15,7 +15,7 @@ const Header = () => {
     { name: 'Rights & Responsibilities', href: '#rights' },
     { name: 'Register as a Member', href: '#register' },
     { name: 'Register as an Admin', href: '/adminregistration', route: true },
-    { name: 'Registered Members', href: '/viewmems', route: true },
+    // { name: 'Registered Members', href: '/viewmems', route: true },
     { name: user ? 'Dashboard' : 'Staff Portal', href: user ? '/dashboard' : '/auth', route: true },
     { name: 'Portal Login', href: '/portal-login', route: true }
   ];
