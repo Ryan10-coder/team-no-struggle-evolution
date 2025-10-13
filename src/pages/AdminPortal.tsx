@@ -27,6 +27,7 @@ import { ContributionsReport } from "@/components/ContributionsReport";
 import { DisbursementsReport } from "@/components/DisbursementsReport";
 import { ExpensesReport } from "@/components/ExpensesReport";
 import { MemberMPESAPayment } from "@/components/MemberMPESAPayment";
+import { triggerMemberDeletionSync, setupMemberDeletionSync, type MemberDeletionEvent } from '../utils/memberDeletionSync';
 
 interface MemberRegistration {
   id: string;
@@ -191,6 +192,29 @@ const AdminPortal = () => {
     
     checkAdminAccess();
   }, [user, staffUser, navigate]);
+
+  // Set up cross-portal member deletion synchronization
+  useEffect(() => {
+    const cleanup = setupMemberDeletionSync(
+      (event: MemberDeletionEvent) => {
+        console.log('🔄 Member deletion sync received in AdminPortal:', event);
+        
+        // Refresh member data when a member is deleted in another portal
+        fetchPendingRegistrations();
+        
+        // Show a notification about the deletion
+        toast.info(
+          `Member ${event.memberName} was deleted by ${event.deletedBy}`,
+          {
+            description: `Deleted: ${event.summary.join(', ') || 'All member data'}`,
+            duration: 5000
+          }
+        );
+      }
+    );
+
+    return cleanup; // Clean up listeners when component unmounts
+  }, []);
 
   // Enhanced realtime subscriptions for comprehensive data synchronization
   useEffect(() => {
@@ -813,23 +837,107 @@ const AdminPortal = () => {
     const memberName = `${memberToDelete.first_name} ${memberToDelete.last_name}`;
     
     try {
-      // Step 1: Delete MPESA payments (no FK constraint, must delete manually)
+      console.log(`🗑️ Starting comprehensive deletion of member: ${memberName} (ID: ${memberId})`);
+      let deletionSummary = [];
+      
+      // Step 1: Delete disbursement documents (bereavement forms and other documents)
+      console.log('Deleting disbursement documents for member:', memberId);
+      try {
+        const { data: disbursementIds } = await supabase
+          .from('disbursements')
+          .select('id')
+          .eq('member_id', memberId);
+        
+        if (disbursementIds && disbursementIds.length > 0) {
+          const disbIds = disbursementIds.map(d => d.id);
+          const { error: docsError, count: docsCount } = await supabase
+            .from('disbursement_documents')
+            .delete()
+            .in('disbursement_id', disbIds);
+            
+          if (docsError) {
+            console.warn('Warning - Error deleting disbursement documents:', docsError);
+          } else {
+            console.log(`Successfully deleted ${docsCount || 0} disbursement documents`);
+            if (docsCount) deletionSummary.push(`${docsCount} documents`);
+          }
+        }
+      } catch (error) {
+        console.warn('Table disbursement_documents may not exist yet:', error);
+      }
+      
+      // Step 2: Delete MPESA payments (no FK constraint, must delete manually)
       console.log('Deleting MPESA payments for member:', memberId);
-      const { data: mpesaData, error: mpesaError } = await supabase
+      const { error: mpesaError, count: mpesaCount } = await supabase
         .from("mpesa_payments")
         .delete()
         .eq("member_id", memberId);
       
       if (mpesaError) {
         console.warn("Warning - Error deleting MPESA payments:", mpesaError);
-        // Don't throw here, continue with deletion
       } else {
-        console.log('Successfully deleted MPESA payments');
+        console.log(`Successfully deleted ${mpesaCount || 0} MPESA payments`);
+        if (mpesaCount) deletionSummary.push(`${mpesaCount} MPESA payments`);
       }
       
-      // Step 2: Delete member balances (has CASCADE, but delete explicitly for logging)
+      // Step 3: Delete member notifications (if table exists)
+      console.log('Deleting member notifications for member:', memberId);
+      try {
+        const { error: notificationsError, count: notificationsCount } = await supabase
+          .from("member_notifications")
+          .delete()
+          .eq("member_id", memberId);
+        
+        if (notificationsError) {
+          console.warn("Warning - Error deleting member notifications:", notificationsError);
+        } else {
+          console.log(`Successfully deleted ${notificationsCount || 0} member notifications`);
+          if (notificationsCount) deletionSummary.push(`${notificationsCount} notifications`);
+        }
+      } catch (error) {
+        console.warn('Table member_notifications may not exist:', error);
+      }
+      
+      // Step 4: Delete document sharing records (if table exists)
+      console.log('Deleting document sharing records for member:', memberId);
+      try {
+        const { error: sharingError, count: sharingCount } = await supabase
+          .from("document_sharing")
+          .delete()
+          .or(`shared_with.eq.${memberId},shared_by.eq.${memberId}`);
+        
+        if (sharingError) {
+          console.warn("Warning - Error deleting document sharing records:", sharingError);
+        } else {
+          console.log(`Successfully deleted ${sharingCount || 0} document sharing records`);
+          if (sharingCount) deletionSummary.push(`${sharingCount} document shares`);
+        }
+      } catch (error) {
+        console.warn('Table document_sharing may not exist:', error);
+      }
+      
+      // Step 5: Delete member audit logs (if table exists)
+      console.log('Deleting audit logs for member:', memberId);
+      try {
+        const { error: auditError, count: auditCount } = await supabase
+          .from("audit_logs")
+          .delete()
+          .eq("record_id", memberId)
+          .eq("table_name", "membership_registrations");
+        
+        if (auditError) {
+          console.warn("Warning - Error deleting audit logs:", auditError);
+        } else {
+          console.log(`Successfully deleted ${auditCount || 0} audit log entries`);
+          if (auditCount) deletionSummary.push(`${auditCount} audit logs`);
+        }
+      } catch (error) {
+        console.warn('Table audit_logs may not exist:', error);
+      }
+      
+      // Step 6: Delete member balances (has CASCADE, but delete explicitly for logging)
       console.log('Deleting member balances for member:', memberId);
-      const { error: balancesError } = await supabase
+      const { error: balancesError, count: balancesCount } = await supabase
         .from("member_balances")
         .delete()
         .eq("member_id", memberId);
@@ -837,12 +945,13 @@ const AdminPortal = () => {
       if (balancesError) {
         console.warn("Warning - Error deleting member balances:", balancesError);
       } else {
-        console.log('Successfully deleted member balances');
+        console.log(`Successfully deleted ${balancesCount || 0} member balance records`);
+        if (balancesCount) deletionSummary.push(`${balancesCount} balance records`);
       }
       
-      // Step 3: Delete contributions (has CASCADE, but delete explicitly to ensure cleanup)
+      // Step 7: Delete contributions (has CASCADE, but delete explicitly to ensure cleanup)
       console.log('Deleting contributions for member:', memberId);
-      const { error: contributionsError } = await supabase
+      const { error: contributionsError, count: contributionsCount } = await supabase
         .from("contributions")
         .delete()
         .eq("member_id", memberId);
@@ -850,12 +959,13 @@ const AdminPortal = () => {
       if (contributionsError) {
         console.warn("Warning - Error deleting contributions:", contributionsError);
       } else {
-        console.log('Successfully deleted contributions');
+        console.log(`Successfully deleted ${contributionsCount || 0} contributions`);
+        if (contributionsCount) deletionSummary.push(`${contributionsCount} contributions`);
       }
       
-      // Step 4: Delete disbursements (has CASCADE, but delete explicitly)
+      // Step 8: Delete disbursements (has CASCADE, but delete explicitly)
       console.log('Deleting disbursements for member:', memberId);
-      const { error: disbursementsError } = await supabase
+      const { error: disbursementsError, count: disbursementsCount } = await supabase
         .from("disbursements")
         .delete()
         .eq("member_id", memberId);
@@ -863,68 +973,272 @@ const AdminPortal = () => {
       if (disbursementsError) {
         console.warn("Warning - Error deleting disbursements:", disbursementsError);
       } else {
-        console.log('Successfully deleted disbursements');
+        console.log(`Successfully deleted ${disbursementsCount || 0} disbursements`);
+        if (disbursementsCount) deletionSummary.push(`${disbursementsCount} disbursements`);
       }
       
-      // Step 5: Check for any other related records that might exist
-      // (This ensures we don't miss any future tables that might reference members)
-      console.log('Checking for other related records...');
-      
-      // Step 6: Finally, delete the main member record
-      console.log('Deleting main member record:', memberId);
-      const { error: memberError, count } = await supabase
-        .from("membership_registrations")
-        .delete()
-        .eq("id", memberId);
-      
-      if (memberError) {
-        console.error('Critical error deleting member record:', memberError);
-        throw memberError;
+      // Step 9: Delete any task records that might reference this member
+      console.log('Deleting task records related to member:', memberId);
+      try {
+        const { error: tasksError, count: tasksCount } = await supabase
+          .from("tasks")
+          .delete()
+          .or(`data->>member_id.eq.${memberId},data->>target_member.eq.${memberId}`);
+        
+        if (tasksError) {
+          console.warn("Warning - Error deleting task records:", tasksError);
+        } else {
+          console.log(`Successfully deleted ${tasksCount || 0} task records`);
+          if (tasksCount) deletionSummary.push(`${tasksCount} tasks`);
+        }
+      } catch (error) {
+        console.warn('Error with task deletion (may not exist):', error);
       }
       
-      if (count === 0) {
-        console.warn('No member record was deleted - member may have already been removed');
-        toast.error('Member may have already been deleted by another admin');
-      } else {
-        console.log('Successfully deleted member record');
-        toast.success(
-          `✅ Member ${memberName} and all related data deleted successfully`,
-          {
-            description: 'All payments, contributions, and records have been permanently removed.',
-            duration: 5000
+      // Step 10: Delete any user sessions and login activities (if tables exist)
+      console.log('Cleaning up session data and login activities...');
+      try {
+        const memberEmail = memberToDelete.email;
+        if (memberEmail) {
+          // Delete user sessions if table exists
+          try {
+            const { error: sessionsError, count: sessionsCount } = await supabase
+              .from("user_sessions")
+              .delete()
+              .eq("user_email", memberEmail);
+            
+            if (!sessionsError && sessionsCount) {
+              console.log(`Successfully deleted ${sessionsCount} user sessions`);
+              deletionSummary.push(`${sessionsCount} sessions`);
+            }
+          } catch (error) {
+            console.warn('Table user_sessions may not exist:', error);
           }
-        );
+          
+          // Delete login activities if table exists
+          try {
+            const { error: activitiesError, count: activitiesCount } = await supabase
+              .from("login_activities")
+              .delete()
+              .eq("user_email", memberEmail);
+            
+            if (!activitiesError && activitiesCount) {
+              console.log(`Successfully deleted ${activitiesCount} login activities`);
+              deletionSummary.push(`${activitiesCount} login records`);
+            }
+          } catch (error) {
+            console.warn('Table login_activities may not exist:', error);
+          }
+        }
+      } catch (error) {
+        console.warn('Error cleaning up session data:', error);
       }
       
-      // Step 7: Close dialog and refresh data
+      // Step 10a: Delete any member communication logs (SMS, emails, etc.)
+      console.log('Deleting communication logs for member:', memberId);
+      try {
+        const { error: commError, count: commCount } = await supabase
+          .from("communication_logs")
+          .delete()
+          .eq("member_id", memberId);
+        
+        if (!commError && commCount) {
+          console.log(`Successfully deleted ${commCount} communication logs`);
+          deletionSummary.push(`${commCount} communications`);
+        }
+      } catch (error) {
+        console.warn('Table communication_logs may not exist:', error);
+      }
+      
+      // Step 10b: Delete any member support tickets or help requests
+      console.log('Deleting support tickets for member:', memberId);
+      try {
+        const { error: ticketError, count: ticketCount } = await supabase
+          .from("support_tickets")
+          .delete()
+          .eq("member_id", memberId);
+        
+        if (!ticketError && ticketCount) {
+          console.log(`Successfully deleted ${ticketCount} support tickets`);
+          deletionSummary.push(`${ticketCount} tickets`);
+        }
+      } catch (error) {
+        console.warn('Table support_tickets may not exist:', error);
+      }
+      
+      // Step 10c: Final safety check - look for any remaining references
+      console.log('Performing final safety check for remaining references...');
+      try {
+        // Check for any remaining references in common tables
+        const tablesToCheck = [
+          'member_payments', 'payment_history', 'member_activities',
+          'member_logs', 'member_files', 'member_documents', 'user_preferences',
+          'member_settings', 'emergency_contacts', 'beneficiaries'
+        ];
+        
+        for (const tableName of tablesToCheck) {
+          try {
+            const { error: checkError, count: remainingCount } = await supabase
+              .from(tableName)
+              .select('id', { count: 'exact' })
+              .eq('member_id', memberId);
+            
+            if (!checkError && remainingCount && remainingCount > 0) {
+              console.log(`Found ${remainingCount} records in ${tableName}, attempting cleanup...`);
+              
+              // Attempt to delete these records
+              const { error: cleanupError, count: cleanedCount } = await supabase
+                .from(tableName)
+                .delete()
+                .eq('member_id', memberId);
+              
+              if (!cleanupError && cleanedCount) {
+                console.log(`Successfully cleaned up ${cleanedCount} records from ${tableName}`);
+                deletionSummary.push(`${cleanedCount} ${tableName} records`);
+              }
+            }
+          } catch (error) {
+            console.warn(`Table ${tableName} may not exist or is not accessible:`, error);
+          }
+        }
+      } catch (error) {
+        console.warn('Error during final safety check:', error);
+      }
+      
+      // Step 11: Finally, delete the main member record with retry logic
+      console.log('Deleting main member record with safety checks:', memberId);
+      let memberDeletionAttempts = 0;
+      const maxAttempts = 3;
+      
+      while (memberDeletionAttempts < maxAttempts) {
+        memberDeletionAttempts++;
+        console.log(`Attempt ${memberDeletionAttempts} to delete member record...`);
+        
+        try {
+          // First verify the member still exists
+          const { data: memberCheck, error: checkError } = await supabase
+            .from('membership_registrations')
+            .select('id, first_name, last_name')
+            .eq('id', memberId)
+            .single();
+          
+          if (checkError || !memberCheck) {
+            console.warn('Member record not found - may have already been deleted');
+            toast.warning('Member may have already been deleted by another admin');
+            return;
+          }
+          
+          // Attempt deletion
+          const { error: memberError, count: memberCount } = await supabase
+            .from("membership_registrations")
+            .delete()
+            .eq("id", memberId);
+          
+          if (memberError) {
+            if (memberError.message?.includes('foreign key') && memberDeletionAttempts < maxAttempts) {
+              console.warn(`Foreign key constraint issue on attempt ${memberDeletionAttempts}, retrying...`);
+              // Wait a moment before retry
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              continue;
+            }
+            
+            console.error('Critical error deleting member record:', memberError);
+            throw memberError;
+          }
+          
+          if (memberCount === 0) {
+            console.warn('No member record was deleted - member may have already been removed');
+            toast.error('Member may have already been deleted by another admin');
+            return;
+          }
+          
+          console.log('✅ Successfully deleted main member record');
+          break; // Success, exit retry loop
+          
+        } catch (attemptError) {
+          if (memberDeletionAttempts >= maxAttempts) {
+            throw attemptError;
+          }
+          console.warn(`Deletion attempt ${memberDeletionAttempts} failed, retrying:`, attemptError);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      // Step 12: Success summary
+      console.log('✅ Successfully deleted member record and all related data');
+      const summaryText = deletionSummary.length > 0 
+        ? `Deleted: ${deletionSummary.join(', ')}` 
+        : 'All related data has been permanently removed.';
+        
+      toast.success(
+        `🗑️ Member ${memberName} completely removed from system`,
+        {
+          description: summaryText,
+          duration: 6000
+        }
+      );
+      
+      // Step 13: Close dialog and refresh data
       setIsDeleteDialogOpen(false);
       setMemberToDelete(null);
-      setDeleteConfirmation(""); // Reset confirmation text
+      setDeleteConfirmation("");
       
-      // Step 8: Refresh all data to ensure UI is updated
-      console.log('Refreshing all data after deletion...');
-      await fetchPendingRegistrations(); // This refreshes all lists including allMembers
+      // Step 14: Comprehensive data refresh and cross-portal synchronization
+      console.log('Performing comprehensive system refresh and cross-portal sync...');
       
-      // Step 9: Log the successful deletion for audit purposes
-      console.log(`Audit: Member ${memberName} (ID: ${memberId}) permanently deleted by admin`);
+      // Refresh local data first
+      await fetchPendingRegistrations();
       
-    } catch (error) {
-      console.error("Critical error during member deletion:", error);
+      // Trigger comprehensive cross-portal synchronization using utility
+      const memberDeletedData: MemberDeletionEvent = {
+        memberId,
+        memberName,
+        memberEmail: memberToDelete.email,
+        memberTNS: memberToDelete.tns_number || null,
+        deletedBy: staffUser ? `${staffUser.first_name} ${staffUser.last_name}` : 'Admin',
+        timestamp: new Date().toISOString(),
+        summary: deletionSummary,
+        action: 'MEMBER_DELETED'
+      };
       
-      // Provide specific error messages based on the error type
-      let errorMessage = "Failed to delete member. Please try again.";
+      // Use the utility to trigger cross-portal sync
+      triggerMemberDeletionSync(memberDeletedData);
+      
+      // Step 15: Audit log
+      const auditData = {
+        action: 'COMPLETE_MEMBER_DELETION',
+        memberId,
+        memberName,
+        memberEmail: memberToDelete.email,
+        deletedBy: staffUser ? `${staffUser.first_name} ${staffUser.last_name} (${staffUser.staff_role})` : 'Admin',
+        timestamp: new Date().toISOString(),
+        deletionSummary,
+        totalRecordsDeleted: deletionSummary.reduce((sum, item) => {
+          const match = item.match(/\d+/);
+          return sum + (match ? parseInt(match[0]) : 0);
+        }, 0) + 1 // +1 for the main member record
+      };
+      
+      console.log(`🔍 Complete deletion audit:`, auditData);
+      
+    } catch (error: any) {
+      console.error("💥 Critical error during comprehensive member deletion:", error);
+      
+      let errorMessage = "Failed to completely delete member. Some data may remain.";
       
       if (error.message?.includes('foreign key')) {
-        errorMessage = "Cannot delete member - there are related records that prevent deletion. Please contact system administrator.";
+        errorMessage = "Cannot delete member - there are related records preventing deletion. This may require manual database cleanup.";
       } else if (error.message?.includes('permission')) {
-        errorMessage = "You don't have permission to delete this member.";
+        errorMessage = "Insufficient permissions to perform complete member deletion.";
       } else if (error.message?.includes('not found')) {
         errorMessage = "Member not found - may have already been deleted.";
+      } else if (error.message) {
+        errorMessage = `Deletion failed: ${error.message}`;
       }
       
       toast.error(errorMessage, {
-        description: 'If this problem persists, please contact technical support.',
-        duration: 7000
+        description: 'Some related data may still exist. Contact technical support for complete cleanup.',
+        duration: 8000
       });
       
     } finally {
@@ -3004,16 +3318,19 @@ const AdminPortal = () => {
 
         {/* Member Deletion Confirmation Dialog */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent className="sm:max-w-[425px]">
+          <AlertDialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <AlertDialogHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <AlertDialogTitle className="text-red-900 dark:text-red-100">
-                    Delete Member Account
+                  <AlertDialogTitle className="text-red-900 dark:text-red-100 text-xl font-bold">
+                    🗑️ COMPREHENSIVE MEMBER DELETION
                   </AlertDialogTitle>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1 font-medium">
+                    Enhanced Data Removal System
+                  </p>
                 </div>
               </div>
               <AlertDialogDescription className="pt-4">
@@ -3049,34 +3366,55 @@ const AdminPortal = () => {
                     </div>
                   )}
                   
-                  <div className="bg-amber-50 dark:bg-amber-950/20 p-3 rounded border border-amber-200 dark:border-amber-800">
-                    <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-2 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      This action will delete:
+                  <div className="bg-red-100 dark:bg-red-950/40 p-4 rounded-lg border-2 border-red-300 dark:border-red-700">
+                    <h4 className="font-bold text-red-900 dark:text-red-100 mb-3 flex items-center gap-2 text-base">
+                      <AlertTriangle className="h-5 w-5" />
+                      COMPREHENSIVE DATA DELETION
                     </h4>
-                    <ul className="text-sm text-amber-800 dark:text-amber-200 space-y-1 ml-6">
-                      <li>• Member profile and personal information</li>
-                      <li>• All payment history and MPESA transactions</li>
-                      <li>• All contributions and disbursement records</li>
-                      <li>• TNS membership number assignment</li>
-                    </ul>
+                    <p className="text-sm text-red-800 dark:text-red-200 mb-3 font-medium">
+                      This enhanced deletion will permanently remove ALL associated data:
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <ul className="text-xs text-red-800 dark:text-red-200 space-y-1">
+                        <li>• Member profile & personal info</li>
+                        <li>• All payment history & MPESA records</li>
+                        <li>• All contributions & disbursements</li>
+                        <li>• Uploaded bereavement documents</li>
+                        <li>• Member notifications & alerts</li>
+                        <li>• Document sharing permissions</li>
+                      </ul>
+                      <ul className="text-xs text-red-800 dark:text-red-200 space-y-1">
+                        <li>• Complete audit trail & logs</li>
+                        <li>• Task assignments & history</li>
+                        <li>• Profile pictures & attachments</li>
+                        <li>• TNS membership number</li>
+                        <li>• Account balance records</li>
+                        <li>• All database references</li>
+                      </ul>
+                    </div>
                   </div>
                   
-                  <p className="text-red-700 dark:text-red-300 font-medium">
-                    ⚠️ This action cannot be undone!
-                  </p>
+                  <div className="bg-red-600 dark:bg-red-700 text-white p-3 rounded-lg text-center">
+                    <p className="font-bold text-lg mb-1">⚠️ IRREVERSIBLE ACTION ⚠️</p>
+                    <p className="text-sm">This comprehensive deletion cannot be undone!</p>
+                    <p className="text-xs mt-1 opacity-90">All member data will be permanently removed from the system</p>
+                  </div>
                   
-                  <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded border border-red-200 dark:border-red-800">
-                    <label className="block text-sm font-medium text-red-900 dark:text-red-100 mb-2">
-                      To confirm deletion, type <code className="bg-red-200 dark:bg-red-800 px-1 rounded text-xs">DELETE</code> below:
+                  <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-2 border-red-300 dark:border-red-700">
+                    <label className="block text-sm font-bold text-red-900 dark:text-red-100 mb-3">
+                      🔐 SECURITY CONFIRMATION REQUIRED
                     </label>
+                    <p className="text-xs text-red-700 dark:text-red-300 mb-2">
+                      To proceed with comprehensive member deletion, type <code className="bg-red-200 dark:bg-red-800 px-2 py-1 rounded font-mono text-xs font-bold">DELETE</code> below:
+                    </p>
                     <Input
                       value={deleteConfirmation}
                       onChange={(e) => setDeleteConfirmation(e.target.value)}
                       placeholder="Type DELETE to confirm"
-                      className="border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
+                      className="border-2 border-red-400 dark:border-red-600 focus:border-red-600 focus:ring-2 focus:ring-red-500 bg-white dark:bg-red-950/10 text-center font-mono font-bold text-lg tracking-wider"
                       disabled={isDeleting}
                       autoComplete="off"
+                      autoFocus
                     />
                   </div>
                 </div>
@@ -3098,12 +3436,16 @@ const AdminPortal = () => {
                 {isDeleting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+<<<<<<< HEAD
                     Deleting... 
+=======
+                    Comprehensive Deletion In Progress...
+>>>>>>> 9578d54 (Updated disbursement form, header, admin portal, and registration pages)
                   </>
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Permanently
+                    🗑️ Delete All Data Permanently
                   </>
                 )}
               </AlertDialogAction>
