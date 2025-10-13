@@ -3436,11 +3436,7 @@ const AdminPortal = () => {
                 {isDeleting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-<<<<<<< HEAD
-                    Deleting... 
-=======
                     Comprehensive Deletion In Progress...
->>>>>>> 9578d54 (Updated disbursement form, header, admin portal, and registration pages)
                   </>
                 ) : (
                   <>
