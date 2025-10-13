@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportMembersData, ExportOptions } from '@/utils/exportUtils';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 interface ExportModalProps {
   open: boolean;
@@ -153,7 +153,7 @@ export const ExportModal = ({
     filterByArea && filterByArea !== 'all' 
       ? filterByArea.replace(/[^a-zA-Z0-9]/g, '_')
       : 'All_Areas'
-  }_${format(new Date(), 'yyyy-MM-dd')}`;
+  }_${formatDate(new Date(), 'yyyy-MM-dd')}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -221,7 +221,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeSummary"
                   checked={includeSummary}
-                  onCheckedChange={setIncludeSummary}
+                  onCheckedChange={(checked) => setIncludeSummary(checked === true)}
                 />
                 <Label htmlFor="includeSummary" className="text-sm font-medium">
                   Summary Statistics
@@ -232,7 +232,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeFinancialData"
                   checked={includeFinancialData}
-                  onCheckedChange={setIncludeFinancialData}
+                  onCheckedChange={(checked) => setIncludeFinancialData(checked === true)}
                 />
                 <Label htmlFor="includeFinancialData" className="text-sm font-medium">
                   Financial Data
@@ -243,7 +243,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeContributions"
                   checked={includeContributions}
-                  onCheckedChange={setIncludeContributions}
+                  onCheckedChange={(checked) => setIncludeContributions(checked === true)}
                 />
                 <Label htmlFor="includeContributions" className="text-sm font-medium">
                   Contribution History
