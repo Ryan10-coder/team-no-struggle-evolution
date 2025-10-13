@@ -88,12 +88,61 @@ export type Database = {
           },
         ]
       }
+      disbursement_documents: {
+        Row: {
+          created_at: string
+          disbursement_id: string
+          file_data: string
+          file_size: number
+          file_type: string
+          filename: string
+          id: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          disbursement_id: string
+          file_data: string
+          file_size: number
+          file_type: string
+          filename: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          disbursement_id?: string
+          file_data?: string
+          file_size?: number
+          file_type?: string
+          filename?: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disbursement_documents_disbursement_id_fkey"
+            columns: ["disbursement_id"]
+            isOneToOne: false
+            referencedRelation: "disbursements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disbursements: {
         Row: {
           amount: number
           approved_by: string | null
+          bereavement_form_url: string | null
           created_at: string
           disbursement_date: string
+          disbursement_type: string | null
           id: string
           member_id: string
           reason: string | null
@@ -103,8 +152,10 @@ export type Database = {
         Insert: {
           amount: number
           approved_by?: string | null
+          bereavement_form_url?: string | null
           created_at?: string
           disbursement_date?: string
+          disbursement_type?: string | null
           id?: string
           member_id: string
           reason?: string | null
@@ -114,8 +165,10 @@ export type Database = {
         Update: {
           amount?: number
           approved_by?: string | null
+          bereavement_form_url?: string | null
           created_at?: string
           disbursement_date?: string
+          disbursement_type?: string | null
           id?: string
           member_id?: string
           reason?: string | null
