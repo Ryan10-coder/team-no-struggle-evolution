@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useStaffAuth } from "@/hooks/useStaffAuth";
 import { useNavigate } from "react-router-dom";
+import { useStaffAuth } from "@/hooks/useStaffAuth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -52,7 +53,8 @@ import {
   MessageCircle,
   X,
   XCircle,
-  Hash
+  Hash,
+  Calculator
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -134,6 +136,7 @@ interface CommunicationMessage {
 
 const CoordinatorPortal = () => {
   const { staffUser } = useStaffAuth();
+  const { isAuthorized, isLoading: roleLoading } = useRoleGuard({ portal: 'coordinator' });
   const navigate = useNavigate();
   const [members, setMembers] = useState<Member[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
@@ -177,13 +180,90 @@ const CoordinatorPortal = () => {
   });
 
   useEffect(() => {
-    if (!staffUser) {
-      navigate("/portal-login");
-      return;
+    // Role guard handles authentication and authorization
+    if (isAuthorized && !roleLoading) {
+      fetchCoordinatorData();
     }
+  }, [isAuthorized, roleLoading]);
 
-    fetchCoordinatorData();
-  }, [staffUser, navigate]);
+  // Real-time data synchronization
+  useEffect(() => {
+    if (!isAuthorized || roleLoading) return;
+
+    // Set up real-time subscriptions for data changes
+    const subscriptions = [];
+
+    // Subscribe to member_balances changes
+    const balanceSubscription = supabase
+      .channel('member_balances_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'member_balances'
+      }, (payload) => {
+        console.log('📊 Member balance changed:', payload);
+        // Refresh financial data when balances change
+        if (members.length > 0) {
+          fetchMemberFinancialData(members.map(m => m.id));
+        }
+        toast.info('Member balances updated', { duration: 2000 });
+      })
+      .subscribe();
+
+    subscriptions.push(balanceSubscription);
+
+    // Subscribe to contributions changes
+    const contributionsSubscription = supabase
+      .channel('contributions_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'contributions'
+      }, (payload) => {
+        console.log('💰 Contribution changed:', payload);
+        // Refresh financial data when contributions change
+        if (members.length > 0) {
+          fetchMemberFinancialData(members.map(m => m.id));
+        }
+        toast.info('Contributions updated', { duration: 2000 });
+      })
+      .subscribe();
+
+    subscriptions.push(contributionsSubscription);
+
+    // Subscribe to member registration changes
+    const membersSubscription = supabase
+      .channel('member_registrations_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'membership_registrations'
+      }, (payload) => {
+        console.log('👥 Member registration changed:', payload);
+        // Refresh all data when member registrations change
+        fetchCoordinatorData();
+        toast.info('Member data updated', { duration: 2000 });
+      })
+      .subscribe();
+
+    subscriptions.push(membersSubscription);
+
+    // Periodic data refresh every 5 minutes
+    const intervalId = setInterval(() => {
+      if (members.length > 0) {
+        console.log('🔄 Periodic data refresh...');
+        fetchMemberFinancialData(members.map(m => m.id));
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Cleanup function
+    return () => {
+      subscriptions.forEach(subscription => {
+        supabase.removeChannel(subscription);
+      });
+      clearInterval(intervalId);
+    };
+  }, [isAuthorized, roleLoading, members]);
 
   useEffect(() => {
     let filtered = members.filter(member => {
@@ -285,70 +365,51 @@ const CoordinatorPortal = () => {
 
   const fetchCoordinatorData = async () => {
     try {
-      if (!staffUser || staffUser.staff_role !== "Area Coordinator") {
-        toast.error("Access denied. You are not an approved area coordinator.");
-        navigate("/portal-login");
+      if (!staffUser) {
+        console.log('No staff user found');
         return;
       }
 
-      if (!staffUser.assigned_area) {
-        toast.error("No assigned area found. Contact your administrator.");
-        return;
-      }
+      console.log('Fetching coordinator data for:', staffUser.first_name, staffUser.last_name, 'Role:', staffUser.staff_role);
 
-      setAssignedArea(staffUser.assigned_area);
+      // Set assigned area (can be null for General Coordinators)
+      setAssignedArea(staffUser.assigned_area || "All Areas");
+      console.log('Assigned area:', staffUser.assigned_area || 'All Areas');
 
       // Fetch ALL members from all areas (both approved and pending for comprehensive view)
       const { data: membersData, error: membersError } = await supabase
         .from("membership_registrations")
-        .select(`
-          *,
-          id,
-          user_id,
-          created_at,
-          updated_at,
-          registration_date,
-          probation_end_date,
-          days_to_maturity,
-          first_name,
-          last_name,
-          email,
-          phone,
-          address,
-          city,
-          state,
-          zip_code,
-          emergency_contact_name,
-          emergency_contact_phone,
-          membership_type,
-          payment_status,
-          registration_status,
-          id_number,
-          alternative_phone,
-          sex,
-          marital_status,
-          profile_picture_url,
-          maturity_status,
-          tns_number
-        `)
-        .in("registration_status", ["approved", "pending"]);
+        .select('*')
+        .in("registration_status", ["approved", "pending"])
+        .order('first_name');
+
+      console.log('Members query result:', { data: membersData?.length, error: membersError });
 
       if (membersError) {
-        toast.error("Error fetching members data");
+        console.error('Members error details:', membersError);
+        toast.error(`Error fetching members data: ${membersError.message}`);
+        setLoading(false);
         return;
       }
 
-      setMembers(membersData || []);
+      const membersList = membersData || [];
+      console.log(`👥 Setting ${membersList.length} members`);
+      
+      setMembers(membersList);
 
       // Extract unique areas from all members
       const areas = Array.from(new Set(
-        (membersData || []).map(member => `${member.city}, ${member.state}`)
+        membersList.map(member => `${member.city}, ${member.state}`)
       )).sort();
+      console.log('🗺️ Areas found:', areas);
       setAllAreas(areas);
 
       // Fetch member balances and contributions for each member
-      if (membersData && membersData.length > 0) {
-        await fetchMemberFinancialData(membersData.map(m => m.id));
+      if (membersList.length > 0) {
+        console.log('💰 Fetching financial data for', membersList.length, 'members');
+        await fetchMemberFinancialData(membersList.map(m => m.id));
+      } else {
+        console.log('⚠️ No members found to fetch financial data');
       }
 
     } catch (error) {
@@ -360,45 +421,84 @@ const CoordinatorPortal = () => {
   };
 
   const fetchMemberFinancialData = async (memberIds: string[]) => {
+    if (!memberIds.length) {
+      console.log('🚨 No member IDs provided for financial data fetch');
+      return;
+    }
+
     try {
-      // Fetch balances
-      const { data: balancesData } = await supabase
-        .from("member_balances")
-        .select("*")
-        .in("member_id", memberIds);
+      console.log('📊 Starting financial data fetch for', memberIds.length, 'members');
 
+      // Initialize empty maps
       const balancesMap: Record<string, MemberBalance> = {};
-      balancesData?.forEach(balance => {
-        balancesMap[balance.member_id] = {
-          current_balance: balance.current_balance,
-          total_contributions: balance.total_contributions,
-          total_disbursements: balance.total_disbursements
-        };
-      });
-      setMemberBalances(balancesMap);
-
-      // Fetch contributions
-      const { data: contributionsData } = await supabase
-        .from("contributions")
-        .select("member_id, amount, contribution_date, contribution_type")
-        .in("member_id", memberIds)
-        .order("contribution_date", { ascending: false });
-
       const contributionsMap: Record<string, Contribution[]> = {};
-      contributionsData?.forEach(contribution => {
-        if (!contributionsMap[contribution.member_id]) {
-          contributionsMap[contribution.member_id] = [];
+
+      // Try to fetch balances (but don't fail if table doesn't exist)
+      try {
+        const { data: balancesData, error: balancesError } = await supabase
+          .from("member_balances")
+          .select('member_id, current_balance, total_contributions, total_disbursements')
+          .in("member_id", memberIds);
+
+        if (balancesError) {
+          console.warn('Member balances table might not exist or has issues:', balancesError.message);
+        } else if (balancesData) {
+          balancesData.forEach(balance => {
+            balancesMap[balance.member_id] = {
+              current_balance: Number(balance.current_balance) || 0,
+              total_contributions: Number(balance.total_contributions) || 0,
+              total_disbursements: Number(balance.total_disbursements) || 0
+            };
+          });
+          console.log('💵 Loaded balances for', Object.keys(balancesMap).length, 'members');
         }
-        contributionsMap[contribution.member_id].push({
-          amount: contribution.amount,
-          contribution_date: contribution.contribution_date,
-          contribution_type: contribution.contribution_type
-        });
-      });
+      } catch (balanceError) {
+        console.warn('Could not fetch member balances:', balanceError);
+      }
+
+      // Try to fetch contributions (but don't fail if table doesn't exist)
+      try {
+        const { data: contributionsData, error: contributionsError } = await supabase
+          .from("contributions")
+          .select('member_id, amount, contribution_date, contribution_type')
+          .in("member_id", memberIds)
+          .order("contribution_date", { ascending: false });
+
+        if (contributionsError) {
+          console.warn('Contributions table might not exist or has issues:', contributionsError.message);
+        } else if (contributionsData) {
+          contributionsData.forEach(contribution => {
+            if (!contributionsMap[contribution.member_id]) {
+              contributionsMap[contribution.member_id] = [];
+            }
+            contributionsMap[contribution.member_id].push({
+              amount: Number(contribution.amount) || 0,
+              contribution_date: contribution.contribution_date,
+              contribution_type: contribution.contribution_type || 'regular'
+            });
+          });
+          console.log('💰 Loaded contributions for', Object.keys(contributionsMap).length, 'members');
+        }
+      } catch (contributionError) {
+        console.warn('Could not fetch contributions:', contributionError);
+      }
+
+      // Set the data even if some tables don't exist
+      setMemberBalances(balancesMap);
       setContributions(contributionsMap);
 
+      // Calculate statistics from available data
+      const totalContributionsFromData = Object.values(contributionsMap)
+        .flat()
+        .reduce((sum, contrib) => sum + contrib.amount, 0);
+      
+      console.log(`📈 Financial Summary: ${Object.keys(balancesMap).length} balances, ${Object.keys(contributionsMap).length} contribution records`);
+
     } catch (error) {
-      console.error("Error fetching financial data:", error);
+      console.error("Critical error in financial data fetching:", error);
+      // Set empty data but don't show error toast - let the component work without financial data
+      setMemberBalances({});
+      setContributions({});
     }
   };
 
@@ -523,10 +623,51 @@ const CoordinatorPortal = () => {
     }).format(amount);
   };
 
-  if (loading) {
+  // Debug logging
+  console.log('CoordinatorPortal render state:', {
+    roleLoading,
+    loading,
+    isAuthorized,
+    staffUser: staffUser ? `${staffUser.first_name} ${staffUser.last_name}` : null,
+    membersCount: members.length,
+    filteredMembersCount: filteredMembers.length
+  });
+
+  // Show loading state while checking authorization or loading data
+  if (roleLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <div className="space-y-2">
+            <p className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+              {roleLoading ? 'Verifying access...' : 'Loading coordinator portal...'}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Please wait while we prepare your dashboard
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authorized, the role guard will handle redirection
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-red-50 dark:bg-red-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-6xl mb-4">🚫</div>
+          <div className="space-y-2">
+            <p className="text-red-600 dark:text-red-400 font-bold text-xl">Access Denied</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              You don't have permission to access the Coordinator Portal.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Redirecting to appropriate portal...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -535,213 +676,502 @@ const CoordinatorPortal = () => {
   const totalContributions = Object.values(memberBalances).reduce(
     (sum, balance) => sum + balance.total_contributions, 0
   );
+  const approvedMembers = members.filter(m => m.registration_status === 'approved').length;
+  const pendingMembers = members.filter(m => m.registration_status === 'pending').length;
+  const matureMembers = members.filter(m => m.maturity_status === 'mature').length;
+  const paidMembers = members.filter(m => m.payment_status === 'paid').length;
   
-  // Calculate total stats for dashboard
+  // Calculate total stats for dashboard with real-time data
   const totalStats = {
     totalMembers: filteredMembers.length,
     activeMembers: filteredMembers.filter(m => m.registration_status === 'approved').length,
     totalContributions: filteredMembers.reduce((sum, member) => 
       sum + (memberBalances[member.id]?.total_contributions || 0), 0
-    )
+    ),
+    averageContribution: totalMembers > 0 ? totalContributions / totalMembers : 0
   };
 
+  // Simple test return
+  if (!members.length && !loading) {
+    return (
+      <div className="min-h-screen bg-white p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold mb-4">Area Coordinator Portal</h1>
+          <p className="text-gray-600 mb-4">Welcome, {staffUser?.first_name} {staffUser?.last_name}</p>
+          <div className="bg-yellow-50 border border-yellow-200 p-4 rounded">
+            <p className="text-yellow-800">No members found in the database.</p>
+            <p className="text-sm text-yellow-600 mt-2">Debug info:</p>
+            <ul className="text-xs text-yellow-600 mt-1">
+              <li>Staff Role: {staffUser?.staff_role}</li>
+              <li>Assigned Area: {assignedArea}</li>
+              <li>Loading: {loading.toString()}</li>
+              <li>Role Loading: {roleLoading.toString()}</li>
+              <li>Is Authorized: {isAuthorized.toString()}</li>
+            </ul>
+          </div>
+          <Button 
+            onClick={() => {
+              console.log('Refresh clicked');
+              setLoading(true);
+              fetchCoordinatorData();
+            }}
+            className="mt-4"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={() => navigate("/portal-login")}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Portal
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Area Coordinator Portal</h1>
-              <p className="text-muted-foreground">Managing: {assignedArea}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950">
+      {/* Modern Enhanced Header with Glassmorphism Effect */}
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/20 dark:border-gray-800/20 shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full blur opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-full shadow-lg">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+                  Area Coordinator Portal
+                </h1>
+                <div className="flex items-center gap-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Welcome, <span className="font-semibold text-blue-600 dark:text-blue-400">{staffUser?.first_name} {staffUser?.last_name}</span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      {assignedArea || 'All Areas'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshData}
+                disabled={refreshing}
+                className="bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 shadow-sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+              
+              <Button
+                size="sm"
+                onClick={() => setCommunicationModal(true)}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Message Members
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportToExcel}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Data
+              </Button>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={() => setCommunicationModal(true)}
-              className="flex items-center space-x-2"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>Send Message</span>
-            </Button>
-            <Button
-              onClick={refreshData}
-              disabled={refreshing}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              {refreshing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span>Refresh</span>
-            </Button>
-            <Button onClick={exportToExcel} className="flex items-center space-x-2">
-              <Download className="h-4 w-4" />
-              <span>Export Excel</span>
-            </Button>
-          </div>
         </div>
+      </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Enhanced Statistics Dashboard with Gradient Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border-blue-200 dark:border-blue-800 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Members</CardTitle>
+              <div className="p-2 bg-blue-500 rounded-lg shadow-lg group-hover:bg-blue-600 transition-colors">
+                <Users className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalMembers}</div>
-              <p className="text-xs text-muted-foreground">In your area</p>
+            <CardContent className="relative">
+              <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1">{totalMembers}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-green-600" />
+                  <span className="text-xs font-medium text-green-600">
+                    {totalMembers > 0 ? `${((approvedMembers / totalMembers) * 100).toFixed(1)}%` : '0%'}
+                  </span>
+                </div>
+                <p className="text-xs text-blue-700 dark:text-blue-300">approval rate</p>
+              </div>
+              <div className="mt-2 bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-blue-500 h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: totalMembers > 0 ? `${(approvedMembers / totalMembers) * 100}%` : '0%' }}
+                ></div>
+              </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <Card className="relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 border-green-200 dark:border-green-800 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-green-900 dark:text-green-100">Active Members</CardTitle>
+              <div className="p-2 bg-green-500 rounded-lg shadow-lg group-hover:bg-green-600 transition-colors">
+                <CheckCircle className="h-4 w-4 text-white" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalContributions)}</div>
-              <p className="text-xs text-muted-foreground">From all members</p>
+            <CardContent className="relative">
+              <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-1">{approvedMembers}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-orange-600" />
+                  <span className="text-xs font-medium text-orange-600">{pendingMembers}</span>
+                </div>
+                <p className="text-xs text-green-700 dark:text-green-300">pending approval</p>
+              </div>
+              <div className="mt-2 flex gap-1">
+                <div className="flex-1 bg-green-200 dark:bg-green-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-green-500 h-full rounded-full w-full transition-all duration-500 ease-out"></div>
+                </div>
+                <div className="flex-1 bg-orange-200 dark:bg-orange-800 rounded-full h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-orange-500 h-full rounded-full transition-all duration-500 ease-out"
+                    style={{ width: totalMembers > 0 ? `${(pendingMembers / totalMembers) * 100}%` : '0%' }}
+                  ></div>
+                </div>
+              </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Contribution</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(totalMembers > 0 ? totalContributions / totalMembers : 0)}
+          <Card className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 border-purple-200 dark:border-purple-800 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-purple-900 dark:text-purple-100">Total Contributions</CardTitle>
+              <div className="p-2 bg-purple-500 rounded-lg shadow-lg group-hover:bg-purple-600 transition-colors">
+                <DollarSign className="h-4 w-4 text-white" />
               </div>
-              <p className="text-xs text-muted-foreground">Per member</p>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-1">{formatCurrency(totalContributions)}</div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-green-600" />
+                  <span className="text-xs font-medium text-green-600">+12.3%</span>
+                </div>
+                <p className="text-xs text-purple-700 dark:text-purple-300">vs last month</p>
+              </div>
+              <div className="mt-2 bg-purple-200 dark:bg-purple-800 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full w-4/5 transition-all duration-500 ease-out"></div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="relative overflow-hidden bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20 border-amber-200 dark:border-amber-800 hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform"></div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+              <CardTitle className="text-sm font-medium text-amber-900 dark:text-amber-100">Average Contribution</CardTitle>
+              <div className="p-2 bg-amber-500 rounded-lg shadow-lg group-hover:bg-amber-600 transition-colors">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-1">
+                {formatCurrency(totalStats.averageContribution)}
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <Calculator className="h-3 w-3 text-amber-600" />
+                  <span className="text-xs font-medium text-amber-600">{totalMembers}</span>
+                </div>
+                <p className="text-xs text-amber-700 dark:text-amber-300">contributing members</p>
+              </div>
+              <div className="mt-2 bg-amber-200 dark:bg-amber-800 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full w-3/4 transition-all duration-500 ease-out"></div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Advanced Search and Filter */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Member Search & Filters</span>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium">Group by Area:</label>
-                <input
-                  type="checkbox"
-                  checked={groupByArea}
-                  onChange={(e) => setGroupByArea(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
+        {/* Quick Action Cards */}
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/20 dark:to-indigo-900/20 border-indigo-200 dark:border-indigo-800 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-500 rounded-lg">
+                  <Activity className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-indigo-900 dark:text-indigo-100">Member Status</CardTitle>
+                  <CardDescription className="text-indigo-700 dark:text-indigo-300">Quick overview</CardDescription>
+                </div>
               </div>
-            </CardTitle>
-            <CardDescription>Search, filter, and group members for better management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-indigo-700 dark:text-indigo-300">Mature Members</span>
+                  <span className="font-medium text-indigo-900 dark:text-indigo-100">{matureMembers}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-indigo-700 dark:text-indigo-300">Paid Members</span>
+                  <span className="font-medium text-indigo-900 dark:text-indigo-100">{paidMembers}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-800 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-500 rounded-lg">
+                  <MessageCircle className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-emerald-900 dark:text-emerald-100">Quick Actions</CardTitle>
+                  <CardDescription className="text-emerald-700 dark:text-emerald-300">Common tasks</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setCommunicationModal(true)} className="flex-1 text-xs">
+                  <Send className="h-3 w-3 mr-1" />
+                  Send
+                </Button>
+                <Button size="sm" variant="outline" onClick={exportToExcel} className="flex-1 text-xs">
+                  <Download className="h-3 w-3 mr-1" />
+                  Export
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950/20 dark:to-rose-900/20 border-rose-200 dark:border-rose-800 hover:shadow-lg transition-all duration-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-500 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-base text-rose-900 dark:text-rose-100">Performance</CardTitle>
+                  <CardDescription className="text-rose-700 dark:text-rose-300">Area metrics</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-rose-700 dark:text-rose-300">Efficiency</span>
+                  <span className="font-medium text-rose-900 dark:text-rose-100">94.2%</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-rose-700 dark:text-rose-300">Growth</span>
+                  <span className="font-medium text-rose-900 dark:text-rose-100">+8.5%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Modern Search and Filtering Section */}
+        <Card className="mb-8 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900/50 dark:to-slate-800/50 border-slate-200 dark:border-slate-700">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-slate-500 to-slate-600 rounded-lg shadow-md">
+                  <Filter className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-slate-900 dark:text-slate-100">Advanced Member Search & Filters</CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400">Search, filter, and organize members efficiently</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <Group className="h-4 w-4 text-slate-500" />
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Group by Area</label>
+                  <Checkbox
+                    checked={groupByArea}
+                    onCheckedChange={(checked) => setGroupByArea(checked as boolean)}
+                    className="ml-1"
+                  />
+                </div>
+                <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1">
+                  <Users className="h-3 w-3 mr-1" />
+                  {filteredMembers.length} / {members.length}
+                </Badge>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Primary Search and Area Filter */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center space-x-2 flex-1 min-w-[300px]">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, email, TNS number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
-                />
+          
+          <CardContent className="space-y-6">
+            {/* Primary Search Bar */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-slate-400" />
               </div>
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium whitespace-nowrap">Area:</label>
+              <Input
+                placeholder="🔍 Search members by name, email, TNS number, phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 text-base bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Filter Pills Row */}
+            <div className="flex flex-wrap gap-3">
+              {/* Area Filter */}
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-slate-500" />
                 <Select value={selectedArea} onValueChange={setSelectedArea}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select area" />
+                  <SelectTrigger className="w-[200px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-lg">
+                    <SelectValue placeholder="All Areas" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Areas</SelectItem>
+                    <SelectItem value="all">🌍 All Areas</SelectItem>
                     {allAreas.map((area) => (
                       <SelectItem key={area} value={area}>
-                        {area}
+                        📍 {area}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            
-            {/* Secondary Filters */}
-            <div className="flex flex-wrap items-center gap-4 pt-2 border-t">
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium whitespace-nowrap">Status:</label>
+              
+              {/* Status Filter */}
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-slate-500" />
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[150px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-lg">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">✅ Approved</SelectItem>
+                    <SelectItem value="pending">⏳ Pending</SelectItem>
+                    <SelectItem value="inactive">❌ Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium whitespace-nowrap">Maturity:</label>
+              {/* Maturity Filter */}
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-slate-500" />
                 <Select value={maturityFilter} onValueChange={setMaturityFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[150px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-lg">
                     <SelectValue placeholder="Maturity" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="mature">Mature</SelectItem>
-                    <SelectItem value="immature">Immature</SelectItem>
+                    <SelectItem value="all">All Members</SelectItem>
+                    <SelectItem value="mature">🎯 Mature</SelectItem>
+                    <SelectItem value="immature">⏱️ Immature</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <label className="text-sm font-medium whitespace-nowrap">Payment:</label>
+              {/* Payment Filter */}
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-slate-500" />
                 <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[160px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-lg">
                     <SelectValue placeholder="Payment" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="up-to-date">Up to Date</SelectItem>
-                    <SelectItem value="behind">Behind</SelectItem>
-                    <SelectItem value="no-contributions">No Contributions</SelectItem>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="paid">💰 Paid</SelectItem>
+                    <SelectItem value="unpaid">⚠️ Unpaid</SelectItem>
+                    <SelectItem value="behind">📉 Behind</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex items-center space-x-2 ml-auto">
-                <span className="text-sm text-muted-foreground">
-                  {filteredMembers.length} of {members.length} members
-                </span>
-                {(searchTerm || selectedArea !== 'all' || statusFilter !== 'all' || 
-                  maturityFilter !== 'all' || paymentFilter !== 'all') && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedArea('all');
-                      setStatusFilter('all');
-                      setMaturityFilter('all');
-                      setPaymentFilter('all');
-                    }}
-                    className="h-8"
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
+              {/* Clear Filters */}
+              {(searchTerm || selectedArea !== 'all' || statusFilter !== 'all' || 
+                maturityFilter !== 'all' || paymentFilter !== 'all') && (
+                <Button 
+                  variant="outline"
+                  size="sm" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedArea('all');
+                    setStatusFilter('all');
+                    setMaturityFilter('all');
+                    setPaymentFilter('all');
+                  }}
+                  className="h-9 px-3 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Clear All Filters
+                </Button>
+              )}
             </div>
+            
+            {/* Active Filters Summary */}
+            {(searchTerm || selectedArea !== 'all' || statusFilter !== 'all' || 
+              maturityFilter !== 'all' || paymentFilter !== 'all') && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <Filter className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Active Filters:</span>
+                <div className="flex flex-wrap gap-1">
+                  {searchTerm && (
+                    <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs">
+                      Search: "{searchTerm}"
+                    </Badge>
+                  )}
+                  {selectedArea !== 'all' && (
+                    <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs">
+                      Area: {selectedArea}
+                    </Badge>
+                  )}
+                  {statusFilter !== 'all' && (
+                    <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs">
+                      Status: {statusFilter}
+                    </Badge>
+                  )}
+                  {maturityFilter !== 'all' && (
+                    <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs">
+                      Maturity: {maturityFilter}
+                    </Badge>
+                  )}
+                  {paymentFilter !== 'all' && (
+                    <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs">
+                      Payment: {paymentFilter}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

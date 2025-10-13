@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStaffAuth } from "@/hooks/useStaffAuth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,6 +128,7 @@ interface DashboardStats {
 
 const SecretaryPortal = () => {
   const { staffUser, logout } = useStaffAuth();
+  const { isAuthorized, isLoading: roleLoading } = useRoleGuard({ portal: 'secretary' });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
@@ -168,19 +170,11 @@ const SecretaryPortal = () => {
   });
 
   useEffect(() => {
-    if (!staffUser) {
-      navigate("/portal-login");
-      return;
+    // Role guard handles authentication and authorization
+    if (isAuthorized && !roleLoading) {
+      fetchData();
     }
-
-    if (staffUser.staff_role !== "Secretary") {
-      toast.error("Access denied. Secretary role required.");
-      navigate("/dashboard");
-      return;
-    }
-
-    fetchData();
-  }, [staffUser, navigate]);
+  }, [isAuthorized, roleLoading]);
 
   const fetchData = async () => {
     try {
@@ -298,12 +292,35 @@ const SecretaryPortal = () => {
     }
   };
 
-  if (loading) {
+  // Show loading state while checking authorization or loading data
+  if (roleLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading Secretary Portal...</p>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground font-medium">
+            {roleLoading ? 'Verifying secretary access...' : 'Loading Secretary Portal...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authorized, the role guard will handle redirection
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-red-600 dark:text-red-400 text-6xl mb-4">🚫</div>
+          <div className="space-y-2">
+            <p className="text-red-600 dark:text-red-400 font-bold text-xl">Access Denied</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              You don't have permission to access the Secretary Portal.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Redirecting to appropriate portal...
+            </p>
+          </div>
         </div>
       </div>
     );

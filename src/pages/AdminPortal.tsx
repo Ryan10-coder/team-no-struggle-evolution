@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useStaffAuth } from "@/hooks/useStaffAuth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +118,7 @@ interface MonthlyExpense {
 const AdminPortal = () => {
   const { user } = useAuth();
   const { staffUser, logout: staffLogout } = useStaffAuth();
+  const { isAuthorized, isLoading: roleLoading } = useRoleGuard({ portal: 'admin' });
   const navigate = useNavigate();
   const [pendingMembers, setPendingMembers] = useState<MemberRegistration[]>([]);
   const [allMembers, setAllMembers] = useState<MemberRegistration[]>([]);
@@ -184,14 +186,11 @@ const AdminPortal = () => {
   }, [mpesaPayments]);
 
   useEffect(() => {
-    // Check if user is authenticated either through regular auth or staff auth
-    if (!user && !staffUser) {
-      navigate("/portal-login");
-      return;
+    // Role guard handles authentication and authorization
+    if (isAuthorized && !roleLoading) {
+      fetchPendingRegistrations();
     }
-    
-    checkAdminAccess();
-  }, [user, staffUser, navigate]);
+  }, [isAuthorized, roleLoading]);
 
   // Set up cross-portal member deletion synchronization
   useEffect(() => {
@@ -298,43 +297,7 @@ const AdminPortal = () => {
     };
   }, []);
 
-  const checkAdminAccess = async () => {
-    try {
-      // If logged in via staff auth, check if they have admin/treasurer role
-      if (staffUser) {
-        if (staffUser.staff_role === "Admin" || staffUser.staff_role === "Treasurer") {
-          fetchPendingRegistrations();
-          return;
-        } else {
-          toast.error("Access denied. Admin or Treasurer privileges required.");
-          navigate("/portal-login");
-          return;
-        }
-      }
-
-      // If logged in via regular auth, check if they have admin role
-      if (user) {
-        const { data: staffData, error } = await supabase
-          .from("staff_registrations")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("staff_role", "Admin")
-          .eq("pending", "approved")
-          .single();
-
-        if (error) {
-          toast.error("Access denied. Admin privileges required.");
-          navigate("/dashboard");
-          return;
-        }
-
-        fetchPendingRegistrations();
-      }
-    } catch (error) {
-      console.error("Error checking admin access:", error);
-      navigate(staffUser ? "/portal-login" : "/dashboard");
-    }
-  };
+  // Role-based access is now handled by useRoleGuard
 
   const fetchPendingRegistrations = async () => {
     setLoading(true);
@@ -1408,10 +1371,49 @@ const AdminPortal = () => {
     }
   };
 
-  if (loading) {
+  // Show loading state while checking authorization or loading data
+  if (roleLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur opacity-75"></div>
+            <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-full">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+            <p className="text-gray-600 dark:text-gray-400 font-medium">
+              {roleLoading ? 'Verifying admin access...' : 'Loading admin portal...'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authorized, the role guard will handle redirection
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-600 rounded-full blur opacity-75"></div>
+            <div className="relative bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-full">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-red-600 dark:text-red-400 font-bold text-xl">Access Denied</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              You don't have permission to access the Admin Portal.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Redirecting to appropriate portal...
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

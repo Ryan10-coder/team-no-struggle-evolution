@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStaffAuth } from "@/hooks/useStaffAuth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +53,7 @@ interface AuditMetrics {
 
 const AuditorPortal = () => {
   const { staffUser, logout } = useStaffAuth();
+  const { isAuthorized, isLoading: roleLoading } = useRoleGuard({ portal: 'auditor' });
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<AuditMetrics>({
@@ -86,19 +88,11 @@ const AuditorPortal = () => {
   });
 
   useEffect(() => {
-    if (!staffUser) {
-      navigate("/portal-login");
-      return;
+    // Role guard handles authentication and authorization
+    if (isAuthorized && !roleLoading) {
+      fetchAuditData();
     }
-
-    if (staffUser.staff_role !== "Auditor" && staffUser.staff_role !== "Treasurer" && staffUser.staff_role !== "Admin") {
-      toast.error("Access denied. Auditor, Treasurer, or Admin role required.");
-      navigate("/dashboard");
-      return;
-    }
-
-    fetchAuditData();
-  }, [staffUser, navigate]);
+  }, [isAuthorized, roleLoading]);
 
   const fetchAuditData = async () => {
     try {
