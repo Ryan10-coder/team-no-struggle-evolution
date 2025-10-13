@@ -54,13 +54,22 @@ import {
   X,
   XCircle,
   Hash,
-  Calculator
+  Calculator,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useCrossPortalSync } from "@/hooks/useCrossPortalSync";
 import { format, addDays, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { ExportModal } from "@/components/ExportModal";
+import { 
+  fetchMembersWithEnhancedData, 
+  calculateRealTimeStats,
+  EnhancedMemberBalance,
+  DetailedContribution
+} from "@/utils/databaseUtils";
 
 interface Member {
   id: string;
@@ -93,17 +102,9 @@ interface Member {
   updated_at?: string;
 }
 
-interface MemberBalance {
-  current_balance: number;
-  total_contributions: number;
-  total_disbursements: number;
-}
-
-interface Contribution {
-  amount: number;
-  contribution_date: string;
-  contribution_type: string;
-}
+// Using enhanced interfaces from databaseUtils
+type MemberBalance = EnhancedMemberBalance;
+type Contribution = DetailedContribution;
 
 interface AreaStats {
   total_members: number;
@@ -151,6 +152,18 @@ const CoordinatorPortal = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [maturityFilter, setMaturityFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
+  
+  // Export modal state
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  
+  // Enhanced real-time statistics
+  const [realTimeStats, setRealTimeStats] = useState({
+    totalMembers: 0,
+    approvedMembers: 0,
+    totalContributions: 0,
+    averageContribution: 0,
+    currentTotalBalance: 0
+  });
   
   // Area grouping state
   const [areaGroups, setAreaGroups] = useState<AreaGroup[]>([]);
@@ -202,10 +215,9 @@ const CoordinatorPortal = () => {
         table: 'member_balances'
       }, (payload) => {
         console.log('📊 Member balance changed:', payload);
-        // Refresh financial data when balances change
-        if (members.length > 0) {
-          fetchMemberFinancialData(members.map(m => m.id));
-        }
+        // Refresh enhanced data when balances change
+        console.log('🔄 Balances changed, refreshing data...');
+        fetchCoordinatorData();
         toast.info('Member balances updated', { duration: 2000 });
       })
       .subscribe();
@@ -221,10 +233,9 @@ const CoordinatorPortal = () => {
         table: 'contributions'
       }, (payload) => {
         console.log('💰 Contribution changed:', payload);
-        // Refresh financial data when contributions change
-        if (members.length > 0) {
-          fetchMemberFinancialData(members.map(m => m.id));
-        }
+        // Refresh enhanced data when contributions change
+        console.log('🔄 Contributions changed, refreshing data...');
+        fetchCoordinatorData();
         toast.info('Contributions updated', { duration: 2000 });
       })
       .subscribe();
@@ -248,11 +259,11 @@ const CoordinatorPortal = () => {
 
     subscriptions.push(membersSubscription);
 
-    // Periodic data refresh every 5 minutes
+    // Periodic enhanced data refresh every 5 minutes
     const intervalId = setInterval(() => {
       if (members.length > 0) {
-        console.log('🔄 Periodic data refresh...');
-        fetchMemberFinancialData(members.map(m => m.id));
+        console.log('🔄 Periodic enhanced data refresh...');
+        fetchCoordinatorData();
       }
     }, 5 * 60 * 1000); // 5 minutes
 
@@ -370,47 +381,35 @@ const CoordinatorPortal = () => {
         return;
       }
 
-      console.log('Fetching coordinator data for:', staffUser.first_name, staffUser.last_name, 'Role:', staffUser.staff_role);
+      console.log('Fetching enhanced coordinator data for:', staffUser.first_name, staffUser.last_name, 'Role:', staffUser.staff_role);
 
       // Set assigned area (can be null for General Coordinators)
       setAssignedArea(staffUser.assigned_area || "All Areas");
       console.log('Assigned area:', staffUser.assigned_area || 'All Areas');
-
-      // Fetch ALL members from all areas (both approved and pending for comprehensive view)
-      const { data: membersData, error: membersError } = await supabase
-        .from("membership_registrations")
-        .select('*')
-        .in("registration_status", ["approved", "pending"])
-        .order('first_name');
-
-      console.log('Members query result:', { data: membersData?.length, error: membersError });
-
-      if (membersError) {
-        console.error('Members error details:', membersError);
-        toast.error(`Error fetching members data: ${membersError.message}`);
-        setLoading(false);
-        return;
-      }
-
-      const membersList = membersData || [];
-      console.log(`👥 Setting ${membersList.length} members`);
       
+      setLoading(true);
+
+      // Use enhanced data fetching
+      const {
+        members: membersList,
+        balances,
+        contributions: contributionData,
+        areaStats,
+        areas
+      } = await fetchMembersWithEnhancedData(staffUser);
+      
+      console.log(`👥 Setting ${membersList.length} members with enhanced data`);
       setMembers(membersList);
-
-      // Extract unique areas from all members
-      const areas = Array.from(new Set(
-        membersList.map(member => `${member.city}, ${member.state}`)
-      )).sort();
-      console.log('🗺️ Areas found:', areas);
+      setMemberBalances(balances);
+      setContributions(contributionData);
       setAllAreas(areas);
-
-      // Fetch member balances and contributions for each member
-      if (membersList.length > 0) {
-        console.log('💰 Fetching financial data for', membersList.length, 'members');
-        await fetchMemberFinancialData(membersList.map(m => m.id));
-      } else {
-        console.log('⚠️ No members found to fetch financial data');
-      }
+      
+      // Calculate real-time statistics
+      const stats = calculateRealTimeStats(membersList, balances);
+      setRealTimeStats(stats);
+      
+      console.log('📊 Real-time stats loaded:', stats);
+      console.log('🗺️ Areas found:', areas);
 
     } catch (error) {
       console.error("Error:", error);
@@ -420,122 +419,11 @@ const CoordinatorPortal = () => {
     }
   };
 
-  const fetchMemberFinancialData = async (memberIds: string[]) => {
-    if (!memberIds.length) {
-      console.log('🚨 No member IDs provided for financial data fetch');
-      return;
-    }
+  // Enhanced financial data fetching is now handled by fetchMembersWithEnhancedData
 
-    try {
-      console.log('📊 Starting financial data fetch for', memberIds.length, 'members');
-
-      // Initialize empty maps
-      const balancesMap: Record<string, MemberBalance> = {};
-      const contributionsMap: Record<string, Contribution[]> = {};
-
-      // Try to fetch balances (but don't fail if table doesn't exist)
-      try {
-        const { data: balancesData, error: balancesError } = await supabase
-          .from("member_balances")
-          .select('member_id, current_balance, total_contributions, total_disbursements')
-          .in("member_id", memberIds);
-
-        if (balancesError) {
-          console.warn('Member balances table might not exist or has issues:', balancesError.message);
-        } else if (balancesData) {
-          balancesData.forEach(balance => {
-            balancesMap[balance.member_id] = {
-              current_balance: Number(balance.current_balance) || 0,
-              total_contributions: Number(balance.total_contributions) || 0,
-              total_disbursements: Number(balance.total_disbursements) || 0
-            };
-          });
-          console.log('💵 Loaded balances for', Object.keys(balancesMap).length, 'members');
-        }
-      } catch (balanceError) {
-        console.warn('Could not fetch member balances:', balanceError);
-      }
-
-      // Try to fetch contributions (but don't fail if table doesn't exist)
-      try {
-        const { data: contributionsData, error: contributionsError } = await supabase
-          .from("contributions")
-          .select('member_id, amount, contribution_date, contribution_type')
-          .in("member_id", memberIds)
-          .order("contribution_date", { ascending: false });
-
-        if (contributionsError) {
-          console.warn('Contributions table might not exist or has issues:', contributionsError.message);
-        } else if (contributionsData) {
-          contributionsData.forEach(contribution => {
-            if (!contributionsMap[contribution.member_id]) {
-              contributionsMap[contribution.member_id] = [];
-            }
-            contributionsMap[contribution.member_id].push({
-              amount: Number(contribution.amount) || 0,
-              contribution_date: contribution.contribution_date,
-              contribution_type: contribution.contribution_type || 'regular'
-            });
-          });
-          console.log('💰 Loaded contributions for', Object.keys(contributionsMap).length, 'members');
-        }
-      } catch (contributionError) {
-        console.warn('Could not fetch contributions:', contributionError);
-      }
-
-      // Set the data even if some tables don't exist
-      setMemberBalances(balancesMap);
-      setContributions(contributionsMap);
-
-      // Calculate statistics from available data
-      const totalContributionsFromData = Object.values(contributionsMap)
-        .flat()
-        .reduce((sum, contrib) => sum + contrib.amount, 0);
-      
-      console.log(`📈 Financial Summary: ${Object.keys(balancesMap).length} balances, ${Object.keys(contributionsMap).length} contribution records`);
-
-    } catch (error) {
-      console.error("Critical error in financial data fetching:", error);
-      // Set empty data but don't show error toast - let the component work without financial data
-      setMemberBalances({});
-      setContributions({});
-    }
-  };
-
-  const exportToExcel = async () => {
-    try {
-      const response = await supabase.functions.invoke('export-excel', {
-        body: {
-          members: filteredMembers,
-          contributions: contributions,
-          balances: memberBalances,
-          area: assignedArea
-        }
-      });
-
-      if (response.error) {
-        toast.error("Error generating Excel file");
-        return;
-      }
-
-      // Create download link
-      const blob = new Blob([response.data], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${assignedArea}_members_contributions_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success("Excel file downloaded successfully");
-    } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Error exporting data");
-    }
+  // Enhanced export functionality is now handled by ExportModal component
+  const handleExportClick = () => {
+    setExportModalOpen(true);
   };
 
   const refreshData = async () => {
@@ -681,14 +569,13 @@ const CoordinatorPortal = () => {
   const matureMembers = members.filter(m => m.maturity_status === 'mature').length;
   const paidMembers = members.filter(m => m.payment_status === 'paid').length;
   
-  // Calculate total stats for dashboard with real-time data
-  const totalStats = {
-    totalMembers: filteredMembers.length,
-    activeMembers: filteredMembers.filter(m => m.registration_status === 'approved').length,
-    totalContributions: filteredMembers.reduce((sum, member) => 
-      sum + (memberBalances[member.id]?.total_contributions || 0), 0
-    ),
-    averageContribution: totalMembers > 0 ? totalContributions / totalMembers : 0
+  // Use real-time stats for dashboard display
+  const displayStats = realTimeStats.totalMembers > 0 ? realTimeStats : {
+    totalMembers,
+    approvedMembers,
+    totalContributions,
+    averageContribution: totalMembers > 0 ? totalContributions / totalMembers : 0,
+    currentTotalBalance: 0
   };
 
   // Simple test return
@@ -791,11 +678,11 @@ const CoordinatorPortal = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={exportToExcel}
+                onClick={handleExportClick}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export Data
+                Export Reports
               </Button>
             </div>
           </div>
@@ -814,12 +701,12 @@ const CoordinatorPortal = () => {
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1">{totalMembers}</div>
+              <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-1">{displayStats.totalMembers}</div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <TrendingUp className="h-3 w-3 text-green-600" />
                   <span className="text-xs font-medium text-green-600">
-                    {totalMembers > 0 ? `${((approvedMembers / totalMembers) * 100).toFixed(1)}%` : '0%'}
+                    {displayStats.totalMembers > 0 ? `${((displayStats.approvedMembers / displayStats.totalMembers) * 100).toFixed(1)}%` : '0%'}
                   </span>
                 </div>
                 <p className="text-xs text-blue-700 dark:text-blue-300">approval rate</p>
@@ -827,7 +714,7 @@ const CoordinatorPortal = () => {
               <div className="mt-2 bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 overflow-hidden">
                 <div 
                   className="bg-blue-500 h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: totalMembers > 0 ? `${(approvedMembers / totalMembers) * 100}%` : '0%' }}
+                  style={{ width: displayStats.totalMembers > 0 ? `${(displayStats.approvedMembers / displayStats.totalMembers) * 100}%` : '0%' }}
                 ></div>
               </div>
             </CardContent>
@@ -842,11 +729,11 @@ const CoordinatorPortal = () => {
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-1">{approvedMembers}</div>
+              <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-1">{displayStats.approvedMembers}</div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3 text-orange-600" />
-                  <span className="text-xs font-medium text-orange-600">{pendingMembers}</span>
+                  <span className="text-xs font-medium text-orange-600">{displayStats.totalMembers - displayStats.approvedMembers}</span>
                 </div>
                 <p className="text-xs text-green-700 dark:text-green-300">pending approval</p>
               </div>
@@ -857,7 +744,7 @@ const CoordinatorPortal = () => {
                 <div className="flex-1 bg-orange-200 dark:bg-orange-800 rounded-full h-1.5 overflow-hidden">
                   <div 
                     className="bg-orange-500 h-full rounded-full transition-all duration-500 ease-out"
-                    style={{ width: totalMembers > 0 ? `${(pendingMembers / totalMembers) * 100}%` : '0%' }}
+                    style={{ width: displayStats.totalMembers > 0 ? `${((displayStats.totalMembers - displayStats.approvedMembers) / displayStats.totalMembers) * 100}%` : '0%' }}
                   ></div>
                 </div>
               </div>
@@ -873,13 +760,15 @@ const CoordinatorPortal = () => {
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-1">{formatCurrency(totalContributions)}</div>
+              <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mb-1">{formatCurrency(displayStats.totalContributions)}</div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-xs font-medium text-green-600">+12.3%</span>
+                  <DollarSign className="h-3 w-3 text-purple-600" />
+                  <span className="text-xs font-medium text-purple-600">
+                    {displayStats.currentTotalBalance > 0 ? formatCurrency(displayStats.currentTotalBalance) : 'Balance N/A'}
+                  </span>
                 </div>
-                <p className="text-xs text-purple-700 dark:text-purple-300">vs last month</p>
+                <p className="text-xs text-purple-700 dark:text-purple-300">current balance</p>
               </div>
               <div className="mt-2 bg-purple-200 dark:bg-purple-800 rounded-full h-1.5 overflow-hidden">
                 <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full w-4/5 transition-all duration-500 ease-out"></div>
@@ -897,14 +786,14 @@ const CoordinatorPortal = () => {
             </CardHeader>
             <CardContent className="relative">
               <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mb-1">
-                {formatCurrency(totalStats.averageContribution)}
+                {formatCurrency(displayStats.averageContribution)}
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1">
                   <Calculator className="h-3 w-3 text-amber-600" />
-                  <span className="text-xs font-medium text-amber-600">{totalMembers}</span>
+                  <span className="text-xs font-medium text-amber-600">{displayStats.totalMembers}</span>
                 </div>
-                <p className="text-xs text-amber-700 dark:text-amber-300">contributing members</p>
+                <p className="text-xs text-amber-700 dark:text-amber-300">total members</p>
               </div>
               <div className="mt-2 bg-amber-200 dark:bg-amber-800 rounded-full h-1.5 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full w-3/4 transition-all duration-500 ease-out"></div>
@@ -959,7 +848,7 @@ const CoordinatorPortal = () => {
                   <Send className="h-3 w-3 mr-1" />
                   Send
                 </Button>
-                <Button size="sm" variant="outline" onClick={exportToExcel} className="flex-1 text-xs">
+                <Button size="sm" variant="outline" onClick={handleExportClick} className="flex-1 text-xs">
                   <Download className="h-3 w-3 mr-1" />
                   Export
                 </Button>
@@ -1593,6 +1482,19 @@ const CoordinatorPortal = () => {
             </div>
           </div>
         )}
+        
+        {/* Enhanced Export Modal */}
+        <ExportModal
+          open={exportModalOpen}
+          onOpenChange={setExportModalOpen}
+          members={filteredMembers}
+          balances={memberBalances}
+          contributions={contributions}
+          coordinatorName={`${staffUser?.first_name || ''} ${staffUser?.last_name || ''}`.trim()}
+          assignedArea={assignedArea}
+          availableAreas={allAreas}
+          filteredArea={selectedArea !== 'all' ? selectedArea : undefined}
+        />
       </div>
     </div>
   );
