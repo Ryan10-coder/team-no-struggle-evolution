@@ -221,7 +221,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeSummary"
                   checked={includeSummary}
-                  onCheckedChange={setIncludeSummary}
+                  onCheckedChange={(checked) => setIncludeSummary(checked === true)}
                 />
                 <Label htmlFor="includeSummary" className="text-sm font-medium">
                   Summary Statistics
@@ -232,7 +232,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeFinancialData"
                   checked={includeFinancialData}
-                  onCheckedChange={setIncludeFinancialData}
+                  onCheckedChange={(checked) => setIncludeFinancialData(checked === true)}
                 />
                 <Label htmlFor="includeFinancialData" className="text-sm font-medium">
                   Financial Data
@@ -243,7 +243,7 @@ export const ExportModal = ({
                 <Checkbox
                   id="includeContributions"
                   checked={includeContributions}
-                  onCheckedChange={setIncludeContributions}
+                  onCheckedChange={(checked) => setIncludeContributions(checked === true)}
                 />
                 <Label htmlFor="includeContributions" className="text-sm font-medium">
                   Contribution History
