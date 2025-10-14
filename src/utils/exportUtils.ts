@@ -337,7 +337,7 @@ export const generateExcelReport = (data: ExportData, options: ExportOptions): v
   }
   
   // Members Sheet
-  const memberData = [
+  const memberData: (string | number)[][] = [
     [
       'TNS Number',
       'First Name',
@@ -366,7 +366,7 @@ export const generateExcelReport = (data: ExportData, options: ExportOptions): v
   
   data.members.forEach(member => {
     const balance = data.balances[member.id];
-    const row = [
+    const row: (string | number)[] = [
       member.tns_number || '',
       member.first_name,
       member.last_name,
@@ -386,7 +386,7 @@ export const generateExcelReport = (data: ExportData, options: ExportOptions): v
       member.registration_status,
       member.payment_status,
       member.maturity_status,
-      member.days_to_maturity || '',
+      member.days_to_maturity?.toString() || '',
       member.registration_date ? formatDate(member.registration_date) : ''
     ];
     
@@ -452,7 +452,7 @@ export const generateExcelReport = (data: ExportData, options: ExportOptions): v
           member.tns_number || '',
           `${member.first_name} ${member.last_name}`,
           formatDate(contribution.contribution_date),
-          contribution.amount,
+          contribution.amount.toString(),
           contribution.contribution_type
         ]);
       });
@@ -516,12 +516,12 @@ export const generateExcelReport = (data: ExportData, options: ExportOptions): v
     Array.from(areaStats.entries()).forEach(([area, stats]) => {
       areaData.push([
         area,
-        stats.members,
-        stats.approvedMembers,
-        stats.matureMembers,
-        stats.paidMembers,
-        stats.totalContributions,
-        stats.averageContribution
+        stats.members.toString(),
+        stats.approvedMembers.toString(),
+        stats.matureMembers.toString(),
+        stats.paidMembers.toString(),
+        stats.totalContributions.toString(),
+        stats.averageContribution.toString()
       ]);
     });
     

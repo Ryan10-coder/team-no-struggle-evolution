@@ -847,7 +847,7 @@ const AdminPortal = () => {
       console.log('Deleting member notifications for member:', memberId);
       try {
         const { error: notificationsError, count: notificationsCount } = await supabase
-          .from("member_notifications")
+          .from("member_notifications" as any)
           .delete()
           .eq("member_id", memberId);
         
@@ -865,7 +865,7 @@ const AdminPortal = () => {
       console.log('Deleting document sharing records for member:', memberId);
       try {
         const { error: sharingError, count: sharingCount } = await supabase
-          .from("document_sharing")
+          .from("document_sharing" as any)
           .delete()
           .or(`shared_with.eq.${memberId},shared_by.eq.${memberId}`);
         
@@ -883,7 +883,7 @@ const AdminPortal = () => {
       console.log('Deleting audit logs for member:', memberId);
       try {
         const { error: auditError, count: auditCount } = await supabase
-          .from("audit_logs")
+          .from("audit_logs" as any)
           .delete()
           .eq("record_id", memberId)
           .eq("table_name", "membership_registrations");
@@ -966,7 +966,7 @@ const AdminPortal = () => {
           // Delete user sessions if table exists
           try {
             const { error: sessionsError, count: sessionsCount } = await supabase
-              .from("user_sessions")
+              .from("user_sessions" as any)
               .delete()
               .eq("user_email", memberEmail);
             
@@ -981,7 +981,7 @@ const AdminPortal = () => {
           // Delete login activities if table exists
           try {
             const { error: activitiesError, count: activitiesCount } = await supabase
-              .from("login_activities")
+              .from("login_activities" as any)
               .delete()
               .eq("user_email", memberEmail);
             
@@ -1001,7 +1001,7 @@ const AdminPortal = () => {
       console.log('Deleting communication logs for member:', memberId);
       try {
         const { error: commError, count: commCount } = await supabase
-          .from("communication_logs")
+          .from("communication_logs" as any)
           .delete()
           .eq("member_id", memberId);
         
@@ -1017,7 +1017,7 @@ const AdminPortal = () => {
       console.log('Deleting support tickets for member:', memberId);
       try {
         const { error: ticketError, count: ticketCount } = await supabase
-          .from("support_tickets")
+          .from("support_tickets" as any)
           .delete()
           .eq("member_id", memberId);
         
@@ -1042,7 +1042,7 @@ const AdminPortal = () => {
         for (const tableName of tablesToCheck) {
           try {
             const { error: checkError, count: remainingCount } = await supabase
-              .from(tableName)
+              .from(tableName as any)
               .select('id', { count: 'exact' })
               .eq('member_id', memberId);
             
@@ -1051,7 +1051,7 @@ const AdminPortal = () => {
               
               // Attempt to delete these records
               const { error: cleanupError, count: cleanedCount } = await supabase
-                .from(tableName)
+                .from(tableName as any)
                 .delete()
                 .eq('member_id', memberId);
               

@@ -68,9 +68,7 @@ export const fetchEnhancedMemberFinancialData = async (
         amount,
         contribution_date,
         contribution_type,
-        payment_method,
-        reference_number,
-        verified,
+        status,
         created_at
       `)
       .in('member_id', memberIds)
@@ -90,9 +88,9 @@ export const fetchEnhancedMemberFinancialData = async (
           amount: Number(contribution.amount) || 0,
           contribution_date: contribution.contribution_date,
           contribution_type: contribution.contribution_type || 'regular',
-          payment_method: contribution.payment_method,
-          reference_number: contribution.reference_number,
-          verified: contribution.verified || false,
+          payment_method: undefined,
+          reference_number: undefined,
+          verified: contribution.status === 'confirmed',
           created_at: contribution.created_at
         });
       });
@@ -107,7 +105,7 @@ export const fetchEnhancedMemberFinancialData = async (
         current_balance,
         total_contributions,
         total_disbursements,
-        last_contribution_date
+        last_updated
       `)
       .in('member_id', memberIds);
 
@@ -131,7 +129,7 @@ export const fetchEnhancedMemberFinancialData = async (
           current_balance: Number(balance.current_balance) || 0,
           total_contributions: Number(balance.total_contributions) || 0,
           total_disbursements: Number(balance.total_disbursements) || 0,
-          last_contribution_date: balance.last_contribution_date,
+          last_contribution_date: memberContributions[0]?.contribution_date,
           contribution_count: contributionCount,
           average_monthly_contribution: averageMonthly
         };

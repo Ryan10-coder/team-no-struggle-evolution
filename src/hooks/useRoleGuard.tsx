@@ -72,7 +72,7 @@ export const useRoleGuard = ({
       const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
       
       // Check if user role is allowed for this portal
-      const isRoleAuthorized = allowedRoles.includes(userRole as any);
+      const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
       
       const isAuthorized = isSuperAdmin || isRoleAuthorized;
 
@@ -142,7 +142,7 @@ export const hasPortalAccess = (
 ): boolean => {
   const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
   const allowedRoles = PORTAL_ROLES[portal];
-  return isSuperAdmin || allowedRoles.includes(userRole as any);
+  return isSuperAdmin || (allowedRoles as readonly string[]).includes(userRole);
 };
 
 /**
@@ -154,6 +154,6 @@ export const getAccessiblePortals = (userRole: string, userEmail: string): Porta
   }
 
   return (Object.keys(PORTAL_ROLES) as PortalType[]).filter(portal => 
-    PORTAL_ROLES[portal].includes(userRole as any)
+    (PORTAL_ROLES[portal] as readonly string[]).includes(userRole)
   );
 };
