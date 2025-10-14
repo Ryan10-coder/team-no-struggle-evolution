@@ -385,7 +385,7 @@ export const ExportModal = ({
             ) : (
               <>
                 <Download className="h-4 w-4 mr-2" />
-                Export {format.toUpperCase()}
+                Export {exportFormat.toUpperCase()}
               </>
             )}
           </Button>
