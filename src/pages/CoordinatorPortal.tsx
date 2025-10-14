@@ -46,8 +46,6 @@ import {
   Plus,
   ChevronRight,
   ChevronDown,
-  Group,
-  Building,
   AlertCircle,
   CheckCircle,
   MessageCircle,
@@ -56,7 +54,8 @@ import {
   Hash,
   Calculator,
   FileSpreadsheet,
-  FileText
+  FileText,
+  LogOut
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -136,7 +135,7 @@ interface CommunicationMessage {
 }
 
 const CoordinatorPortal = () => {
-  const { staffUser } = useStaffAuth();
+  const { staffUser, logout: staffLogout } = useStaffAuth();
   const { isAuthorized, isLoading: roleLoading } = useRoleGuard({ portal: 'coordinator' });
   const navigate = useNavigate();
   const [members, setMembers] = useState<Member[]>([]);
@@ -278,17 +277,25 @@ const CoordinatorPortal = () => {
 
   useEffect(() => {
     let filtered = members.filter(member => {
+      // Normalize fields to avoid null/undefined crashes
+      const firstName = (member.first_name || '').toLowerCase();
+      const lastName = (member.last_name || '').toLowerCase();
+      const email = (member.email || '').toLowerCase();
+      const phone = (member.phone || '').toLowerCase();
+      const tns = (member.tns_number || '').toLowerCase();
+      const term = (searchTerm || '').toLowerCase();
+
       // Search filter
       const matchesSearch = 
-        member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (member.tns_number && member.tns_number.toLowerCase().includes(searchTerm.toLowerCase()));
+        firstName.includes(term) ||
+        lastName.includes(term) ||
+        email.includes(term) ||
+        phone.includes(term) ||
+        tns.includes(term);
       
       // Area filter
-      const matchesArea = selectedArea === "all" || 
-        `${member.city}, ${member.state}` === selectedArea;
+      const areaStr = `${member.city || ''}, ${member.state || ''}`;
+      const matchesArea = selectedArea === "all" || areaStr === selectedArea;
       
       // Status filter
       const matchesStatus = statusFilter === "all" || 
@@ -431,6 +438,16 @@ const CoordinatorPortal = () => {
     await fetchCoordinatorData();
     setRefreshing(false);
     toast.success('Data refreshed successfully');
+  };
+  
+  const handleLogout = () => {
+    if (staffUser) {
+      staffLogout();
+      toast.success('Logged out successfully');
+      navigate('/portal-login');
+    } else {
+      navigate('/dashboard');
+    }
   };
   
   const handleBulkMessage = async () => {
@@ -684,6 +701,17 @@ const CoordinatorPortal = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Export Reports
               </Button>
+              {staffUser && (
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -898,7 +926,7 @@ const CoordinatorPortal = () => {
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
-                  <Group className="h-4 w-4 text-slate-500" />
+                  <Users className="h-4 w-4 text-slate-500" />
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Group by Area</label>
                   <Checkbox
                     checked={groupByArea}
@@ -1132,7 +1160,7 @@ const CoordinatorPortal = () => {
                                 ) : (
                                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                                     <span className="text-sm font-medium">
-                                      {member.first_name[0]}{member.last_name[0]}
+                                      {(member.first_name?.[0] || '?')}{member.last_name?.[0] || ''}
                                     </span>
                                   </div>
                                 )}
@@ -1255,7 +1283,7 @@ const CoordinatorPortal = () => {
                           ) : (
                             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                               <span className="text-sm font-medium">
-                                {member.first_name[0]}{member.last_name[0]}
+                                {(member.first_name?.[0] || '?')}{member.last_name?.[0] || ''}
                               </span>
                             </div>
                           )}

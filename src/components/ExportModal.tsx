@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { exportMembersData, ExportOptions } from '@/utils/exportUtils';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 interface ExportModalProps {
   open: boolean;
@@ -55,7 +55,7 @@ export const ExportModal = ({
   availableAreas,
   filteredArea
 }: ExportModalProps) => {
-  const [format, setFormat] = useState<'pdf' | 'excel'>('pdf');
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'excel'>('pdf');
   const [includeFinancialData, setIncludeFinancialData] = useState(true);
   const [includeContributions, setIncludeContributions] = useState(true);
   const [includeSummary, setIncludeSummary] = useState(true);
@@ -89,7 +89,7 @@ export const ExportModal = ({
 
       // Prepare export options
       const exportOptions: ExportOptions = {
-        format,
+        format: exportFormat,
         includeFinancialData,
         includeContributions,
         includeSummary,
@@ -118,7 +118,7 @@ export const ExportModal = ({
       );
 
       toast.success(
-        `${format.toUpperCase()} report generated successfully! ` +
+        `${exportFormat.toUpperCase()} report generated successfully! ` +
         `${membersToExport.length} members exported.`
       );
 
@@ -127,7 +127,7 @@ export const ExportModal = ({
 
     } catch (error) {
       console.error('Export error:', error);
-      toast.error(`Failed to generate ${format.toUpperCase()} report. Please try again.`);
+      toast.error(`Failed to generate ${exportFormat.toUpperCase()} report. Please try again.`);
     } finally {
       setIsExporting(false);
     }
@@ -149,11 +149,11 @@ export const ExportModal = ({
   };
 
   // Generate default filename
-  const defaultFileName = `TNS_${format === 'pdf' ? 'Report' : 'Data'}_${
+  const defaultFileName = `TNS_${exportFormat === 'pdf' ? 'Report' : 'Data'}_${
     filterByArea && filterByArea !== 'all' 
       ? filterByArea.replace(/[^a-zA-Z0-9]/g, '_')
       : 'All_Areas'
-  }_${format(new Date(), 'yyyy-MM-dd')}`;
+  }_${formatDate(new Date(), 'yyyy-MM-dd')}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -178,12 +178,12 @@ export const ExportModal = ({
             <div className="grid grid-cols-2 gap-4">
               <Card 
                 className={`cursor-pointer transition-all ${
-                  format === 'pdf' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                  exportFormat === 'pdf' ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => setFormat('pdf')}
+                onClick={() => setExportFormat('pdf')}
               >
                 <CardContent className="flex items-center gap-3 p-4">
-                  <FileText className={`h-8 w-8 ${format === 'pdf' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <FileText className={`h-8 w-8 ${exportFormat === 'pdf' ? 'text-blue-600' : 'text-gray-400'}`} />
                   <div>
                     <div className="font-medium">PDF Report</div>
                     <div className="text-sm text-gray-600">Professional formatted report</div>
@@ -193,12 +193,12 @@ export const ExportModal = ({
               
               <Card 
                 className={`cursor-pointer transition-all ${
-                  format === 'excel' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-gray-50'
+                  exportFormat === 'excel' ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => setFormat('excel')}
+                onClick={() => setExportFormat('excel')}
               >
                 <CardContent className="flex items-center gap-3 p-4">
-                  <FileSpreadsheet className={`h-8 w-8 ${format === 'excel' ? 'text-green-600' : 'text-gray-400'}`} />
+                  <FileSpreadsheet className={`h-8 w-8 ${exportFormat === 'excel' ? 'text-green-600' : 'text-gray-400'}`} />
                   <div>
                     <div className="font-medium">Excel Workbook</div>
                     <div className="text-sm text-gray-600">Multiple sheets with detailed data</div>
