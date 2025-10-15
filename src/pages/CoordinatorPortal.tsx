@@ -663,16 +663,6 @@ const CoordinatorPortal = () => {
             
             <div className="flex items-center space-x-3">
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100/50 dark:hover:bg-gray-800/50"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard
-              </Button>
-              
-              <Button
                 variant="outline"
                 size="sm"
                 onClick={refreshData}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStaffAuth } from './useStaffAuth';
+import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Define allowed roles for each portal
@@ -36,6 +38,7 @@ export const useRoleGuard = ({
   showAccessDeniedToast = true 
 }: UseRoleGuardOptions): RoleGuardState => {
   const { staffUser, isLoading: authLoading } = useStaffAuth();
+  const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const [state, setState] = useState<RoleGuardState>({
     isAuthorized: false,
@@ -45,64 +48,116 @@ export const useRoleGuard = ({
   });
 
   useEffect(() => {
-    const checkAccess = () => {
+    const checkAccess = async () => {
       // Still loading authentication
       if (authLoading) {
         setState(prev => ({ ...prev, isLoading: true }));
         return;
       }
 
-      // User not authenticated
-      if (!staffUser) {
+      const allowedRoles = PORTAL_ROLES[portal];
+
+      // Primary path: use staff portal auth
+      if (staffUser) {
+        const userRole = staffUser.staff_role;
+        const userEmail = staffUser.email;
+
+        const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
+        const isRoleAuthorized = allowedRoles.includes(userRole as any);
+        const isAuthorized = isSuperAdmin || isRoleAuthorized;
+
         setState({
-          isAuthorized: false,
+          isAuthorized,
           isLoading: false,
-          userRole: null,
-          isAuthenticated: false
+          userRole,
+          isAuthenticated: true
         });
-        navigate(redirectTo);
+
+        if (!isAuthorized) {
+          if (showAccessDeniedToast) {
+            toast.error(
+              `Access denied. This portal requires ${allowedRoles.join(' or ')} role.`,
+              {
+                description: `Your current role: ${userRole}`,
+                duration: 5000,
+              }
+            );
+          }
+          const redirectPath = getAuthorizedPortalPath(userRole, userEmail);
+          navigate(redirectPath);
+        }
         return;
       }
 
-      const userRole = staffUser.staff_role;
-      const userEmail = staffUser.email;
-      const allowedRoles = PORTAL_ROLES[portal];
-      
-      // Check if user is super admin (has access to all portals)
-      const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
-      
-      // Check if user role is allowed for this portal
-      const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
-      
-      const isAuthorized = isSuperAdmin || isRoleAuthorized;
+      // Fallback path: derive staff role from authenticated Supabase user
+      if (authUser?.email) {
+        try {
+          const { data: staffData, error } = await supabase
+            .from('staff_registrations')
+            .select('id, email, first_name, last_name, staff_role, assigned_area, pending')
+            .eq('email', authUser.email)
+            .eq('pending', 'approved')
+            .single();
 
-      setState({
-        isAuthorized,
-        isLoading: false,
-        userRole,
-        isAuthenticated: true
-      });
+          if (!error && staffData) {
+            const userRole = staffData.staff_role as string;
+            const userEmail = staffData.email as string;
+            const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
+            const isRoleAuthorized = allowedRoles.includes(userRole as any);
+            const isAuthorized = isSuperAdmin || isRoleAuthorized;
 
-      // Handle unauthorized access
-      if (!isAuthorized) {
-        if (showAccessDeniedToast) {
-          toast.error(
-            `Access denied. This portal requires ${allowedRoles.join(' or ')} role.`,
-            {
-              description: `Your current role: ${userRole}`,
-              duration: 5000,
+            // Hydrate localStorage so future sessions pick it up via StaffAuthProvider
+            try {
+              const hydrated = {
+                id: staffData.id,
+                email: staffData.email,
+                first_name: staffData.first_name,
+                last_name: staffData.last_name,
+                staff_role: staffData.staff_role,
+                assigned_area: staffData.assigned_area,
+              };
+              localStorage.setItem('staff_user', JSON.stringify(hydrated));
+            } catch (_) {}
+
+            setState({
+              isAuthorized,
+              isLoading: false,
+              userRole,
+              isAuthenticated: true
+            });
+
+            if (!isAuthorized) {
+              if (showAccessDeniedToast) {
+                toast.error(
+                  `Access denied. This portal requires ${allowedRoles.join(' or ')} role.`,
+                  {
+                    description: `Your current role: ${userRole}`,
+                    duration: 5000,
+                  }
+                );
+              }
+              const redirectPath = getAuthorizedPortalPath(userRole, userEmail);
+              navigate(redirectPath);
             }
-          );
+            return;
+          }
+        } catch (e) {
+          // ignore fallback errors and proceed to redirect
         }
-        
-        // Redirect based on user's actual role
-        const redirectPath = getAuthorizedPortalPath(userRole, userEmail);
-        navigate(redirectPath);
       }
+
+      // No staff access determined
+      setState({
+        isAuthorized: false,
+        isLoading: false,
+        userRole: null,
+        isAuthenticated: false
+      });
+      navigate(redirectTo);
     };
 
     checkAccess();
-  }, [staffUser, authLoading, portal, navigate, redirectTo, showAccessDeniedToast]);
+  }, [staffUser, authLoading, portal, navigate, redirectTo, showAccessDeniedToast, authUser?.email]);
 
   return state;
 };

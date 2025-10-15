@@ -131,6 +131,33 @@ const MultiStepRegistration = () => {
     setIsSubmitting(true);
     
     try {
+      // Normalize and validate ID number uniqueness before any uploads
+      const rawId = (memberInfo.idNumber || '').trim();
+      if (!rawId) {
+        throw new Error('ID number is required');
+      }
+
+      // Check for duplicate ID number in the system
+      const { data: existingById, error: idCheckError } = await supabase
+        .from('membership_registrations')
+        .select('id')
+        .eq('id_number', rawId)
+        .limit(1);
+
+      if (idCheckError) {
+        console.error('Error checking ID number uniqueness:', idCheckError);
+      }
+
+      if (existingById && existingById.length > 0) {
+        toast({
+          title: 'Duplicate ID Number',
+          description: 'This ID number is already registered in the system. Please verify and use a different ID.',
+          variant: 'destructive'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Extract city and state from area of residence
       const areaOfResidence = memberInfo.areaOfResidence;
       const areaParts = areaOfResidence.split(',').map(part => part.trim());
@@ -412,8 +439,16 @@ const MultiStepRegistration = () => {
         // User-friendly error messages
         if (error.message.includes('required')) {
           errorMessage = error.message;
-        } else if (error.message.includes('violates unique constraint')) {
-          errorMessage = "This email or phone number is already registered. Please use different details or contact support.";
+        } else if (error.message.includes('violates unique constraint') || error.message.toLowerCase().includes('duplicate')) {
+          if (error.message.toLowerCase().includes('id_number')) {
+            errorMessage = "This ID number is already registered. Please use a different ID number.";
+          } else if (error.message.toLowerCase().includes('email')) {
+            errorMessage = "This email is already registered. Please use a different email or contact support.";
+          } else if (error.message.toLowerCase().includes('phone')) {
+            errorMessage = "This phone number is already registered. Please use a different phone number.";
+          } else {
+            errorMessage = "Duplicate details detected. Please review your information.";
+          }
         } else if (error.message.includes('invalid')) {
           errorMessage = "Please check your information and ensure all fields are filled correctly.";
         }

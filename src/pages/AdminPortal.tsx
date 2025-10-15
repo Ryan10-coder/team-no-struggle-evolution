@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Users, UserCheck, UserX, Shield, Key, LogOut, Download, FileSpreadsheet, FileText, File, BarChart3, PieChart, DollarSign, TrendingUp, Calculator, Trash2, AlertTriangle, Edit, Save, X, UserMinus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
@@ -1271,17 +1273,87 @@ const AdminPortal = () => {
   };
 
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    const toastId = toast.loading("Generating " + format.toUpperCase() + " export...");
     try {
-      toast.loading("Generating " + format.toUpperCase() + " export...");
-      
-      // Call the edge function directly with the format parameter
-      const response = await fetch("https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-members?format=" + format, {
-        method: 'GET',
-        headers: {
-          'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
-          'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
+      // Nicely formatted PDF export (client-side)
+      if (format === 'pdf') {
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginX = 40;
+        const marginTop = 60;
+
+        const title = 'Team No Struggle — Members Report';
+        const subTitle = `Generated: ${new Date().toLocaleString()}`;
+
+        const header = () => {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(16);
+          doc.text(title, pageWidth / 2, 30, { align: 'center' });
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.text(subTitle, pageWidth / 2, 48, { align: 'center' });
+        };
+
+        const footer = (currentPage: number, totalPages: number) => {
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+          doc.text(`Page ${currentPage} of ${totalPages}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+        };
+
+        const rows = (allMembers || []).map((m) => [
+          `${m.first_name || ''} ${m.last_name || ''}`.trim(),
+          m.email || '',
+          m.phone || '',
+          m.city || '',
+          m.state || '',
+          m.tns_number || '-',
+          m.registration_status || '-',
+          m.payment_status || '-',
+          (m.registration_date ? new Date(m.registration_date).toLocaleDateString() : '-')
+        ]);
+
+        autoTable(doc, {
+          head: [[
+            'Name', 'Email', 'Phone', 'City', 'State', 'TNS #', 'Reg. Status', 'Payment', 'Reg. Date'
+          ]],
+          body: rows,
+          startY: marginTop,
+          margin: { left: marginX, right: marginX, top: marginTop, bottom: 30 },
+          styles: { fontSize: 9, cellPadding: 6, valign: 'middle' },
+          headStyles: { fillColor: [34, 139, 230], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 247, 250] },
+          didDrawPage: (data) => {
+            header();
+            const currentPage = doc.getNumberOfPages();
+            footer(currentPage, currentPage); // total will be corrected after autoTable finishes
+          },
+        } as any);
+
+        // Correct footer to display total pages
+        const totalPages = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          footer(i, totalPages);
         }
-      });
+
+        const date = new Date().toISOString().split('T')[0];
+        doc.save(`members_report_${date}.pdf`);
+        toast.success('PDF exported successfully!', { id: toastId });
+        return;
+      }
+
+      // CSV/Excel export via edge function
+      const response = await fetch(
+        "https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-members?format=" + format,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA",
+            'apikey': "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndmcWduc2hobGZ1em5hYndlb2ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTE0MzgsImV4cCI6MjA3MDgyNzQzOH0.EsPr_ypf7B1PXTWmjS2ZGXDVBe7HeNHDWsvJcgQpkLA"
+          }
+        }
+      );
 
       if (!response.ok) throw new Error('Export failed');
 
@@ -1289,26 +1361,29 @@ const AdminPortal = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
+
       const date = new Date().toISOString().split('T')[0];
-      const extension = format === 'excel' ? 'xls' : format === 'pdf' ? 'html' : 'csv';
+      const extension = format === 'excel' ? 'xls' : 'csv';
       a.download = "members_export_" + date + "." + extension;
-      
+
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
-      toast.success(format.toUpperCase() + " export downloaded successfully!");
+
+      toast.success(format.toUpperCase() + " export downloaded successfully!", { id: toastId });
     } catch (error) {
       console.error('Export error:', error);
-      toast.error("Failed to export " + format.toUpperCase() + " file");
+      toast.error("Failed to export " + format.toUpperCase() + " file", { id: toastId });
+    } finally {
+      // Ensure the loading toast is dismissed even if toast updates fail
+      try { toast.dismiss(toastId); } catch (_) {}
     }
   };
 
   const handleTreasurerExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    const toastId = toast.loading("Generating treasurer " + format.toUpperCase() + " report...");
     try {
-      toast.loading("Generating treasurer " + format.toUpperCase() + " report...");
       
       // Generate sample financial data for the report
       const financialSummary = {
@@ -1333,7 +1408,82 @@ const AdminPortal = () => {
         { month: "June 2024", members: 125, contributions: 320000, disbursements: 250000, expenses: 15000, growth: 14.3 }
       ];
 
-      // Call the treasurer report edge function
+      // Nicely formatted PDF export (client-side) for treasurer report
+      if (format === 'pdf') {
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        const title = 'Team No Struggle — Treasurer Report';
+        const subTitle = `Generated: ${new Date().toLocaleString()}  •  By: ${staffUser ? staffUser.first_name + ' ' + staffUser.last_name : 'Admin'}`;
+
+        // Header
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(title, pageWidth / 2, 30, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.text(subTitle, pageWidth / 2, 48, { align: 'center' });
+
+        // Summary cards (as a table)
+        const summaryRows = [
+          ['Total Members', String(financialSummary.totalMembers)],
+          ['Total Contributions', `KES ${financialSummary.totalContributions.toLocaleString()}`],
+          ['Total Disbursements', `KES ${financialSummary.totalDisbursements.toLocaleString()}`],
+          ['Monthly Expenses', `KES ${financialSummary.monthlyExpenses.toLocaleString()}`],
+          ['Net Position', `KES ${financialSummary.netPosition.toLocaleString()}`],
+          ['Avg Monthly Contribution', `KES ${Math.round(financialSummary.avgMonthlyContribution).toLocaleString()}`],
+          ['Avg Disbursement', `KES ${Math.round(financialSummary.avgDisbursement).toLocaleString()}`],
+          ['Contribution Growth', `${financialSummary.contributionGrowth}%`],
+          ['Expense Ratio', `${financialSummary.expenseRatio}%`],
+          ['Liquidity Ratio', `${financialSummary.liquidityRatio}`],
+        ];
+
+        autoTable(doc, {
+          head: [['Metric', 'Value']],
+          body: summaryRows,
+          startY: 70,
+          styles: { fontSize: 10, cellPadding: 6 },
+          headStyles: { fillColor: [34, 139, 230], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [245, 247, 250] },
+          margin: { left: 40, right: 40 },
+        } as any);
+
+        // Monthly breakdown table
+        const breakdownRows = monthlyData.map((d) => [
+          d.month,
+          String(d.members),
+          `KES ${d.contributions.toLocaleString()}`,
+          `KES ${d.disbursements.toLocaleString()}`,
+          `KES ${d.expenses.toLocaleString()}`,
+          `${d.growth}%`
+        ]);
+
+        autoTable(doc, {
+          head: [['Month', 'Members', 'Contributions', 'Disbursements', 'Expenses', 'Growth']],
+          body: breakdownRows,
+          startY: (doc as any).lastAutoTable.finalY + 20,
+          styles: { fontSize: 9, cellPadding: 6 },
+          headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [247, 253, 247] },
+          margin: { left: 40, right: 40, bottom: 30 },
+        } as any);
+
+        const totalPages = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(9);
+          doc.setTextColor(120);
+          doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+        }
+
+        const date = new Date().toISOString().split('T')[0];
+        doc.save(`TNS_Treasurer_Report_${date}.pdf`);
+        toast.success('Treasurer PDF exported successfully!', { id: toastId });
+        return;
+      }
+
+      // Otherwise, use edge function (CSV/Excel)
       const response = await fetch('https://wfqgnshhlfuznabweofj.supabase.co/functions/v1/export-treasurer-report', {
         method: 'POST',
         headers: {
@@ -1357,17 +1507,20 @@ const AdminPortal = () => {
       a.href = url;
       
       const date = new Date().toISOString().split('T')[0];
-      a.download = "TNS_Treasurer_Report_" + date + ".csv";
+      const extension = format === 'excel' ? 'xls' : 'csv';
+      a.download = "TNS_Treasurer_Report_" + date + "." + extension;
       
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
-      toast.success("Treasurer " + format.toUpperCase() + " report downloaded successfully!");
+      toast.success("Treasurer " + format.toUpperCase() + " report downloaded successfully!", { id: toastId });
     } catch (error) {
       console.error('Treasurer export error:', error);
-      toast.error("Failed to export treasurer " + format.toUpperCase() + " report");
+      toast.error("Failed to export treasurer " + format.toUpperCase() + " report", { id: toastId });
+    } finally {
+      try { toast.dismiss(toastId); } catch (_) {}
     }
   };
 

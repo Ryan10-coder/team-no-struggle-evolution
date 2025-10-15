@@ -23,6 +23,7 @@ const AdminRegistration = () => {
   });
 
   const roles = [
+    { value: 'Admin', label: '☑️ Admin' },
     { value: 'Advisory Committee', label: 'Advisory Committee' },
     { value: 'General Coordinator', label: 'General Coordinator' },
     { value: 'Area Coordinator', label: '☑️ Area Coordinator' },
