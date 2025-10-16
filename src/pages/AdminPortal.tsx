@@ -1325,13 +1325,13 @@ const AdminPortal = () => {
           alternateRowStyles: { fillColor: [245, 247, 250] },
           didDrawPage: (data) => {
             header();
-            const currentPage = doc.getNumberOfPages();
+            const currentPage = (doc as any).internal.getNumberOfPages();
             footer(currentPage, currentPage); // total will be corrected after autoTable finishes
           },
         } as any);
 
         // Correct footer to display total pages
-        const totalPages = doc.getNumberOfPages();
+        const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           doc.setPage(i);
           footer(i, totalPages);
@@ -1469,7 +1469,7 @@ const AdminPortal = () => {
           margin: { left: 40, right: 40, bottom: 30 },
         } as any);
 
-        const totalPages = doc.getNumberOfPages();
+        const totalPages = (doc as any).internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           doc.setPage(i);
           doc.setFontSize(9);

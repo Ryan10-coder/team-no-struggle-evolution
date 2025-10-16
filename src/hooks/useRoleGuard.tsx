@@ -63,7 +63,7 @@ export const useRoleGuard = ({
         const userEmail = staffUser.email;
 
         const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
-        const isRoleAuthorized = allowedRoles.includes(userRole as any);
+        const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
         const isAuthorized = isSuperAdmin || isRoleAuthorized;
 
         setState({
@@ -103,7 +103,7 @@ export const useRoleGuard = ({
             const userRole = staffData.staff_role as string;
             const userEmail = staffData.email as string;
             const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
-            const isRoleAuthorized = allowedRoles.includes(userRole as any);
+            const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
             const isAuthorized = isSuperAdmin || isRoleAuthorized;
 
             // Hydrate localStorage so future sessions pick it up via StaffAuthProvider
