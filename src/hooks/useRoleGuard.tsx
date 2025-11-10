@@ -13,8 +13,9 @@ export const PORTAL_ROLES = {
   auditor: ['Auditor'],
 } as const;
 
-// Define the super admin email who has access to all portals
-const SUPER_ADMIN_EMAIL = 'brianokutu@gmail.com';
+// Super admin access should be managed through proper role-based system
+// DO NOT use hardcoded emails for authorization - security vulnerability
+// const SUPER_ADMIN_EMAIL = 'brianokutu@gmail.com'; // REMOVED for security
 
 export type PortalType = keyof typeof PORTAL_ROLES;
 export type StaffRole = 'Admin' | 'Secretary' | 'Area Coordinator' | 'General Coordinator' | 'Auditor' | 'Treasurer';
@@ -62,9 +63,9 @@ export const useRoleGuard = ({
         const userRole = staffUser.staff_role;
         const userEmail = staffUser.email;
 
-        const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
+        // Check only role-based authorization - no hardcoded super admin
         const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
-        const isAuthorized = isSuperAdmin || isRoleAuthorized;
+        const isAuthorized = isRoleAuthorized;
 
         setState({
           isAuthorized,
@@ -102,9 +103,9 @@ export const useRoleGuard = ({
           if (!error && staffData) {
             const userRole = staffData.staff_role as string;
             const userEmail = staffData.email as string;
-            const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
+            // Check only role-based authorization - no hardcoded super admin
             const isRoleAuthorized = (allowedRoles as readonly string[]).includes(userRole);
-            const isAuthorized = isSuperAdmin || isRoleAuthorized;
+            const isAuthorized = isRoleAuthorized;
 
             // Hydrate localStorage so future sessions pick it up via StaffAuthProvider
             try {
@@ -166,11 +167,7 @@ export const useRoleGuard = ({
  * Get the authorized portal path for a given role
  */
 export const getAuthorizedPortalPath = (role: string, email?: string): string => {
-  // Super admin can go to any portal, default to admin
-  if (email === SUPER_ADMIN_EMAIL) {
-    return '/admin';
-  }
-
+  // Route based on role only - no hardcoded super admin bypass
   switch (role) {
     case 'Admin':
     case 'Treasurer':
@@ -195,19 +192,16 @@ export const hasPortalAccess = (
   userEmail: string, 
   portal: PortalType
 ): boolean => {
-  const isSuperAdmin = userEmail === SUPER_ADMIN_EMAIL;
+  // Check only role-based access - no hardcoded super admin
   const allowedRoles = PORTAL_ROLES[portal];
-  return isSuperAdmin || (allowedRoles as readonly string[]).includes(userRole);
+  return (allowedRoles as readonly string[]).includes(userRole);
 };
 
 /**
  * Get all accessible portals for a user
  */
 export const getAccessiblePortals = (userRole: string, userEmail: string): PortalType[] => {
-  if (userEmail === SUPER_ADMIN_EMAIL) {
-    return Object.keys(PORTAL_ROLES) as PortalType[];
-  }
-
+  // Return portals based on role only - no hardcoded super admin
   return (Object.keys(PORTAL_ROLES) as PortalType[]).filter(portal => 
     (PORTAL_ROLES[portal] as readonly string[]).includes(userRole)
   );

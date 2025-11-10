@@ -646,22 +646,13 @@ export type Database = {
         Args: { required_roles: string[]; staff_email: string }
         Returns: boolean
       }
-      generate_next_tns_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      is_admin: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
+      generate_next_tns_number: { Args: never; Returns: string }
+      is_admin: { Args: { user_id_param: string }; Returns: boolean }
       link_staff_to_user: {
         Args: { auth_user_id: string; staff_email: string }
         Returns: undefined
       }
-      update_maturity_status: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_maturity_status: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

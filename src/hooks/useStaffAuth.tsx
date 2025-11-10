@@ -56,6 +56,10 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: 'No portal password assigned. Contact your administrator.' };
       }
 
+      // ⚠️ SECURITY WARNING: This performs plaintext password comparison
+      // TODO: Migrate to Supabase Auth with proper password hashing
+      // Current implementation stores passwords in plaintext - CRITICAL SECURITY ISSUE
+      // See security scan for remediation steps
       if (password !== staffData.portal_password) {
         return { success: false, error: 'Incorrect portal password' };
       }
@@ -71,6 +75,10 @@ export const StaffAuthProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setStaffUser(staff);
+      
+      // ⚠️ SECURITY WARNING: Storing sensitive data in localStorage
+      // TODO: Move to HttpOnly cookies or Supabase session management
+      // Current implementation exposes staff credentials to XSS attacks
       localStorage.setItem('staff_user', JSON.stringify(staff));
       
       return { success: true };
