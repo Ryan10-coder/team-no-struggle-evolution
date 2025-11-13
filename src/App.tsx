@@ -13,7 +13,6 @@ import AuditorPortal from "./pages/AuditorPortal";
 import AdminPortal from "./pages/AdminPortal";
 import SecretaryPortal from "./pages/SecretaryPortal";
 import AdminRegistration from "./pages/AdminRegistration";
-import ViewMembers from "./pages/ViewMembers";
 import PortalLogin from "./pages/PortalLogin";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -40,7 +39,6 @@ const App = () => (
               <Route path="/secretary" element={<SecretaryPortal />} />
               <Route path="/backhome" element={<Index />} />
               <Route path="/adminregistration" element={<AdminRegistration />} />
-              <Route path="/viewmems" element={<ViewMembers />} />
               <Route path="/portal-login" element={<PortalLogin />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />

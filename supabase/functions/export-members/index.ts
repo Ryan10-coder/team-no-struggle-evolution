@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { verifyAuth, verifyRole } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,22 +8,26 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // SECURITY: Verify authentication and authorization
+    const { user, supabase } = await verifyAuth(req);
+    
+    const hasPermission = await verifyRole(supabase, user.id, ['admin', 'treasurer', 'auditor']);
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin, Treasurer, or Auditor role required.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log('Export members function called');
     
     const url = new URL(req.url);
     const format = url.searchParams.get('format') || 'csv';
-    
-    // Initialize Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Fetch all member registrations
     const { data: members, error } = await supabase
@@ -80,10 +85,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in export-members function:', error);
+    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ error: error.message || 'Internal server error' }), 
       { 
-        status: 500,
+        status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
@@ -159,7 +165,6 @@ function exportCSV(members: any[]) {
 }
 
 function exportExcel(members: any[]) {
-  // Simple Excel XML format
   const excelXML = `<?xml version="1.0"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -234,7 +239,6 @@ function exportExcel(members: any[]) {
 }
 
 function exportPDF(members: any[]) {
-  // Simple HTML that can be converted to PDF
   const htmlContent = `
     <!DOCTYPE html>
     <html>

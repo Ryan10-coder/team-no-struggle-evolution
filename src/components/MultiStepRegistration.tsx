@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, ChevronLeft, ChevronRight, Upload, Users, Heart, User, Baby, UserCheck, Receipt, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
 
 interface MemberInfo {
   name: string;
@@ -50,6 +51,95 @@ interface ParentsInfo {
   parent1: ParentInfo;
   parent2: ParentInfo;
 }
+
+// Validation schemas
+const phoneSchema = z.string()
+  .regex(/^(\+?254|0)?[17]\d{8}$/, 'Invalid phone number format. Use format: 0700000000 or +254700000000')
+  .transform(phone => {
+    phone = phone.replace(/\s/g, '');
+    if (phone.startsWith('0')) return `254${phone.slice(1)}`;
+    if (phone.startsWith('+')) return phone.slice(1);
+    if (!phone.startsWith('254')) return `254${phone}`;
+    return phone;
+  });
+
+const memberInfoSchema = z.object({
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+  email: z.string()
+    .email('Invalid email format')
+    .max(255, 'Email too long')
+    .toLowerCase(),
+  idNumber: z.string()
+    .min(5, 'ID number must be at least 5 characters')
+    .max(20, 'ID number too long')
+    .regex(/^[A-Z0-9]+$/i, 'ID number can only contain letters and numbers')
+    .transform(id => id.toUpperCase()),
+  phone: phoneSchema,
+  altPhone: z.string().optional().or(z.literal('')).refine(
+    val => !val || /^(\+?254|0)?[17]\d{8}$/.test(val),
+    'Invalid alternative phone format'
+  ),
+  sex: z.enum(['Male', 'Female', 'Other'] as const, {
+    errorMap: () => ({ message: 'Please select a valid sex' })
+  }),
+  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed'] as const, {
+    errorMap: () => ({ message: 'Please select a valid marital status' })
+  }),
+  areaOfResidence: z.string()
+    .min(3, 'Area of residence required')
+    .max(200, 'Area of residence too long'),
+  country: z.string()
+    .min(2, 'Country required')
+    .max(100, 'Country name too long'),
+  photo: z.instanceof(File).nullable()
+});
+
+const spouseInfoSchema = z.object({
+  name: z.string().min(2).max(100).optional().or(z.literal('')),
+  idNumber: z.string().max(20).optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')).refine(
+    val => !val || /^(\+?254|0)?[17]\d{8}$/.test(val),
+    'Invalid phone format'
+  ),
+  altPhone: z.string().optional().or(z.literal('')),
+  sex: z.string().optional().or(z.literal('')),
+  areaOfResidence: z.string().max(200).optional().or(z.literal('')),
+  photo: z.instanceof(File).nullable()
+});
+
+const childInfoSchema = z.object({
+  name: z.string()
+    .min(2, 'Child name must be at least 2 characters')
+    .max(100, 'Child name too long'),
+  dob: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+    .refine(date => {
+      const d = new Date(date);
+      const now = new Date();
+      const eighteenYearsAgo = new Date(now.getFullYear() - 18, now.getMonth(), now.getDate());
+      return d < now && d > new Date('1900-01-01') && d > eighteenYearsAgo;
+    }, 'Child must be born in the past and be under 18 years old'),
+  age: z.string()
+    .regex(/^\d+$/, 'Age must be a number')
+    .transform(Number)
+    .refine(age => age >= 0 && age <= 17, 'Age must be between 0 and 17'),
+  birthCertificate: z.instanceof(File).nullable()
+});
+
+const parentInfoSchema = z.object({
+  name: z.string().max(100).optional().or(z.literal('')),
+  idNumber: z.string().max(20).optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')).refine(
+    val => !val || /^(\+?254|0)?[17]\d{8}$/.test(val),
+    'Invalid phone format'
+  ),
+  altPhone: z.string().optional().or(z.literal('')),
+  areaOfResidence: z.string().max(200).optional().or(z.literal(''))
+});
+
 
 const MultiStepRegistration = () => {
   const { toast } = useToast();
@@ -115,7 +205,85 @@ const MultiStepRegistration = () => {
     }
   };
 
+  const validateStep = (step: number): boolean => {
+    try {
+      switch(step) {
+        case 0: // Country selection
+          if (!memberInfo.country) {
+            toast({
+              title: 'Validation Error',
+              description: 'Please select a country',
+              variant: 'destructive'
+            });
+            return false;
+          }
+          break;
+        case 1: // Member info
+          memberInfoSchema.parse(memberInfo);
+          break;
+        case 2: // Spouse info (only if married)
+          if (memberInfo.maritalStatus === 'Married') {
+            if (!spouseInfo.name) {
+              toast({
+                title: 'Validation Error',
+                description: 'Spouse name is required for married members',
+                variant: 'destructive'
+              });
+              return false;
+            }
+            spouseInfoSchema.parse(spouseInfo);
+          }
+          break;
+        case 3: // Children info
+          if (children.length > 0) {
+            children.forEach((child, idx) => {
+              try {
+                childInfoSchema.parse(child);
+              } catch (error: any) {
+                if (error instanceof z.ZodError) {
+                  throw new Error(`Child ${idx + 1}: ${error.errors[0].message}`);
+                }
+              }
+            });
+          }
+          break;
+        case 4: // Parents info
+          parentInfoSchema.parse(parentsInfo.parent1);
+          parentInfoSchema.parse(parentsInfo.parent2);
+          break;
+        case 5: // Payment proof
+          if (!transactionId.trim()) {
+            toast({
+              title: 'Validation Error',
+              description: 'Payment transaction ID is required',
+              variant: 'destructive'
+            });
+            return false;
+          }
+          break;
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Validation Error',
+          description: error.errors[0].message,
+          variant: 'destructive'
+        });
+      } else if (error instanceof Error) {
+        toast({
+          title: 'Validation Error',
+          description: error.message,
+          variant: 'destructive'
+        });
+      }
+      return false;
+    }
+  };
+
   const nextStep = () => {
+    if (!validateStep(currentStep)) return;
+    
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
@@ -128,6 +296,14 @@ const MultiStepRegistration = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate all steps before submission
+    for (let step = 0; step <= 5; step++) {
+      if (!validateStep(step)) {
+        setCurrentStep(step + 1);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     
     try {

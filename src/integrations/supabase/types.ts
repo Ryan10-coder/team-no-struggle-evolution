@@ -637,6 +637,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          expires_at: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -647,6 +674,13 @@ export type Database = {
         Returns: boolean
       }
       generate_next_tns_number: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: { user_id_param: string }; Returns: boolean }
       link_staff_to_user: {
         Args: { auth_user_id: string; staff_email: string }
@@ -655,7 +689,14 @@ export type Database = {
       update_maturity_status: { Args: never; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "admin"
+        | "treasurer"
+        | "auditor"
+        | "secretary"
+        | "area_coordinator"
+        | "general_coordinator"
+        | "customer_service"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -782,6 +823,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "admin",
+        "treasurer",
+        "auditor",
+        "secretary",
+        "area_coordinator",
+        "general_coordinator",
+        "customer_service",
+      ],
+    },
   },
 } as const

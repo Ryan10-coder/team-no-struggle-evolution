@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { verifyAuth, verifyRole } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify authentication and authorization
+    const { user, supabase } = await verifyAuth(req);
+    
+    const hasPermission = await verifyRole(supabase, user.id, ['admin', 'customer_service', 'treasurer']);
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin, Customer Service, or Treasurer role required.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { phone, memberName, tnsNumber, balance, messageType } = await req.json();
 
     // Format the SMS message based on type
@@ -55,11 +66,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error sending SMS:', error);
+    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: 'Failed to send SMS' }),
+      JSON.stringify({ error: error.message || 'Failed to send SMS' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status 
       }
     );
   }

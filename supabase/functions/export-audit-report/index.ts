@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { verifyAuth, verifyRole } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify authentication and authorization
+    const { user, supabase } = await verifyAuth(req);
+    
+    const hasPermission = await verifyRole(supabase, user.id, ['admin', 'auditor']);
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin or Auditor role required.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { summary, monthlyData, generatedBy, generatedAt } = await req.json();
 
     // Create detailed audit report in CSV format
@@ -54,11 +66,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error generating audit report:', error);
+    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: 'Failed to generate audit report' }),
+      JSON.stringify({ error: error.message || 'Failed to generate audit report' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status 
       }
     );
   }
