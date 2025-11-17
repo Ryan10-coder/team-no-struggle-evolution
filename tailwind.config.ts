@@ -92,6 +92,7 @@ export default {
 				'gradient-secondary': 'var(--gradient-secondary)',
 				'gradient-hero': 'var(--gradient-hero)',
 				'gradient-chart': 'var(--gradient-chart)',
+				'gradient-accent': 'var(--gradient-accent)',
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
