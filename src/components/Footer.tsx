@@ -1,4 +1,5 @@
-import { Users, Phone, Mail, MapPin, Heart, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Users, Phone, Mail, MapPin, Heart, Facebook, Twitter, Instagram, Linkedin, ArrowRight, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -41,133 +42,182 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-foreground text-background">
-      <div className="container mx-auto px-4 py-16">
-        {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {/* Company Info */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="h-10 w-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Team No Struggle</h3>
-                <p className="text-sm text-background/70">Welfare Group</p>
-              </div>
+    <footer className="relative bg-gradient-to-br from-foreground via-foreground to-primary/20 text-background overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 left-20 w-64 h-64 bg-primary rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
+        {/* Newsletter Section */}
+        <div className="py-16 border-b border-background/10">
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <div className="inline-flex items-center gap-2 bg-primary/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-background">Stay Connected</span>
             </div>
-            <p className="text-background/80 leading-relaxed">
-              Building stronger communities through mutual support and financial assistance. 
-              Together, we ensure no one faces life's challenges alone.
+            <h3 className="text-3xl md:text-4xl font-bold">Join Our Community Newsletter</h3>
+            <p className="text-background/70 text-lg max-w-xl mx-auto">
+              Get updates on community events, member stories, and important announcements.
             </p>
-            <div className="flex items-center gap-2 text-background/80">
-              <Heart className="h-4 w-4 text-secondary" />
-              <span className="text-sm">Supporting 3,500+ families since 2008</span>
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-6 py-4 rounded-2xl bg-background/10 backdrop-blur-sm border border-background/20 text-background placeholder:text-background/50 focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <Button variant="secondary" size="lg" className="gap-2 whitespace-nowrap">
+                Subscribe
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
+        </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-3">
-              {quickLinks.map((link, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => scrollToSection(link.href)}
-                    className="text-background/80 hover:text-background transition-colors duration-200"
-                  >
-                    {link.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* Main Footer Content */}
+        <div className="py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
+            {/* Company Info - Spans 2 columns on large screens */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-large">
+                  <Users className="h-7 w-7 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold">Team No Struggle</h3>
+                  <p className="text-sm text-background/60">Welfare Community</p>
+                </div>
+              </div>
+              <p className="text-background/70 leading-relaxed max-w-md">
+                Building stronger communities through mutual support and financial assistance. 
+                Together, we ensure no one faces life's challenges alone.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-background/80">
+                  <div className="h-10 w-10 rounded-xl bg-background/10 backdrop-blur-sm flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">3,500+ Families</div>
+                    <div className="text-sm text-background/60">Supported since 2008</div>
+                  </div>
+                </div>
+              </div>
 
-          {/* Support */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Support</h4>
-            <ul className="space-y-3">
-              {supportLinks.map((link, index) => (
-                <li key={index}>
+              {/* Social Links */}
+              <div className="flex gap-3 pt-2">
+                {socialLinks.map((social) => (
                   <a
-                    href={link.href}
-                    className="text-background/80 hover:text-background transition-colors duration-200"
+                    key={social.label}
+                    href={social.href}
+                    aria-label={social.label}
+                    className="h-11 w-11 rounded-xl bg-background/10 backdrop-blur-sm border border-background/20 hover:bg-background/20 hover:border-background/40 flex items-center justify-center transition-all duration-200 hover:scale-110"
                   >
-                    {link.name}
+                    <social.icon className="h-5 w-5" />
                   </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact Info */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Contact Info</h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-background/80">
-                <Phone className="h-4 w-4 text-secondary" />
-                <span>0798920754/0785854400</span>
-              </div>
-              <div className="flex items-center gap-3 text-background/80">
-                <Mail className="h-4 w-4 text-secondary" />
-                <span>support@teamnostruggle.org</span>
-              </div>
-              <div className="flex items-start gap-3 text-background/80">
-                <MapPin className="h-4 w-4 text-secondary mt-1" />
-                <span>Shianda<br />Mumias</span>
+                ))}
               </div>
             </div>
 
-            {/* Social Links */}
-            <div className="mt-6">
-              <h5 className="font-medium mb-3">Follow Us</h5>
-              <div className="flex gap-3">
-                {socialLinks.map((social, index) => {
-                  const Icon = social.icon;
-                  return (
-                    <a
-                      key={index}
-                      href={social.href}
-                      aria-label={social.label}
-                      className="p-2 bg-background/10 rounded-lg hover:bg-background/20 transition-colors duration-200"
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <div className="h-1 w-8 bg-gradient-primary rounded-full"></div>
+                Quick Links
+              </h4>
+              <ul className="space-y-3">
+                {quickLinks.map((link) => (
+                  <li key={link.name}>
+                    <button
+                      onClick={() => scrollToSection(link.href)}
+                      className="text-background/70 hover:text-background transition-colors duration-200 text-sm flex items-center gap-2 group"
                     >
-                      <Icon className="h-5 w-5" />
+                      <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -ml-5 group-hover:ml-0 transition-all" />
+                      {link.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <div className="h-1 w-8 bg-gradient-secondary rounded-full"></div>
+                Support
+              </h4>
+              <ul className="space-y-3">
+                {supportLinks.map((link) => (
+                  <li key={link.name}>
+                    <a
+                      href={link.href}
+                      className="text-background/70 hover:text-background transition-colors duration-200 text-sm flex items-center gap-2 group"
+                    >
+                      <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 -ml-5 group-hover:ml-0 transition-all" />
+                      {link.name}
                     </a>
-                  );
-                })}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <h4 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <div className="h-1 w-8 bg-gradient-accent rounded-full"></div>
+                Contact
+              </h4>
+              <div className="space-y-4">
+                <a href="tel:+254712345678" className="flex items-start gap-3 text-background/70 hover:text-background transition-colors group">
+                  <div className="h-9 w-9 rounded-lg bg-background/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:bg-background/20 transition-colors">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-medium text-background">Phone</div>
+                    <div>+254 712 345 678</div>
+                  </div>
+                </a>
+                <a href="mailto:info@teamnostruggle.org" className="flex items-start gap-3 text-background/70 hover:text-background transition-colors group">
+                  <div className="h-9 w-9 rounded-lg bg-background/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:bg-background/20 transition-colors">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-medium text-background">Email</div>
+                    <div>info@teamnostruggle.org</div>
+                  </div>
+                </a>
+                <div className="flex items-start gap-3 text-background/70">
+                  <div className="h-9 w-9 rounded-lg bg-background/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <div className="text-sm">
+                    <div className="font-medium text-background">Address</div>
+                    <div>Nairobi, Kenya</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-background/20 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            {/* Copyright */}
-            <div className="text-center md:text-left text-background/70">
-              <p>© {currentYear} Team No Struggle Welfare Group. All rights reserved.</p>
+        {/* Bottom Bar */}
+        <div className="border-t border-background/10 py-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="text-background/60 text-sm">
+              © {currentYear} Team No Struggle Welfare Group. All rights reserved.
             </div>
-
-            {/* Legal Links */}
-            <div className="flex flex-wrap justify-center gap-6 text-sm">
-              {legalLinks.map((link, index) => (
+            <div className="flex flex-wrap justify-center gap-6">
+              {legalLinks.map((link) => (
                 <a
-                  key={index}
+                  key={link.name}
                   href={link.href}
-                  className="text-background/70 hover:text-background transition-colors duration-200"
+                  className="text-background/60 hover:text-background transition-colors text-sm"
                 >
                   {link.name}
                 </a>
               ))}
             </div>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-6 pt-6 border-t border-background/20 text-center text-sm text-background/60">
-            <p>
-              Team No Struggle is a registered welfare organization dedicated to community support and mutual aid. 
-              We operate with complete transparency and are committed to helping members during their time of need.
-            </p>
           </div>
         </div>
       </div>
