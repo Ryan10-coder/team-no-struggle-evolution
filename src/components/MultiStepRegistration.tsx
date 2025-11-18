@@ -1242,11 +1242,19 @@ const MultiStepRegistration = () => {
   };
 
   return (
-    <section id="register" className="py-20 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            Member <span className="text-primary">Registration</span>
+    <section id="register" className="py-24 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+      
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-20">
+          <div className="inline-block mb-4 px-4 py-2 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
+            <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Join Team No Struggle
+            </span>
+          </div>
+          <h2 className="text-4xl md:text-6xl font-bold mb-6">
+            Member <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Registration</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
             Complete the multi-step registration form to join our supportive community
@@ -1254,55 +1262,69 @@ const MultiStepRegistration = () => {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {/* Progress Indicator */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              {Array.from({ length: totalSteps }, (_, i) => (
-                <div key={i} className="flex items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                      i + 1 <= currentStep
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {i + 1}
-                  </div>
-                  {i < totalSteps - 1 && (
+          {/* Modern Progress Indicator */}
+          <div className="mb-12">
+            <div className="relative">
+              {/* Progress bar background */}
+              <div className="absolute top-5 left-0 right-0 h-1 bg-muted/50 rounded-full" />
+              {/* Active progress bar */}
+              <div 
+                className="absolute top-5 left-0 h-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-full transition-all duration-500"
+                style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
+              />
+              
+              {/* Step indicators */}
+              <div className="relative flex justify-between">
+                {Array.from({ length: totalSteps }, (_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-3">
                     <div
-                      className={`h-1 w-full mx-2 ${
-                        i + 1 < currentStep ? 'bg-primary' : 'bg-muted'
+                      className={`relative w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300 ${
+                        i + 1 <= currentStep
+                          ? 'bg-gradient-to-br from-primary to-secondary text-white border-primary shadow-lg scale-110'
+                          : 'bg-background text-muted-foreground border-muted'
                       }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-              <span>Country</span>
-              <span>Personal</span>
-              <span>Spouse</span>
-              <span>Children</span>
-              <span>Parents</span>
-              <span>Payment</span>
+                    >
+                      {i + 1 <= currentStep && (
+                        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+                      )}
+                      <span className="relative z-10">{i + 1}</span>
+                    </div>
+                    <span className={`text-xs font-medium transition-colors duration-300 ${
+                      i + 1 <= currentStep ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                      {['Country', 'Personal', 'Spouse', 'Children', 'Parents', 'Payment'][i]}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <Card className="shadow-medium border-border/50">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-foreground text-center">
-                Step {currentStep} of {totalSteps}
-              </CardTitle>
+          <Card className="relative overflow-hidden backdrop-blur-sm bg-card/80 shadow-xl border-border/50 rounded-3xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+            <CardHeader className="relative z-10 pb-8">
+              <div className="text-center">
+                <div className="inline-block mb-2 px-3 py-1 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
+                  <span className="text-xs font-semibold text-primary">
+                    Step {currentStep} of {totalSteps}
+                  </span>
+                </div>
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                  {['Select Country', 'Personal Information', 'Spouse Details', 'Children Information', 'Parent Details', 'Payment Proof'][currentStep - 1]}
+                </CardTitle>
+              </div>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="relative z-10">
               {renderStepContent()}
 
-              <div className="flex justify-between pt-8">
+              <div className="flex justify-between items-center pt-10 gap-4">
                 <Button
                   onClick={prevStep}
                   disabled={currentStep === 1}
                   variant="outline"
+                  size="lg"
+                  className="flex-1 md:flex-initial"
                 >
                   <ChevronLeft className="h-4 w-4 mr-2" />
                   Previous
@@ -1312,7 +1334,8 @@ const MultiStepRegistration = () => {
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting || !transactionId}
-                    className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                    size="lg"
+                    className="flex-1 md:flex-initial bg-gradient-to-r from-primary to-secondary hover:shadow-xl hover:scale-105 transition-all duration-300"
                   >
                     {isSubmitting ? (
                       <>
@@ -1327,7 +1350,11 @@ const MultiStepRegistration = () => {
                     )}
                   </Button>
                 ) : (
-                  <Button onClick={nextStep}>
+                  <Button 
+                    onClick={nextStep}
+                    size="lg"
+                    className="flex-1 md:flex-initial bg-gradient-to-r from-primary to-secondary hover:shadow-xl hover:scale-105 transition-all duration-300"
+                  >
                     Next
                     <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
