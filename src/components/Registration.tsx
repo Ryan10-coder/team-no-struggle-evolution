@@ -259,7 +259,7 @@ const Registration = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="reasonForJoining" className="text-foreground font-medium">
-                    Why do you want to join Team No Struggle?
+                    Why do you want to join Itumbu Welfare?
                   </Label>
                   <Textarea
                     id="reasonForJoining"

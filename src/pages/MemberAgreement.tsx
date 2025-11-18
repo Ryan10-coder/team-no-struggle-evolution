@@ -24,7 +24,7 @@ const MemberAgreement = () => {
                 <h2 className="text-2xl font-semibold mb-3">1. Membership Commitment</h2>
                 <p>
                   By signing this agreement, I commit to being an active and supportive member of 
-                  Team No Struggle Welfare Group. I understand that this is a mutual aid organization 
+                  Itumbu Welfare Welfare Group. I understand that this is a mutual aid organization 
                   built on trust, solidarity, and shared responsibility.
                 </p>
               </section>
@@ -96,7 +96,7 @@ const MemberAgreement = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-3">8. Agreement Acceptance</h2>
                 <p>
-                  By joining Team No Struggle Welfare Group, I acknowledge that I have read, 
+                  By joining Itumbu Welfare Welfare Group, I acknowledge that I have read, 
                   understood, and agree to be bound by this Member Agreement and all group policies.
                 </p>
               </section>

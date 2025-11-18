@@ -29,9 +29,9 @@ serve(async (req) => {
     let message = '';
     
     if (messageType === 'balance') {
-      message = `Dear ${memberName},\n\nYour TNS Account Update:\nTNS Number: ${tnsNumber}\nBenevolent Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nCustomer Care: 0700-000-000\n\nThank you for being part of Team No Struggle.`;
+      message = `Dear ${memberName},\n\nYour TNS Account Update:\nTNS Number: ${tnsNumber}\nBenevolent Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nCustomer Care: 0700-000-000\n\nThank you for being part of Itumbu Welfare.`;
     } else if (messageType === 'welcome') {
-      message = `Welcome to Team No Struggle, ${memberName}!\n\nYour TNS Number: ${tnsNumber}\nPAYBILL: 4148511\n\nFor support, call Customer Care: 0700-000-000\n\nWe're glad to have you!`;
+      message = `Welcome to Itumbu Welfare, ${memberName}!\n\nYour TNS Number: ${tnsNumber}\nPAYBILL: 4148511\n\nFor support, call Customer Care: 0700-000-000\n\nWe're glad to have you!`;
     } else if (messageType === 'contribution') {
       message = `Dear ${memberName},\n\nContribution received successfully!\nTNS Number: ${tnsNumber}\nNew Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nThank you for your contribution.`;
     }

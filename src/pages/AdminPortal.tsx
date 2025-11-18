@@ -1283,7 +1283,7 @@ const AdminPortal = () => {
         const marginX = 40;
         const marginTop = 60;
 
-        const title = 'Team No Struggle — Members Report';
+        const title = 'Itumbu Welfare — Members Report';
         const subTitle = `Generated: ${new Date().toLocaleString()}`;
 
         const header = () => {
@@ -1414,7 +1414,7 @@ const AdminPortal = () => {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        const title = 'Team No Struggle — Treasurer Report';
+        const title = 'Itumbu Welfare — Treasurer Report';
         const subTitle = `Generated: ${new Date().toLocaleString()}  •  By: ${staffUser ? staffUser.first_name + ' ' + staffUser.last_name : 'Admin'}`;
 
         // Header

@@ -85,7 +85,7 @@ const Footer = () => {
                   <Users className="h-7 w-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold">Team No Struggle</h3>
+                  <h3 className="text-2xl font-bold">Itumbu Welfare</h3>
                   <p className="text-sm text-background/60">Welfare Community</p>
                 </div>
               </div>
@@ -205,7 +205,7 @@ const Footer = () => {
         <div className="border-t border-background/10 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="text-background/60 text-sm">
-              © {currentYear} Team No Struggle Welfare Group. All rights reserved.
+              © {currentYear} Itumbu Welfare Welfare Group. All rights reserved.
             </div>
             <div className="flex flex-wrap justify-center gap-6">
               {legalLinks.map((link) => (

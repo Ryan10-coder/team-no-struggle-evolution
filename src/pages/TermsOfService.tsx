@@ -23,7 +23,7 @@ const TermsOfService = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-3">1. Acceptance of Terms</h2>
                 <p>
-                  By becoming a member of Team No Struggle Welfare Group, you agree to be bound by these Terms of Service. 
+                  By becoming a member of Itumbu Welfare Welfare Group, you agree to be bound by these Terms of Service. 
                   These terms constitute a legal agreement between you and the organization.
                 </p>
               </section>

@@ -54,10 +54,10 @@ const About = () => {
             </span>
           </div>
           <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-            About <span className="text-primary">Team No Struggle</span>
+            About <span className="text-primary">Itumbu Welfare</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
-            Team No Struggle is a benevolent welfare group targeting 3,500+ members. We operate through 
+            Itumbu Welfare is a benevolent welfare group targeting 3,500+ members. We operate through 
             a pooled support system where members contribute small amounts to collectively support families 
             during difficult times, particularly with funeral expenses and related needs.
           </p>
@@ -107,7 +107,7 @@ const About = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
                 <img 
                   src="/lovable-uploads/2b896dec-cf05-49e1-adf4-2812daf80b94.png" 
-                  alt="Team No Struggle members gathering together for community support" 
+                  alt="Itumbu Welfare members gathering together for community support" 
                   className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
@@ -120,7 +120,7 @@ const About = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
                 <img 
                   src="/lovable-uploads/72c12052-4bfc-47e0-83da-a8ab3a74fc60.png" 
-                  alt="Team No Struggle community volunteers in their signature uniforms" 
+                  alt="Itumbu Welfare community volunteers in their signature uniforms" 
                   className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
@@ -133,7 +133,7 @@ const About = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
                 <img 
                   src="/lovable-uploads/5799a3f3-3192-499e-9b94-50df16c3444a.png" 
-                  alt="Team No Struggle members providing support and care to community members in need" 
+                  alt="Itumbu Welfare members providing support and care to community members in need" 
                   className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">

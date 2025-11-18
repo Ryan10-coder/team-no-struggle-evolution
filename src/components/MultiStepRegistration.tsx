@@ -1206,7 +1206,7 @@ const MultiStepRegistration = () => {
               <div className="text-center">
                 <h4 className="text-xl font-semibold text-foreground mb-2">Registration Fee</h4>
                 <div className="text-3xl font-bold text-primary mb-2">Ksh 1000</div>
-                <p className="text-muted-foreground">One-time administrative fee to join Team No Struggle</p>
+                <p className="text-muted-foreground">One-time administrative fee to join Itumbu Welfare</p>
               </div>
             </div>
 
@@ -1250,7 +1250,7 @@ const MultiStepRegistration = () => {
         <div className="max-w-4xl mx-auto text-center mb-20">
           <div className="inline-block mb-4 px-4 py-2 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
             <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Join Team No Struggle
+              Join Itumbu Welfare
             </span>
           </div>
           <h2 className="text-4xl md:text-6xl font-bold mb-6">

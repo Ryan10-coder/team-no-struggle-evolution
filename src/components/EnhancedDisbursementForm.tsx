@@ -149,7 +149,7 @@ export const EnhancedDisbursementForm = ({ onSuccess }: { onSuccess?: () => void
     // Header
     pdf.setFontSize(20);
     pdf.setFont("helvetica", "bold");
-    pdf.text("TEAM NO STRUGGLE EVOLUTION", pageWidth / 2, 30, { align: "center" });
+    pdf.text("Itumbu Welfare EVOLUTION", pageWidth / 2, 30, { align: "center" });
     
     pdf.setFontSize(16);
     pdf.text("BEREAVEMENT DISBURSEMENT FORM", pageWidth / 2, 45, { align: "center" });

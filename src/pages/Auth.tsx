@@ -101,7 +101,7 @@ const Auth = () => {
           </Button>
           <CardTitle className="text-2xl font-bold">TNS Portal</CardTitle>
           <CardDescription>
-            Sign in to access your Team No Struggle account
+            Sign in to access your Itumbu Welfare account
           </CardDescription>
         </CardHeader>
         <CardContent>

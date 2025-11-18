@@ -62,7 +62,7 @@ export interface AuditTrailData {
 export class ReportGenerator {
   private static addLogo(worksheet: XLSX.WorkSheet) {
     // Add organization header
-    worksheet['A1'] = { v: 'TEAM NO STRUGGLE WELFARE GROUP', t: 's' };
+    worksheet['A1'] = { v: 'Itumbu Welfare WELFARE GROUP', t: 's' };
     worksheet['A2'] = { v: 'Financial Management System', t: 's' };
     worksheet['A3'] = { v: `Generated on: ${format(new Date(), 'PPpp')}`, t: 's' };
   }
@@ -96,7 +96,7 @@ export class ReportGenerator {
     
     // Prepare data for worksheet
     const worksheetData = [
-      ['TEAM NO STRUGGLE WELFARE GROUP'],
+      ['Itumbu Welfare WELFARE GROUP'],
       ['Contributions Report'],
       [`Generated on: ${format(new Date(), 'PPpp')}`],
       ...(filters?.startDate || filters?.endDate ? [[`Period: ${filters?.startDate || 'All'} to ${filters?.endDate || 'All'}`]] : []),
@@ -142,7 +142,7 @@ export class ReportGenerator {
     const workbook = XLSX.utils.book_new();
     
     const worksheetData = [
-      ['TEAM NO STRUGGLE WELFARE GROUP'],
+      ['Itumbu Welfare WELFARE GROUP'],
       ['Disbursements Report'],
       [`Generated on: ${format(new Date(), 'PPpp')}`],
       ...(filters?.startDate || filters?.endDate ? [[`Period: ${filters?.startDate || 'All'} to ${filters?.endDate || 'All'}`]] : []),
@@ -182,7 +182,7 @@ export class ReportGenerator {
     const workbook = XLSX.utils.book_new();
     
     const worksheetData = [
-      ['TEAM NO STRUGGLE WELFARE GROUP'],
+      ['Itumbu Welfare WELFARE GROUP'],
       ['Member Balances Report'],
       [`Generated on: ${format(new Date(), 'PPpp')}`],
       [],
@@ -224,7 +224,7 @@ export class ReportGenerator {
     const workbook = XLSX.utils.book_new();
     
     const worksheetData = [
-      ['TEAM NO STRUGGLE WELFARE GROUP'],
+      ['Itumbu Welfare WELFARE GROUP'],
       ['Monthly Expenses Report'],
       [`Generated on: ${format(new Date(), 'PPpp')}`],
       ...(filters?.startDate || filters?.endDate ? [[`Period: ${filters?.startDate || 'All'} to ${filters?.endDate || 'All'}`]] : []),
@@ -271,7 +271,7 @@ export class ReportGenerator {
     const workbook = XLSX.utils.book_new();
     
     const worksheetData = [
-      ['TEAM NO STRUGGLE WELFARE GROUP'],
+      ['Itumbu Welfare WELFARE GROUP'],
       ['Audit Trail Report'],
       [`Generated on: ${format(new Date(), 'PPpp')}`],
       ...(filters?.startDate || filters?.endDate ? [[`Period: ${filters?.startDate || 'All'} to ${filters?.endDate || 'All'}`]] : []),
@@ -320,7 +320,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -400,7 +400,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -479,7 +479,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -561,7 +561,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -660,7 +660,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -765,7 +765,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -886,7 +886,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -1002,7 +1002,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -1129,7 +1129,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -1211,7 +1211,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -1289,7 +1289,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);
@@ -1396,7 +1396,7 @@ export class ReportGenerator {
     // Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text('TEAM NO STRUGGLE WELFARE GROUP', 105, yPosition, { align: 'center' });
+    doc.text('Itumbu Welfare WELFARE GROUP', 105, yPosition, { align: 'center' });
     yPosition += 10;
     
     doc.setFontSize(16);

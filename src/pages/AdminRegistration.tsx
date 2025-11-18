@@ -124,7 +124,7 @@ const AdminRegistration = () => {
                 Admin Registration
               </h1>
               <p className="text-xl text-muted-foreground">
-                Register for committee and administrative roles in Team No Struggle
+                Register for committee and administrative roles in Itumbu Welfare
               </p>
             </div>
 

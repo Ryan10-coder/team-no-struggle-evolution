@@ -61,7 +61,7 @@ export const ExportModal = ({
   const [includeSummary, setIncludeSummary] = useState(true);
   const [filterByArea, setFilterByArea] = useState(filteredArea || 'all');
   const [customFileName, setCustomFileName] = useState('');
-  const [reportTitle, setReportTitle] = useState('Team No Struggle - Members Report');
+  const [reportTitle, setReportTitle] = useState('Itumbu Welfare - Members Report');
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
