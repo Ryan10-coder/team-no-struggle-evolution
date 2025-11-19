@@ -92,7 +92,7 @@ const memberInfoSchema = z.object({
     .min(3, 'Area of residence required')
     .max(200, 'Area of residence too long'),
   country: z.string()
-    .min(2, 'Country required')
+    .min(1, 'Country is required')
     .max(100, 'Country name too long'),
   photo: z.instanceof(File).nullable()
 });

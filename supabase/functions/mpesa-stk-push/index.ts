@@ -73,9 +73,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in MPESA function:', error);
-    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }), 
+      JSON.stringify({ error: errorMessage }), 
       { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -183,10 +184,11 @@ async function handleSTKPush(data: any, supabase: any) {
 
   } catch (error) {
     console.error('Error in handleSTKPush:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to initiate STK Push';
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Failed to initiate STK Push'
+        error: errorMessage
       }),
       { 
         status: 500,
@@ -266,8 +268,9 @@ async function handleSTKCallback(payload: any, supabase: any) {
 
   } catch (error) {
     console.error('Error in handleSTKCallback:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Callback processing failed';
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: errorMessage }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
