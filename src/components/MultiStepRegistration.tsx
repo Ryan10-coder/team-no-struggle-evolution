@@ -282,7 +282,7 @@ const MultiStepRegistration = () => {
   };
 
   const nextStep = () => {
-    if (!validateStep(currentStep)) return;
+    if (!validateStep(currentStep - 1)) return;
     
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -296,7 +296,7 @@ const MultiStepRegistration = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate all steps before submission
+    // Validate all steps before submission (validateStep uses 0-based indexing)
     for (let step = 0; step <= 5; step++) {
       if (!validateStep(step)) {
         setCurrentStep(step + 1);
