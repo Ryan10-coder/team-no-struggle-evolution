@@ -82,9 +82,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error generating treasurer report:', error);
-    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate treasurer report';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to generate treasurer report' }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status 

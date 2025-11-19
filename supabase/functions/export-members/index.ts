@@ -85,9 +85,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in export-members function:', error);
-    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }), 
+      JSON.stringify({ error: errorMessage }), 
       { 
         status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

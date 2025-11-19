@@ -66,9 +66,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error sending SMS:', error);
-    const status = error.message.includes('authorization') || error.message.includes('token') ? 401 : 500;
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send SMS';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to send SMS' }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status 
