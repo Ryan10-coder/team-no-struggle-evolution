@@ -40,7 +40,7 @@ const Header = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-lg group-hover:opacity-30 transition-opacity rounded-full"></div>
               <img 
-                src="/lovable-uploads/4a4961c3-bc53-48f7-a650-4dc70fb40614.png" 
+                src="/lovable-uploads/" 
                 alt="Itumbu Welfare" 
                 className="h-14 w-auto relative z-10 group-hover:scale-105 transition-transform"
               />
