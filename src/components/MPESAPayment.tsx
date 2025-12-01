@@ -41,19 +41,24 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
       });
 
       if (error) {
-        throw error;
+        console.error('Edge function invocation error:', error);
+        toast.error(`Payment failed: ${error.message}`);
+        return;
       }
 
-      if (data.success) {
+      if (data?.success) {
         toast.success("STK push sent! Please check your phone and enter your MPESA PIN.");
         setAmount("");
         setPhoneNumber("");
       } else {
-        toast.error(data.error || "Payment failed");
+        const errorMsg = data?.error || "Payment failed - unknown error";
+        console.error('Payment failed:', errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error("Payment failed. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Payment failed. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
