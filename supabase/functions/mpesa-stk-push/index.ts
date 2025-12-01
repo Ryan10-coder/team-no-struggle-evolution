@@ -17,27 +17,44 @@ serve(async (req) => {
   }
 
   try {
+    console.log('MPESA STK Push function invoked');
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     
     if (req.method === 'POST') {
       const raw = await req.text();
+      console.log('Received POST request, body length:', raw.length);
       let json: any = null;
       try {
         json = raw ? JSON.parse(raw) : null;
-      } catch (_e) {
+        console.log('Parsed JSON action:', json?.action);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
         json = null;
       }
 
       // Client-initiated actions require authentication
       if (json && typeof json === 'object' && 'action' in json) {
-        // SECURITY: Verify authentication and authorization for client-initiated actions
-        const { user, supabase: userSupabase } = await verifyAuth(req);
-        
-        const hasPermission = await verifyRole(userSupabase, user.id, ['admin', 'treasurer']);
-        if (!hasPermission) {
+        console.log('Client-initiated action detected, verifying auth...');
+        try {
+          const { user, supabase: userSupabase } = await verifyAuth(req);
+          console.log('Auth verified for user:', user.id);
+          
+          const hasPermission = await verifyRole(userSupabase, user.id, ['admin', 'treasurer']);
+          console.log('Permission check result:', hasPermission);
+          
+          if (!hasPermission) {
+            console.error('Insufficient permissions for user:', user.id);
+            return new Response(
+              JSON.stringify({ error: 'Insufficient permissions. Admin or Treasurer role required.' }),
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } catch (authError) {
+          console.error('Authentication error:', authError);
+          const errorMessage = authError instanceof Error ? authError.message : 'Authentication failed';
           return new Response(
-            JSON.stringify({ error: 'Insufficient permissions. Admin or Treasurer role required.' }),
-            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({ success: false, error: errorMessage }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
