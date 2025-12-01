@@ -39,7 +39,7 @@ serve(async (req) => {
           const { user, supabase: userSupabase } = await verifyAuth(req);
           console.log('Auth verified for user:', user.id);
           
-          const hasPermission = await verifyRole(userSupabase, user.id, ['admin', 'treasurer']);
+          const hasPermission = await verifyRole(userSupabase, user.id, ['admin', 'treasurer', 'secretary', 'area_coordinator', 'general_coordinator']);
           console.log('Permission check result:', hasPermission);
           
           if (!hasPermission) {
