@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -145,6 +145,8 @@ const MultiStepRegistration = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countries, setCountries] = useState<string[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
 
   const [memberInfo, setMemberInfo] = useState<MemberInfo>({
     name: '',
@@ -178,6 +180,33 @@ const MultiStepRegistration = () => {
   const [transactionId, setTransactionId] = useState('');
 
   const totalSteps = 6;
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        setIsLoadingCountries(true);
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name');
+        const data = await response.json();
+        
+        const countryNames = data
+          .map((country: any) => country.name.common)
+          .sort((a: string, b: string) => a.localeCompare(b));
+        
+        setCountries(countryNames);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+        toast({
+          title: 'Warning',
+          description: 'Failed to load countries list. Please refresh the page.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+
+    fetchCountries();
+  }, [toast]);
 
   const addChild = () => {
     if (children.length < 6) {
@@ -660,35 +689,23 @@ const MultiStepRegistration = () => {
               <Select 
                 onValueChange={(value) => setMemberInfo({ ...memberInfo, country: value })}
                 value={memberInfo.country}
+                disabled={isLoadingCountries}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select your country" />
+                  <SelectValue placeholder={isLoadingCountries ? "Loading countries..." : "Select your country"} />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  <SelectItem value="Kenya">Kenya</SelectItem>
-                  <SelectItem value="United States">United States</SelectItem>
-                  <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="Australia">Australia</SelectItem>
-                  <SelectItem value="South Africa">South Africa</SelectItem>
-                  <SelectItem value="Nigeria">Nigeria</SelectItem>
-                  <SelectItem value="Ghana">Ghana</SelectItem>
-                  <SelectItem value="Tanzania">Tanzania</SelectItem>
-                  <SelectItem value="Uganda">Uganda</SelectItem>
-                  <SelectItem value="Ethiopia">Ethiopia</SelectItem>
-                  <SelectItem value="Rwanda">Rwanda</SelectItem>
-                  <SelectItem value="Germany">Germany</SelectItem>
-                  <SelectItem value="France">France</SelectItem>
-                  <SelectItem value="Italy">Italy</SelectItem>
-                  <SelectItem value="Spain">Spain</SelectItem>
-                  <SelectItem value="Japan">Japan</SelectItem>
-                  <SelectItem value="China">China</SelectItem>
-                  <SelectItem value="India">India</SelectItem>
-                  <SelectItem value="Brazil">Brazil</SelectItem>
-                  <SelectItem value="Mexico">Mexico</SelectItem>
-                  <SelectItem value="Argentina">Argentina</SelectItem>
-                  <SelectItem value="New Zealand">New Zealand</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
+                  {isLoadingCountries ? (
+                    <SelectItem value="loading" disabled>Loading countries...</SelectItem>
+                  ) : countries.length > 0 ? (
+                    countries.map((country) => (
+                      <SelectItem key={country} value={country}>
+                        {country}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="error" disabled>Failed to load countries</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
