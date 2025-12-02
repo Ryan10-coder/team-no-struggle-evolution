@@ -101,6 +101,39 @@ serve(async (req) => {
 
 async function handleSTKPush(data: any, supabase: any) {
   const { memberId, amount, phoneNumber } = data;
+
+  if (!memberId || !amount || !phoneNumber) {
+    console.error('Missing required STK push fields:', { memberId: !!memberId, amount, phoneNumber: !!phoneNumber });
+    return new Response(
+      JSON.stringify({ success: false, error: 'Missing required fields: member, amount or phone number' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  if (typeof amount !== 'number' || amount <= 0) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Amount must be a positive number' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  let msisdn = String(phoneNumber).replace(/\D/g, '');
+
+  if (msisdn.startsWith('0') && msisdn.length === 10) {
+    msisdn = `254${msisdn.slice(1)}`;
+  } else if (msisdn.startsWith('7') && msisdn.length === 9) {
+    msisdn = `254${msisdn}`;
+  }
+
+  if (!msisdn.startsWith('254') || msisdn.length !== 12) {
+    console.error('Invalid MSISDN after normalization:', { original: phoneNumber, normalized: msisdn });
+    return new Response(
+      JSON.stringify({ success: false, error: 'Invalid phone number format for MPESA' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('Normalized MSISDN for STK push:', msisdn);
   
   const consumerKey = Deno.env.get('MPESA_CONSUMER_KEY')!;
   const consumerSecret = Deno.env.get('MPESA_CONSUMER_SECRET')!;
@@ -124,7 +157,9 @@ async function handleSTKPush(data: any, supabase: any) {
     });
     
     if (!tokenResponse.ok) {
-      throw new Error(`OAuth failed: ${tokenResponse.statusText}`);
+      const errorBody = await tokenResponse.text();
+      console.error('OAuth token error:', tokenResponse.status, tokenResponse.statusText, errorBody);
+      throw new Error(`OAuth failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
     }
 
     const tokenData = await tokenResponse.json();
@@ -142,15 +177,15 @@ async function handleSTKPush(data: any, supabase: any) {
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: amount,
-      PartyA: phoneNumber,
+      PartyA: msisdn,
       PartyB: shortcode,
-      PhoneNumber: phoneNumber,
+      PhoneNumber: msisdn,
       CallBackURL: callbackUrl,
       AccountReference: `TNS${memberId}`,
       TransactionDesc: 'TNS Contribution Payment'
     };
 
-    console.log('Initiating STK Push...');
+    console.log('Initiating STK Push with payload:', stkPushData);
     
     const stkResponse = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
       method: 'POST',
@@ -169,7 +204,7 @@ async function handleSTKPush(data: any, supabase: any) {
         .from('mpesa_payments')
         .insert({
           member_id: memberId,
-          phone_number: phoneNumber,
+          phone_number: msisdn,
           amount: amount,
           merchant_request_id: stkResult.MerchantRequestID,
           checkout_request_id: stkResult.CheckoutRequestID,
