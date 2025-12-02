@@ -12,6 +12,26 @@ interface MPESAPaymentProps {
   memberName?: string;
 }
 
+const normalizeKenyanPhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, "");
+
+  if (!digits) return "";
+
+  if (digits.startsWith("0") && digits.length === 10) {
+    return `254${digits.slice(1)}`;
+  }
+
+  if (digits.startsWith("254") && digits.length === 12) {
+    return digits;
+  }
+
+  if (digits.startsWith("7") && digits.length === 9) {
+    return `254${digits}`;
+  }
+
+  return digits;
+};
+
 export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -28,6 +48,13 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
       return;
     }
 
+    const normalizedPhone = normalizeKenyanPhone(phoneNumber);
+
+    if (!/^((2547\d{8})|(7\d{8})|(0[17]\d{8})|(\+2547\d{8}))$/.test(normalizedPhone)) {
+      toast.error("Invalid phone number format. Use 0712345678 or +254712345678");
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -36,7 +63,7 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
           action: 'stk_push',
           memberId,
           amount: parseFloat(amount),
-          phoneNumber
+          phoneNumber: normalizedPhone
         }
       });
 
