@@ -1575,55 +1575,57 @@ const AdminPortal = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-slate-950 dark:via-blue-950/30 dark:to-indigo-950">
       {/* Enhanced Header with Gradient Background */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur opacity-75"></div>
-                <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 p-3 rounded-full">
-                  <Shield className="h-8 w-8 text-white" />
+                <div className="relative bg-gradient-to-r from-blue-500 to-indigo-600 p-2 sm:p-3 rounded-full">
+                  <Shield className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
               </div>
-              <div className="space-y-1">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+              <div className="space-y-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent truncate">
                   Admin Control Center
                 </h1>
-                <div className="flex items-center gap-3">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    Complete administrative oversight and management
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm md:text-lg hidden sm:block">
+                    Administrative oversight
                   </p>
                   {staffUser && (
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-700">
-                        {staffUser.first_name} {staffUser.last_name} • {staffUser.staff_role}
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-300 dark:border-green-700 text-xs">
+                        {staffUser.first_name} {staffUser.last_name}
                       </Badge>
                     </div>
                   )}
                   {user && !staffUser && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs truncate max-w-[150px]">
                       {user.email}
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
               <Button 
                 onClick={() => navigate(staffUser ? "/portal-login" : "/dashboard")} 
                 variant="outline"
-                className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 transition-all duration-200"
+                size="sm"
+                className="border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 transition-all duration-200 text-xs sm:text-sm"
               >
-                Back to {staffUser ? "Portal Login" : "Dashboard"}
+                <span className="hidden sm:inline">Back to </span>{staffUser ? "Portal" : "Dashboard"}
               </Button>
               {staffUser && (
                 <Button 
                   onClick={handleLogout} 
                   variant="outline"
+                  size="sm"
                   className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950/20 transition-all duration-200"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  <LogOut className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Logout</span>
                 </Button>
               )}
             </div>
@@ -1631,106 +1633,106 @@ const AdminPortal = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
         {/* Enhanced Tabs Navigation */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-2 mb-8">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 p-1.5 sm:p-2 mb-4 sm:mb-8">
           <Tabs defaultValue="analytics" className="w-full">
-            <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1">
+            <TabsList className="flex w-full overflow-x-auto bg-gray-100 dark:bg-gray-800 rounded-lg p-1 gap-1 no-scrollbar">
               <TabsTrigger 
                 value="analytics" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 flex-shrink-0"
               >
                 <BarChart3 className="h-4 w-4" />
-                <span className="font-medium">Analytics</span>
+                <span className="font-medium text-xs sm:text-sm">Analytics</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="treasurer" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 flex-shrink-0"
               >
                 <DollarSign className="h-4 w-4" />
-                <span className="font-medium">Treasurer</span>
+                <span className="font-medium text-xs sm:text-sm">Treasurer</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="pending-members" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4 relative"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 relative flex-shrink-0"
               >
                 <Users className="h-4 w-4" />
-                <span className="font-medium">Pending Members</span>
+                <span className="font-medium text-xs sm:text-sm whitespace-nowrap">Pending</span>
                 {pendingMembers.length > 0 && (
-                  <Badge className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  <Badge className="ml-1 sm:ml-2 bg-red-500 text-white text-xs px-1.5 sm:px-2 py-0.5 rounded-full">
                     {pendingMembers.length}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger 
                 value="all-members" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 flex-shrink-0"
               >
                 <Users className="h-4 w-4" />
-                <span className="font-medium">All Members</span>
-                <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full">
+                <span className="font-medium text-xs sm:text-sm">Members</span>
+                <Badge variant="secondary" className="ml-1 sm:ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-1.5 sm:px-2 py-0.5 rounded-full">
                   {allMembers.length}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger 
                 value="pending-staff" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 flex-shrink-0"
               >
                 <Shield className="h-4 w-4" />
-                <span className="font-medium">Pending Staff</span>
+                <span className="font-medium text-xs sm:text-sm whitespace-nowrap">P. Staff</span>
                 {pendingStaff.length > 0 && (
-                  <Badge className="ml-2 bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  <Badge className="ml-1 sm:ml-2 bg-purple-500 text-white text-xs px-1.5 sm:px-2 py-0.5 rounded-full">
                     {pendingStaff.length}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger 
                 value="all-staff" 
-                className="flex items-center space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-3 px-4"
+                className="flex items-center space-x-1 sm:space-x-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-gray-500 data-[state=active]:to-slate-600 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200 rounded-md py-2 sm:py-3 px-2 sm:px-4 flex-shrink-0"
               >
                 <Shield className="h-4 w-4" />
-                <span className="font-medium">All Staff</span>
-                <Badge variant="secondary" className="ml-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">
+                <span className="font-medium text-xs sm:text-sm">Staff</span>
+                <Badge variant="secondary" className="ml-1 sm:ml-2 bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 text-xs px-1.5 sm:px-2 py-0.5 rounded-full">
                   {allStaff.length}
                 </Badge>
               </TabsTrigger>
             </TabsList>
 
-          <TabsContent value="analytics" className="space-y-8">
+          <TabsContent value="analytics" className="space-y-4 sm:space-y-8">
             {/* Analytics Header */}
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
-                <BarChart3 className="h-8 w-8 text-white" />
+            <div className="text-center space-y-3 sm:space-y-4">
+              <div className="inline-flex items-center justify-center p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full shadow-lg">
+                <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-gray-100 dark:to-gray-400 bg-clip-text text-transparent">
                   System Analytics & Insights
                 </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">
-                  Real-time data visualization and organizational metrics
+                <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 mt-1 sm:mt-2">
+                  Real-time data visualization
                 </p>
               </div>
             </div>
 
-            <div className="grid gap-8">
+            <div className="grid gap-4 sm:gap-8">
               {/* Enhanced Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                 <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800 hover:shadow-xl transition-all duration-300 group">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-semibold text-blue-700 dark:text-blue-300">Total Members</CardTitle>
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform">
-                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">Total Members</CardTitle>
+                    <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-3xl font-bold text-blue-800 dark:text-blue-200">{allMembers.length}</div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400">
-                      {pendingMembers.length} pending approval
+                  <CardContent className="space-y-1 sm:space-y-2 p-3 sm:p-6 pt-0">
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">{allMembers.length}</div>
+                    <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">
+                      {pendingMembers.length} pending
                     </p>
-                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                    <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-1.5 sm:h-2">
                       <div 
-                        className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                        className="bg-blue-500 h-1.5 sm:h-2 rounded-full transition-all duration-500" 
                         style={{width: `${Math.min((allMembers.length / 100) * 100, 100)}%`}}
                       ></div>
                     </div>
@@ -1738,22 +1740,22 @@ const AdminPortal = () => {
                 </Card>
 
                 <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 border-emerald-200 dark:border-emerald-800 hover:shadow-xl transition-all duration-300 group">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Approved Members</CardTitle>
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform">
-                      <UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">Approved</CardTitle>
+                    <div className="p-1.5 sm:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <UserCheck className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200">
+                  <CardContent className="space-y-1 sm:space-y-2 p-3 sm:p-6 pt-0">
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold text-emerald-800 dark:text-emerald-200">
                       {allMembers.filter(m => m.registration_status === 'approved').length}
                     </div>
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                      {((allMembers.filter(m => m.registration_status === 'approved').length / allMembers.length) * 100 || 0).toFixed(1)}% approval rate
+                    <p className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
+                      {((allMembers.filter(m => m.registration_status === 'approved').length / allMembers.length) * 100 || 0).toFixed(0)}% rate
                     </p>
-                    <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
+                    <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-1.5 sm:h-2">
                       <div 
-                        className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                        className="bg-emerald-500 h-1.5 sm:h-2 rounded-full transition-all duration-500" 
                         style={{width: `${(allMembers.filter(m => m.registration_status === 'approved').length / allMembers.length) * 100 || 0}%`}}
                       ></div>
                     </div>
@@ -1761,20 +1763,20 @@ const AdminPortal = () => {
                 </Card>
 
                 <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800 hover:shadow-xl transition-all duration-300 group">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-semibold text-purple-700 dark:text-purple-300">Total Staff</CardTitle>
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform">
-                      <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">Total Staff</CardTitle>
+                    <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 dark:text-purple-400" />
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-3xl font-bold text-purple-800 dark:text-purple-200">{allStaff.length}</div>
-                    <p className="text-sm text-purple-600 dark:text-purple-400">
-                      {pendingStaff.length} pending approval
+                  <CardContent className="space-y-1 sm:space-y-2 p-3 sm:p-6 pt-0">
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold text-purple-800 dark:text-purple-200">{allStaff.length}</div>
+                    <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400">
+                      {pendingStaff.length} pending
                     </p>
-                    <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-2">
+                    <div className="w-full bg-purple-200 dark:bg-purple-800 rounded-full h-1.5 sm:h-2">
                       <div 
-                        className="bg-purple-500 h-2 rounded-full transition-all duration-500" 
+                        className="bg-purple-500 h-1.5 sm:h-2 rounded-full transition-all duration-500" 
                         style={{width: `${Math.min((allStaff.length / 20) * 100, 100)}%`}}
                       ></div>
                     </div>
@@ -1782,22 +1784,22 @@ const AdminPortal = () => {
                 </Card>
 
                 <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-orange-200 dark:border-orange-800 hover:shadow-xl transition-all duration-300 group">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <CardTitle className="text-sm font-semibold text-orange-700 dark:text-orange-300">Payment Rate</CardTitle>
-                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform">
-                      <PieChart className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3 p-3 sm:p-6">
+                    <CardTitle className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300">Payment Rate</CardTitle>
+                    <div className="p-1.5 sm:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full group-hover:scale-110 transition-transform">
+                      <PieChart className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 dark:text-orange-400" />
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-3xl font-bold text-orange-800 dark:text-orange-200">
+                  <CardContent className="space-y-1 sm:space-y-2 p-3 sm:p-6 pt-0">
+                    <div className="text-xl sm:text-2xl md:text-3xl font-bold text-orange-800 dark:text-orange-200">
                       {Math.round((allMembers.filter(m => m.payment_status === 'paid').length / allMembers.length) * 100) || 0}%
                     </div>
-                    <p className="text-sm text-orange-600 dark:text-orange-400">
-                      {allMembers.filter(m => m.payment_status === 'paid').length} members paid
+                    <p className="text-xs sm:text-sm text-orange-600 dark:text-orange-400">
+                      {allMembers.filter(m => m.payment_status === 'paid').length} paid
                     </p>
-                    <div className="w-full bg-orange-200 dark:bg-orange-800 rounded-full h-2">
+                    <div className="w-full bg-orange-200 dark:bg-orange-800 rounded-full h-1.5 sm:h-2">
                       <div 
-                        className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
+                        className="bg-orange-500 h-1.5 sm:h-2 rounded-full transition-all duration-500" 
                         style={{width: `${Math.round((allMembers.filter(m => m.payment_status === 'paid').length / allMembers.length) * 100) || 0}%`}}
                       ></div>
                     </div>
@@ -1995,7 +1997,8 @@ const AdminPortal = () => {
                     </Badge>
                   </div>
                 ) : (
-                  <div className="bg-white dark:bg-gray-900 rounded-lg border border-orange-200 dark:border-orange-700 overflow-hidden">
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className="min-w-[900px] bg-white dark:bg-gray-900 rounded-lg border border-orange-200 dark:border-orange-700 overflow-hidden">
                     <Table>
                       <TableHeader className="bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30">
                         <TableRow className="border-orange-200 dark:border-orange-800">
@@ -2144,6 +2147,7 @@ const AdminPortal = () => {
                         ))}
                       </TableBody>
                     </Table>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -2152,49 +2156,54 @@ const AdminPortal = () => {
 
           <TabsContent value="all-members">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
+              <CardHeader className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <CardTitle>All Members</CardTitle>
-                    <CardDescription>
-                      View all registered members and their status
+                    <CardTitle className="text-lg sm:text-xl">All Members</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">
+                      View all registered members
                     </CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap gap-1">
                     <Button
                       onClick={() => handleExport('csv')}
                       variant="outline"
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      <File className="h-4 w-4 mr-2" />
-                      CSV
+                      <File className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">CSV</span>
                     </Button>
                     <Button
                       onClick={() => handleExport('excel')}
                       variant="outline"
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      Excel
+                      <FileSpreadsheet className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Excel</span>
                     </Button>
                     <Button
                       onClick={() => handleExport('pdf')}
                       variant="outline"
                       size="sm"
+                      className="text-xs h-8"
                     >
-                      <FileText className="h-4 w-4 mr-2" />
-                      PDF
+                      <FileText className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">PDF</span>
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 {allMembers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No members registered yet
                   </div>
                 ) : (
-                  <Table>
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className="min-w-[1200px]">
+                    <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Profile</TableHead>
@@ -2328,6 +2337,8 @@ const AdminPortal = () => {
                       ))}
                     </TableBody>
                   </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -2335,18 +2346,20 @@ const AdminPortal = () => {
 
           <TabsContent value="pending-staff">
             <Card>
-              <CardHeader>
-                <CardTitle>Pending Staff Registrations</CardTitle>
-                <CardDescription>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl">Pending Staff Registrations</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Review and approve staff applications
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 {pendingStaff.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No pending staff registrations
                   </div>
                 ) : (
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className="min-w-[700px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2398,6 +2411,8 @@ const AdminPortal = () => {
                       ))}
                     </TableBody>
                   </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -2405,18 +2420,20 @@ const AdminPortal = () => {
 
           <TabsContent value="all-staff">
             <Card>
-              <CardHeader>
-                <CardTitle>All Staff</CardTitle>
-                <CardDescription>
-                  View all registered staff and their status
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-lg sm:text-xl">All Staff</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  View all registered staff
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-6 pt-0">
                 {allStaff.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     No staff registered yet
                   </div>
                 ) : (
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <div className="min-w-[600px]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2458,17 +2475,19 @@ const AdminPortal = () => {
                       ))}
                     </TableBody>
                   </Table>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
           
           <TabsContent value="treasurer">
-            <div className="space-y-8">
+            <div className="space-y-4 sm:space-y-8">
               {/* Header Section */}
               <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold text-primary">Financial Management Center</h2>
-                <p className="text-muted-foreground text-lg">Comprehensive financial oversight and transaction management</p>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">Financial Management</h2>
+                <p className="text-muted-foreground text-sm sm:text-base md:text-lg">Financial oversight and transactions</p>
                 <div className="w-24 h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20 mx-auto rounded-full"></div>
               </div>
 
@@ -2484,11 +2503,11 @@ const AdminPortal = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <ManualPaymentEntry onSuccess={fetchPendingRegistrations} />
                     </div>
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
                       <ExpenditureForm onSuccess={fetchPendingRegistrations} />
                     </div>
                   </div>
@@ -2497,27 +2516,27 @@ const AdminPortal = () => {
               
               {/* Enhanced Disbursement Management */}
               <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
-                <CardHeader>
-                  <CardTitle className="text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-                    <UserMinus className="h-5 w-5" />
-                    Enhanced Disbursement Management
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-base sm:text-xl text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                    <UserMinus className="h-4 w-4 sm:h-5 sm:w-5" />
+                    Disbursement Management
                   </CardTitle>
-                  <CardDescription className="text-indigo-700 dark:text-indigo-300">
-                    Advanced disbursement processing with bereavement form generation and document management
+                  <CardDescription className="text-xs sm:text-sm text-indigo-700 dark:text-indigo-300">
+                    Process disbursements with document management
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-sm">
+                <CardContent className="p-3 sm:p-6 pt-0">
+                  <div className="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-sm">
                     <EnhancedDisbursementForm onSuccess={fetchPendingRegistrations} />
                   </div>
                 </CardContent>
               </Card>
               
               {/* Member MPESA Payment Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Member Payment Processing</h3>
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100">Payment Processing</h3>
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700 w-fit">
                     Paybill: 4148511
                   </Badge>
                 </div>
@@ -2525,15 +2544,15 @@ const AdminPortal = () => {
               </div>
               
               {/* Enhanced Financial Summary Cards */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Financial Overview</h3>
-                  <div className="text-sm text-muted-foreground">
-                    Last updated: {new Date().toLocaleString()}
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100">Financial Overview</h3>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Updated: {new Date().toLocaleTimeString()}
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-6">
                   <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800 hover:shadow-lg transition-all duration-200 group">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                       <CardTitle className="text-sm font-semibold text-green-700 dark:text-green-300">Total Contributions</CardTitle>
