@@ -168,10 +168,13 @@ function addSummaryBox(doc: jsPDF, items: [string, string][], y: number, color: 
   const boxWidth = pageWidth - 28;
   const boxHeight = 8 + items.length * 7;
 
-  doc.setFillColor(color[0], color[1], color[2]);
-  doc.setGState(doc.GState({ opacity: 0.08 }));
+  // Light background fill
+  doc.setFillColor(
+    Math.min(255, color[0] + Math.round((255 - color[0]) * 0.9)),
+    Math.min(255, color[1] + Math.round((255 - color[1]) * 0.9)),
+    Math.min(255, color[2] + Math.round((255 - color[2]) * 0.9))
+  );
   doc.roundedRect(14, y, boxWidth, boxHeight, 2, 2, 'F');
-  doc.setGState(doc.GState({ opacity: 1 }));
 
   doc.setDrawColor(...color);
   doc.setLineWidth(0.5);
