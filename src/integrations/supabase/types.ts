@@ -686,6 +686,10 @@ export type Database = {
         Args: { auth_user_id: string; staff_email: string }
         Returns: undefined
       }
+      map_staff_role_to_app_role: {
+        Args: { staff_role: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       update_maturity_status: { Args: never; Returns: undefined }
     }
     Enums: {
