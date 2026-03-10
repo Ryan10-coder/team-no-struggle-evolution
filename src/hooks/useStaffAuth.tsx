@@ -13,7 +13,7 @@ interface StaffUser {
 interface StaffAuthContextType {
   staffUser: StaffUser | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void> | void;
   isLoading: boolean;
 }
 
