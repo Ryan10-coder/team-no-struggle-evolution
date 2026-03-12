@@ -271,8 +271,16 @@ const AdminPortal = () => {
         scheduleRefresh('member_balances changed');
       })
       // Admin operation tables
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'membership_registrations' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'membership_registrations' }, (payload) => {
         scheduleRefresh('membership_registrations changed');
+
+        const record = payload.eventType === 'DELETE' ? payload.old : payload.new;
+        if (record?.id) {
+          const memberUpdateEvent = new CustomEvent('memberUpdated', {
+            detail: { memberId: record.id, changes: record }
+          });
+          window.dispatchEvent(memberUpdateEvent);
+        }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_registrations' }, () => {
         scheduleRefresh('staff_registrations changed');
