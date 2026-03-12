@@ -219,81 +219,89 @@ const AdminPortal = () => {
 
   // Enhanced realtime subscriptions for comprehensive data synchronization
   useEffect(() => {
+    let refreshTimeout: ReturnType<typeof window.setTimeout> | null = null;
+    let refreshInFlight = false;
+    let queuedRefresh = false;
+
+    const runRefresh = async (reason: string) => {
+      if (refreshInFlight) {
+        queuedRefresh = true;
+        return;
+      }
+
+      refreshInFlight = true;
+      try {
+        console.log(`Real-time: refreshing AdminPortal data (${reason})`);
+        await fetchPendingRegistrations();
+      } finally {
+        refreshInFlight = false;
+        if (queuedRefresh) {
+          queuedRefresh = false;
+          void runRefresh('queued-event');
+        }
+      }
+    };
+
+    const scheduleRefresh = (reason: string) => {
+      if (refreshTimeout) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      refreshTimeout = window.setTimeout(() => {
+        void runRefresh(reason);
+      }, 350);
+    };
+
     const channel = supabase
       .channel('realtime-admin-portal')
-      // MPESA payments and contributions
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'mpesa_payments',
-        filter: 'status=eq.completed'
-      }, () => {
-        console.log('Real-time: Completed MPESA payment inserted');
-        fetchPendingRegistrations();
+      // Financial tables
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mpesa_payments' }, () => {
+        scheduleRefresh('mpesa_payments changed');
       })
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'mpesa_payments',
-        filter: 'status=eq.completed'
-      }, (payload) => {
-        console.log('Real-time: MPESA payment completed', payload);
-        fetchPendingRegistrations();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contributions' }, () => {
+        scheduleRefresh('contributions changed');
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'contributions' }, () => {
-        console.log('Real-time: Contribution inserted');
-        fetchPendingRegistrations();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'disbursements' }, () => {
+        scheduleRefresh('disbursements changed');
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'contributions' }, () => {
-        console.log('Real-time: Contribution updated');
-        fetchPendingRegistrations();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'monthly_expenses' }, () => {
+        scheduleRefresh('monthly_expenses changed');
       })
-      // Member registration changes - critical for cross-portal sync
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'membership_registrations' }, (payload) => {
-        console.log('Real-time: Member registration updated', payload);
-        fetchPendingRegistrations();
-        
-        // Broadcast member update event for other components/portals
-        const memberUpdateEvent = new CustomEvent('memberUpdated', {
-          detail: { memberId: payload.new.id, changes: payload.new }
-        });
-        window.dispatchEvent(memberUpdateEvent);
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'member_balances' }, () => {
+        scheduleRefresh('member_balances changed');
       })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'membership_registrations' }, () => {
-        console.log('Real-time: New member registration');
-        fetchPendingRegistrations();
+      // Admin operation tables
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'membership_registrations' }, () => {
+        scheduleRefresh('membership_registrations changed');
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'membership_registrations' }, () => {
-        console.log('Real-time: Member registration deleted');
-        fetchPendingRegistrations();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staff_registrations' }, () => {
+        scheduleRefresh('staff_registrations changed');
       })
-      // Disbursement changes
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'disbursements' }, () => {
-        console.log('Real-time: Disbursement inserted');
-        fetchPendingRegistrations();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, () => {
+        scheduleRefresh('user_roles changed');
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'disbursements' }, () => {
-        console.log('Real-time: Disbursement updated');
-        fetchPendingRegistrations();
-      })
-      // Member balance changes
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'member_balances' }, () => {
-        console.log('Real-time: Member balance updated');
-        fetchPendingRegistrations();
-      })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('AdminPortal realtime status:', status);
+        if (status === 'SUBSCRIBED') {
+          scheduleRefresh('realtime-subscribed');
+        }
+      });
 
     // Listen for member updates from other parts of the application
     const handleMemberUpdate = (event: CustomEvent) => {
       console.log('Cross-portal sync: Member update received', event.detail);
-      fetchPendingRegistrations();
+      scheduleRefresh('memberUpdated custom event');
     };
-    
+
     window.addEventListener('memberUpdated', handleMemberUpdate as EventListener);
 
     return () => {
-      try { 
-        supabase.removeChannel(channel); 
+      if (refreshTimeout) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      try {
+        supabase.removeChannel(channel);
         window.removeEventListener('memberUpdated', handleMemberUpdate as EventListener);
       } catch (_) {}
     };
