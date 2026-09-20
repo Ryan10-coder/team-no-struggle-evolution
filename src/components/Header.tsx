@@ -43,7 +43,7 @@ const Header = () => {
 
               <img
                 src="/lovable-uploads/"
-                alt="Itumbu Welfare"
+                alt=""
                 className="h-11 w-auto relative z-10 object-contain group-hover:scale-105 transition-transform duration-300"
               />
             </div>
