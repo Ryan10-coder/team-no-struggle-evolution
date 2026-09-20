@@ -45,60 +45,84 @@ const Requirements = () => {
   ];
 
   return (
-    <section id="requirements" className="py-24 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden">
-      {/* Decorative background */}
-      <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center mb-20">
-          <div className="inline-block mb-4 px-4 py-2 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
-            <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Join Our Community
+    <section
+      id="requirements"
+      className="relative overflow-hidden bg-background py-16 sm:py-20 lg:py-24"
+    >
+      {/* Subtle background decoration */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-secondary/5 blur-3xl" />
+
+      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Section Header */}
+        <div className="mx-auto mb-14 max-w-3xl text-center lg:mb-16">
+          <div className="mb-5 inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-4 py-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary sm:text-sm">
+              Membership Information
             </span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Membership <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Requirements</span>
+
+          <h2 className="mb-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            Membership{' '}
+            <span className="text-primary">
+              Requirements
+            </span>
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            Simple and inclusive eligibility criteria designed to welcome everyone who wants 
-            to be part of our supportive community.
+
+          <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+            Simple and inclusive eligibility criteria designed to welcome
+            everyone who wants to be part of our supportive community.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-16">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12">
+
           {/* Eligibility Requirements */}
           <div>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl mb-4 border border-primary/30">
-                <Users className="h-8 w-8 text-primary" />
+            <div className="mb-7 flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
+                <Users className="h-6 w-6" />
               </div>
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Who Can Join
-              </h3>
+
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                  Eligibility
+                </p>
+
+                <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  Who Can Join
+                </h3>
+              </div>
             </div>
-            <div className="space-y-6">
+
+            <div className="space-y-4">
               {eligibilityRequirements.map((requirement, index) => {
                 const Icon = requirement.icon;
+
                 return (
-                  <Card 
-                    key={index} 
-                    className="group relative overflow-hidden backdrop-blur-sm bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+                  <Card
+                    key={index}
+                    className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${requirement.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    <CardContent className="p-8 relative z-10">
-                      <div className="flex items-start gap-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary/20">
-                            <Icon className="h-6 w-6 text-primary" />
-                          </div>
+                    <CardContent className="p-5 sm:p-6">
+                      <div className="flex items-start gap-4 sm:gap-5">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
+
+                        <div className="min-w-0 flex-1">
+                          <h4 className="mb-1.5 text-base font-semibold text-foreground sm:text-lg">
                             {requirement.title}
                           </h4>
-                          <p className="text-muted-foreground leading-relaxed">{requirement.description}</p>
+
+                          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                            {requirement.description}
+                          </p>
                         </div>
+
+                        <CheckCircle className="mt-1 hidden h-5 w-5 shrink-0 text-primary/50 sm:block" />
                       </div>
                     </CardContent>
                   </Card>
@@ -109,37 +133,48 @@ const Requirements = () => {
 
           {/* Contribution Rules */}
           <div>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-secondary/20 to-accent/20 rounded-2xl mb-4 border border-secondary/30">
-                <DollarSign className="h-8 w-8 text-secondary" />
+            <div className="mb-7 flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary ring-1 ring-secondary/10">
+                <DollarSign className="h-6 w-6" />
               </div>
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-secondary bg-clip-text text-transparent">
-                Contribution Rules
-              </h3>
+
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-secondary">
+                  Financial Guidelines
+                </p>
+
+                <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  Contribution Rules
+                </h3>
+              </div>
             </div>
-            <div className="space-y-6">
+
+            <div className="space-y-4">
               {contributionRules.map((rule, index) => {
                 const Icon = rule.icon;
+
                 return (
-                  <Card 
-                    key={index} 
-                    className="group relative overflow-hidden backdrop-blur-sm bg-card/50 border-border/50 hover:border-secondary/30 transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+                  <Card
+                    key={index}
+                    className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-md"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${rule.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    <CardContent className="p-8 relative z-10">
-                      <div className="flex items-start gap-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-secondary/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative w-14 h-14 bg-gradient-to-br from-secondary/10 to-accent/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-secondary/20">
-                            <Icon className="h-6 w-6 text-secondary" />
-                          </div>
+                    <CardContent className="p-5 sm:p-6">
+                      <div className="flex items-start gap-4 sm:gap-5">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary transition-colors duration-300 group-hover:bg-secondary group-hover:text-secondary-foreground">
+                          <Icon className="h-5 w-5" />
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-foreground mb-2 group-hover:text-secondary transition-colors duration-300">
+
+                        <div className="min-w-0 flex-1">
+                          <h4 className="mb-1.5 text-base font-semibold text-foreground sm:text-lg">
                             {rule.title}
                           </h4>
-                          <p className="text-muted-foreground leading-relaxed">{rule.description}</p>
+
+                          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                            {rule.description}
+                          </p>
                         </div>
+
+                        <CheckCircle className="mt-1 hidden h-5 w-5 shrink-0 text-secondary/50 sm:block" />
                       </div>
                     </CardContent>
                   </Card>
@@ -150,35 +185,71 @@ const Requirements = () => {
         </div>
 
         {/* Summary Box */}
-        <div className="relative max-w-4xl mx-auto overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 backdrop-blur-sm border border-primary/20 p-10">
-          <div className="absolute inset-0 bg-grid-white/5" />
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="group">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
-              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
-                18+
-              </div>
-              <div className="text-muted-foreground font-medium">Minimum Age</div>
+        <div className="mx-auto mt-12 max-w-5xl lg:mt-16">
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+            <div className="border-b border-border/60 bg-muted/30 px-5 py-4 sm:px-6">
+              <h3 className="text-base font-semibold text-foreground sm:text-lg">
+                Membership at a glance
+              </h3>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Key figures to keep in mind before joining.
+              </p>
             </div>
-            <div className="group">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-secondary to-accent rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                <DollarSign className="h-6 w-6 text-white" />
+
+            <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              
+              {/* Minimum Age */}
+              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:mx-auto sm:mb-4">
+                  <Calendar className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                    18+
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-muted-foreground">
+                    Minimum Age
+                  </div>
+                </div>
               </div>
-              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent mb-2">
-                Ksh 100
+
+              {/* Contribution */}
+              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary sm:mx-auto sm:mb-4">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                    Ksh 100
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-muted-foreground">
+                    Per Contribution
+                  </div>
+                </div>
               </div>
-              <div className="text-muted-foreground font-medium">Per Contribution</div>
-            </div>
-            <div className="group">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="h-6 w-6 text-white" />
+
+              {/* Registration */}
+              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent-foreground sm:mx-auto sm:mb-4">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                    Ksh 1000
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-muted-foreground">
+                    Registration Fee
+                  </div>
+                </div>
               </div>
-              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent mb-2">
-                Ksh 1000
-              </div>
-              <div className="text-muted-foreground font-medium">Registration Fee</div>
+
             </div>
           </div>
         </div>
