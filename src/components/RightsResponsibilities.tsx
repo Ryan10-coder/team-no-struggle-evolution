@@ -66,59 +66,89 @@ const RightsResponsibilities = () => {
   ];
 
   return (
-    <section id="rights" className="py-24 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden">
-      {/* Decorative background */}
-      <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center mb-20">
-          <div className="inline-block mb-4 px-4 py-2 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
-            <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+    <section
+      id="rights"
+      className="relative overflow-hidden bg-slate-50 py-20 sm:py-24 lg:py-28"
+    >
+      {/* Strong section color bars */}
+      <div className="absolute left-0 top-0 h-2 w-full bg-blue-600" />
+      <div className="absolute bottom-0 left-0 h-2 w-full bg-green-600" />
+
+      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Section Header */}
+        <div className="mx-auto mb-14 max-w-4xl text-center sm:mb-16">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-white shadow-md">
+            <Shield className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-[0.16em]">
               Member Guidelines
             </span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Rights & <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Responsibilities</span>
+
+          <h2 className="mb-6 text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+            Rights &{' '}
+            <span className="text-blue-600">
+              Responsibilities
+            </span>
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            Understanding your rights as a member and the conditions that govern 
+
+          <p className="mx-auto max-w-3xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8 lg:text-xl">
+            Understanding your rights as a member and the conditions that govern
             our community participation and welfare group membership.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-20">
+        {/* Rights & Dismissal */}
+        <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+
           {/* Member Rights */}
-          <div>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl mb-4 border border-primary/30">
-                <Shield className="h-8 w-8 text-primary" />
+          <div className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl">
+            <div className="bg-blue-600 px-6 py-7 text-white sm:px-8">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+                  <Shield className="h-7 w-7" />
+                </div>
+
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-100">
+                    Member Rights
+                  </p>
+                  <h3 className="text-2xl font-black sm:text-3xl">
+                    Your Rights as a Member
+                  </h3>
+                </div>
               </div>
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Your Rights as a Member
-              </h3>
             </div>
-            <div className="space-y-6">
+
+            <div className="space-y-4 p-5 sm:p-7">
               {memberRights.map((right, index) => {
                 const Icon = right.icon;
+
                 return (
-                  <Card 
-                    key={index} 
-                    className="group relative overflow-hidden backdrop-blur-sm bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+                  <Card
+                    key={index}
+                    className="group overflow-hidden border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-lg"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${right.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    <CardContent className="p-8 relative z-10">
-                      <div className="flex items-start gap-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary/20">
-                            <Icon className="h-6 w-6 text-primary" />
-                          </div>
+                    <CardContent className="p-5 sm:p-6">
+                      <div className="flex items-start gap-4 sm:gap-5">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
-                            {right.title}
-                          </h4>
-                          <p className="text-muted-foreground leading-relaxed">{right.description}</p>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-2 flex items-start gap-3">
+                            <span className="mt-1 text-xs font-black text-blue-600">
+                              0{index + 1}
+                            </span>
+
+                            <h4 className="text-lg font-extrabold leading-tight text-slate-900 transition-colors duration-300 group-hover:text-blue-700 sm:text-xl">
+                              {right.title}
+                            </h4>
+                          </div>
+
+                          <p className="pl-7 text-sm leading-6 text-slate-600 sm:text-base">
+                            {right.description}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -129,37 +159,53 @@ const RightsResponsibilities = () => {
           </div>
 
           {/* Dismissal Conditions */}
-          <div>
-            <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-destructive/20 to-destructive/10 rounded-2xl mb-4 border border-destructive/30">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div className="overflow-hidden rounded-3xl border border-red-100 bg-white shadow-xl">
+            <div className="bg-red-600 px-6 py-7 text-white sm:px-8">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+                  <AlertTriangle className="h-7 w-7" />
+                </div>
+
+                <div>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-red-100">
+                    Membership Rules
+                  </p>
+                  <h3 className="text-2xl font-black sm:text-3xl">
+                    Dismissal Conditions
+                  </h3>
+                </div>
               </div>
-              <h3 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-destructive bg-clip-text text-transparent">
-                Dismissal Conditions
-              </h3>
             </div>
-            <div className="space-y-6">
+
+            <div className="space-y-4 p-5 sm:p-7">
               {dismissalConditions.map((condition, index) => {
                 const Icon = condition.icon;
+
                 return (
-                  <Card 
-                    key={index} 
-                    className="group relative overflow-hidden backdrop-blur-sm bg-card/50 border-border/50 hover:border-destructive/30 transition-all duration-500 hover:shadow-xl hover:-translate-y-1"
+                  <Card
+                    key={index}
+                    className="group overflow-hidden border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-red-300 hover:bg-red-50/50 hover:shadow-lg"
                   >
-                    <div className={`absolute inset-0 bg-gradient-to-br ${condition.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    <CardContent className="p-8 relative z-10">
-                      <div className="flex items-start gap-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-destructive/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          <div className="relative w-14 h-14 bg-gradient-to-br from-destructive/10 to-destructive/5 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-destructive/20">
-                            <Icon className="h-6 w-6 text-destructive" />
-                          </div>
+                    <CardContent className="p-5 sm:p-6">
+                      <div className="flex items-start gap-4 sm:gap-5">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-foreground mb-2 group-hover:text-destructive transition-colors duration-300">
-                            {condition.title}
-                          </h4>
-                          <p className="text-muted-foreground leading-relaxed">{condition.description}</p>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-2 flex items-start gap-3">
+                            <span className="mt-1 text-xs font-black text-red-600">
+                              0{index + 1}
+                            </span>
+
+                            <h4 className="text-lg font-extrabold leading-tight text-slate-900 transition-colors duration-300 group-hover:text-red-700 sm:text-xl">
+                              {condition.title}
+                            </h4>
+                          </div>
+
+                          <p className="pl-7 text-sm leading-6 text-slate-600 sm:text-base">
+                            {condition.description}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -171,35 +217,50 @@ const RightsResponsibilities = () => {
         </div>
 
         {/* Community Responsibilities */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 backdrop-blur-sm border border-primary/20 p-12">
-          <div className="absolute inset-0 bg-grid-white/5" />
-          <div className="relative z-10">
-            <div className="text-center mb-12">
-              <div className="inline-block mb-4 px-4 py-2 bg-background/50 backdrop-blur-sm rounded-full border border-primary/20">
-                <span className="text-sm font-semibold text-primary">Our Commitment</span>
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 shadow-2xl">
+          <div className="h-2 w-full bg-green-600" />
+
+          <div className="p-6 sm:p-8 lg:p-10">
+            <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-3xl">
+                <div className="mb-4 inline-flex rounded-full bg-green-600 px-4 py-2 text-white">
+                  <span className="text-xs font-bold uppercase tracking-[0.16em]">
+                    Our Commitment
+                  </span>
+                </div>
+
+                <h3 className="mb-4 text-3xl font-black text-white sm:text-4xl">
+                  Community{' '}
+                  <span className="text-green-400">
+                    Responsibilities
+                  </span>
+                </h3>
+
+                <p className="text-base leading-7 text-slate-300 sm:text-lg">
+                  Together we build a stronger, more supportive community through shared values and responsibilities
+                </p>
               </div>
-              <h3 className="text-3xl md:text-4xl font-bold mb-4">
-                Community <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Responsibilities</span>
-              </h3>
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                Together we build a stronger, more supportive community through shared values and responsibilities
-              </p>
+
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white shadow-lg">
+                <Handshake className="h-8 w-8" />
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {communityResponsibilities.map((responsibility, index) => {
                 const Icon = responsibility.icon;
+
                 return (
                   <div
                     key={index}
-                    className="group relative overflow-hidden backdrop-blur-sm bg-background/50 rounded-2xl p-6 border border-border/50 hover:border-primary/30 transition-all duration-500 hover:shadow-lg hover:-translate-y-1"
+                    className="group rounded-2xl border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-green-400/40 hover:bg-white/10 hover:shadow-lg sm:p-6"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <div className="relative z-10 flex flex-col items-center text-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-primary/20">
-                        <Icon className="h-6 w-6 text-primary group-hover:text-secondary transition-colors duration-300" />
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-600 text-white transition-transform duration-300 group-hover:scale-105">
+                        <Icon className="h-6 w-6" />
                       </div>
-                      <span className="text-foreground font-semibold group-hover:text-primary transition-colors duration-300">
+
+                      <span className="text-sm font-bold leading-6 text-white sm:text-base">
                         {responsibility.text}
                       </span>
                     </div>
@@ -209,6 +270,7 @@ const RightsResponsibilities = () => {
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
