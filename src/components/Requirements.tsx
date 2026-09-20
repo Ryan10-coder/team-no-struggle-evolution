@@ -47,47 +47,47 @@ const Requirements = () => {
   return (
     <section
       id="requirements"
-      className="relative overflow-hidden bg-background py-16 sm:py-20 lg:py-24"
+      className="relative bg-background py-20 sm:py-24 lg:py-28"
     >
-      {/* Subtle background decoration */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-secondary/5 blur-3xl" />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
 
-      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mx-auto mb-16 max-w-3xl text-center lg:mb-20">
 
-        {/* Section Header */}
-        <div className="mx-auto mb-14 max-w-3xl text-center lg:mb-16">
-          <div className="mb-5 inline-flex items-center rounded-full border border-primary/15 bg-primary/5 px-4 py-2">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary sm:text-sm">
-              Membership Information
+          <div className="mb-6 inline-flex items-center gap-2">
+            <span className="h-px w-8 bg-primary" />
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary">
+              Membership
             </span>
+            <span className="h-px w-8 bg-primary" />
           </div>
 
-          <h2 className="mb-5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Membership{' '}
-            <span className="text-primary">
-              Requirements
-            </span>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+            Membership Requirements
           </h2>
 
-          <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Simple and inclusive eligibility criteria designed to welcome
-            everyone who wants to be part of our supportive community.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+            Everything you need to know about eligibility, membership
+            contributions and registration before joining Itumbu Welfare.
           </p>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12">
+        {/* Main Sections */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
 
-          {/* Eligibility Requirements */}
+          {/* ============================================
+              WHO CAN JOIN
+          ============================================= */}
           <div>
-            <div className="mb-7 flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10">
+
+            {/* Section Heading */}
+            <div className="mb-8 flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
                 <Users className="h-6 w-6" />
               </div>
 
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">
                   Eligibility
                 </p>
 
@@ -97,6 +97,7 @@ const Requirements = () => {
               </div>
             </div>
 
+            {/* Eligibility Cards */}
             <div className="space-y-4">
               {eligibilityRequirements.map((requirement, index) => {
                 const Icon = requirement.icon;
@@ -104,25 +105,37 @@ const Requirements = () => {
                 return (
                   <Card
                     key={index}
-                    className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+                    className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-none transition-all duration-300 hover:border-primary/40 hover:shadow-md"
                   >
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex items-start gap-4 sm:gap-5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                    {/* Accent Line */}
+                    <div className="absolute left-0 top-0 h-full w-1 bg-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-5 p-5 sm:p-6">
+
+                        {/* Number */}
+                        <div className="hidden shrink-0 text-sm font-bold text-muted-foreground/40 sm:block">
+                          0{index + 1}
+                        </div>
+
+                        {/* Icon */}
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
                           <Icon className="h-5 w-5" />
                         </div>
 
+                        {/* Content */}
                         <div className="min-w-0 flex-1">
-                          <h4 className="mb-1.5 text-base font-semibold text-foreground sm:text-lg">
+                          <h4 className="text-base font-semibold text-foreground sm:text-lg">
                             {requirement.title}
                           </h4>
 
-                          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
                             {requirement.description}
                           </p>
                         </div>
 
-                        <CheckCircle className="mt-1 hidden h-5 w-5 shrink-0 text-primary/50 sm:block" />
+                        {/* Status */}
+                        <CheckCircle className="hidden h-5 w-5 shrink-0 text-primary/50 sm:block" />
                       </div>
                     </CardContent>
                   </Card>
@@ -131,16 +144,21 @@ const Requirements = () => {
             </div>
           </div>
 
-          {/* Contribution Rules */}
+
+          {/* ============================================
+              CONTRIBUTION RULES
+          ============================================= */}
           <div>
-            <div className="mb-7 flex items-center gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary ring-1 ring-secondary/10">
+
+            {/* Section Heading */}
+            <div className="mb-8 flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground shadow-sm">
                 <DollarSign className="h-6 w-6" />
               </div>
 
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-secondary">
-                  Financial Guidelines
+                <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-secondary">
+                  Contributions
                 </p>
 
                 <h3 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -149,6 +167,7 @@ const Requirements = () => {
               </div>
             </div>
 
+            {/* Contribution Cards */}
             <div className="space-y-4">
               {contributionRules.map((rule, index) => {
                 const Icon = rule.icon;
@@ -156,25 +175,37 @@ const Requirements = () => {
                 return (
                   <Card
                     key={index}
-                    className="group overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-secondary/30 hover:shadow-md"
+                    className="group relative overflow-hidden rounded-xl border border-border bg-card shadow-none transition-all duration-300 hover:border-secondary/40 hover:shadow-md"
                   >
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex items-start gap-4 sm:gap-5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary transition-colors duration-300 group-hover:bg-secondary group-hover:text-secondary-foreground">
+                    {/* Accent Line */}
+                    <div className="absolute left-0 top-0 h-full w-1 bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-5 p-5 sm:p-6">
+
+                        {/* Number */}
+                        <div className="hidden shrink-0 text-sm font-bold text-muted-foreground/40 sm:block">
+                          0{index + 1}
+                        </div>
+
+                        {/* Icon */}
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-secondary transition-colors duration-300 group-hover:bg-secondary group-hover:text-secondary-foreground">
                           <Icon className="h-5 w-5" />
                         </div>
 
+                        {/* Content */}
                         <div className="min-w-0 flex-1">
-                          <h4 className="mb-1.5 text-base font-semibold text-foreground sm:text-lg">
+                          <h4 className="text-base font-semibold text-foreground sm:text-lg">
                             {rule.title}
                           </h4>
 
-                          <p className="text-sm leading-6 text-muted-foreground sm:text-base">
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
                             {rule.description}
                           </p>
                         </div>
 
-                        <CheckCircle className="mt-1 hidden h-5 w-5 shrink-0 text-secondary/50 sm:block" />
+                        {/* Status */}
+                        <CheckCircle className="hidden h-5 w-5 shrink-0 text-secondary/50 sm:block" />
                       </div>
                     </CardContent>
                   </Card>
@@ -184,75 +215,115 @@ const Requirements = () => {
           </div>
         </div>
 
-        {/* Summary Box */}
-        <div className="mx-auto mt-12 max-w-5xl lg:mt-16">
-          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-            <div className="border-b border-border/60 bg-muted/30 px-5 py-4 sm:px-6">
-              <h3 className="text-base font-semibold text-foreground sm:text-lg">
-                Membership at a glance
-              </h3>
 
-              <p className="mt-1 text-sm text-muted-foreground">
-                Key figures to keep in mind before joining.
-              </p>
+        {/* ============================================
+            MEMBERSHIP AT A GLANCE
+        ============================================= */}
+        <div className="mt-16 lg:mt-20">
+
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+
+            {/* Header */}
+            <div className="flex flex-col gap-2 border-b border-border bg-muted/20 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+
+              <div>
+                <h3 className="text-lg font-bold text-foreground">
+                  Membership at a glance
+                </h3>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Key figures to remember when joining the welfare.
+                </p>
+              </div>
+
+              <div className="hidden h-2 w-2 rounded-full bg-primary sm:block" />
             </div>
 
-            <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-              
-              {/* Minimum Age */}
-              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:mx-auto sm:mb-4">
-                  <Calendar className="h-5 w-5" />
-                </div>
 
-                <div>
-                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    18+
+            {/* Statistics */}
+            <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+
+              {/* Age */}
+              <div className="group px-6 py-7 sm:px-8 sm:py-8">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Calendar className="h-5 w-5" />
                   </div>
 
-                  <div className="mt-1 text-sm font-medium text-muted-foreground">
-                    Minimum Age
-                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Eligibility
+                  </span>
                 </div>
+
+                <div className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  18+
+                </div>
+
+                <p className="mt-1 text-sm font-medium text-muted-foreground">
+                  Minimum Age
+                </p>
               </div>
+
 
               {/* Contribution */}
-              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-secondary sm:mx-auto sm:mb-4">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    Ksh 100
+              <div className="group px-6 py-7 sm:px-8 sm:py-8">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+                    <DollarSign className="h-5 w-5" />
                   </div>
 
-                  <div className="mt-1 text-sm font-medium text-muted-foreground">
-                    Per Contribution
-                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Contribution
+                  </span>
                 </div>
+
+                <div className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  Ksh 100
+                </div>
+
+                <p className="mt-1 text-sm font-medium text-muted-foreground">
+                  Per Bereavement Contribution
+                </p>
               </div>
 
+
               {/* Registration */}
-              <div className="group flex items-center gap-4 p-5 sm:block sm:p-7 sm:text-center">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent-foreground sm:mx-auto sm:mb-4">
-                  <CheckCircle className="h-5 w-5" />
-                </div>
-
-                <div>
-                  <div className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    Ksh 1000
+              <div className="group px-6 py-7 sm:px-8 sm:py-8">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent-foreground">
+                    <CheckCircle className="h-5 w-5" />
                   </div>
 
-                  <div className="mt-1 text-sm font-medium text-muted-foreground">
-                    Registration Fee
-                  </div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Registration
+                  </span>
                 </div>
+
+                <div className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  Ksh 1000
+                </div>
+
+                <p className="mt-1 text-sm font-medium text-muted-foreground">
+                  One-Time Registration Fee
+                </p>
               </div>
 
             </div>
           </div>
         </div>
+
+
+        {/* Bottom Note */}
+        <div className="mx-auto mt-8 flex max-w-3xl items-start gap-3 rounded-lg border border-border/70 bg-muted/20 px-5 py-4">
+          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+
+          <p className="text-sm leading-6 text-muted-foreground">
+            Membership is open to eligible adults regardless of gender or
+            location. Contributions help members support one another during
+            times of bereavement.
+          </p>
+        </div>
+
       </div>
     </section>
   );
