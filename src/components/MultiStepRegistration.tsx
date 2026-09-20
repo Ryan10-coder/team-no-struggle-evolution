@@ -676,12 +676,12 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <Globe className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <Globe className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Country Selection</h3>
-              <p className="text-muted-foreground">Please select your country of residence</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Country Selection</h3>
+              <p className="text-slate-600">Please select your country of residence</p>
             </div>
 
             <div className="space-y-2">
@@ -717,12 +717,12 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <User className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <User className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Member Information</h3>
-              <p className="text-muted-foreground">Please provide your personal details</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Member Information</h3>
+              <p className="text-slate-600">Please provide your personal details</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -814,7 +814,7 @@ const MultiStepRegistration = () => {
                 placeholder="e.g., Nairobi, Kampala, London, etc."
                 required
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-600">
                 Enter your city or area. You can also include state/region (e.g., "Boston, Massachusetts")
               </p>
             </div>
@@ -848,12 +848,12 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <Heart className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <Heart className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Spouse Information</h3>
-              <p className="text-muted-foreground">Please provide your spouse's details (if married)</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Spouse Information</h3>
+              <p className="text-slate-600">Please provide your spouse's details (if married)</p>
             </div>
 
             {memberInfo.maritalStatus === 'Married' ? (
@@ -947,7 +947,7 @@ const MultiStepRegistration = () => {
               </>
             ) : (
               <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
+                <p className="text-slate-600 text-lg">
                   This section is only required if you are married. You can proceed to the next step.
                 </p>
               </div>
@@ -960,16 +960,16 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <Baby className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <Baby className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Children Information</h3>
-              <p className="text-muted-foreground">Add up to 6 children (if applicable)</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Children Information</h3>
+              <p className="text-slate-600">Add up to 6 children (if applicable)</p>
             </div>
 
-            <div className="flex justify-between items-center">
-              <h4 className="text-lg font-semibold text-foreground">Children ({children.length}/6)</h4>
+            <div className="flex justify-between items-center gap-4">
+              <h4 className="text-lg font-extrabold text-slate-900">Children ({children.length}/6)</h4>
               {children.length < 6 && (
                 <Button onClick={addChild} variant="outline" size="sm">
                   <UserPlus className="h-4 w-4 mr-2" />
@@ -987,10 +987,10 @@ const MultiStepRegistration = () => {
             ) : (
               <div className="space-y-6">
                 {children.map((child, index) => (
-                  <Card key={index} className="border-border/50">
+                  <Card key={index} className="border-slate-200 shadow-sm">
                     <CardContent className="p-6">
                       <div className="flex justify-between items-center mb-4">
-                        <h5 className="text-lg font-semibold text-foreground">Child {index + 1}</h5>
+                        <h5 className="text-lg font-extrabold text-slate-900">Child {index + 1}</h5>
                         <Button
                           onClick={() => removeChild(index)}
                           variant="destructive"
@@ -1064,18 +1064,18 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <UserCheck className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <UserCheck className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Parents Information</h3>
-              <p className="text-muted-foreground">Please provide information for your parents</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Parents Information</h3>
+              <p className="text-slate-600">Please provide information for your parents</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Parent 1 */}
               <div>
-                <h4 className="text-lg font-semibold text-foreground mb-4">Parent 1 Information</h4>
+                <h4 className="text-lg font-extrabold text-slate-900 mb-4">Parent 1 Information</h4>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Parent Names *</Label>
@@ -1141,7 +1141,7 @@ const MultiStepRegistration = () => {
 
               {/* Parent 2 */}
               <div>
-                <h4 className="text-lg font-semibold text-foreground mb-4">
+                <h4 className="text-lg font-extrabold text-slate-900 mb-4">
                   Parent 2 Information (Optional)
                 </h4>
                 <div className="space-y-4">
@@ -1211,19 +1211,19 @@ const MultiStepRegistration = () => {
           <div className="space-y-6">
             <div className="text-center mb-6">
               <div className="flex justify-center mb-4">
-                <div className="p-4 bg-gradient-primary rounded-full">
-                  <Receipt className="h-8 w-8 text-primary-foreground" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
+                  <Receipt className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Payment Proof</h3>
-              <p className="text-muted-foreground">Provide transaction ID for your registration fee payment</p>
+              <h3 className="text-2xl font-black text-slate-950 mb-2">Payment Proof</h3>
+              <p className="text-slate-600">Provide transaction ID for your registration fee payment</p>
             </div>
 
-            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 mb-6">
+            <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-8 mb-6">
               <div className="text-center">
-                <h4 className="text-xl font-semibold text-foreground mb-2">Registration Fee</h4>
-                <div className="text-3xl font-bold text-primary mb-2">Ksh 1000</div>
-                <p className="text-muted-foreground">One-time administrative fee to join Itumbu Welfare</p>
+                <h4 className="text-xl font-black text-slate-950 mb-2">Registration Fee</h4>
+                <div className="text-3xl font-black text-blue-600 mb-2">Ksh 1000</div>
+                <p className="text-slate-600">One-time administrative fee to join Itumbu Welfare</p>
               </div>
             </div>
 
@@ -1236,14 +1236,14 @@ const MultiStepRegistration = () => {
                 placeholder="Enter your MPESA transaction ID (e.g., MDHBBEBEBEB)"
                 required
               />
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-600">
                 Please provide the transaction ID from your Ksh 1000 registration fee payment
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-900 mb-2">Payment Instructions:</h5>
-              <ul className="text-sm text-blue-800 space-y-1">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5">
+              <h5 className="font-black text-blue-900 mb-2">Payment Instructions:</h5>
+              <ul className="text-sm text-blue-800 space-y-2">
                 <li>• Pay Ksh 1000 to our official payment account</li>
                 <li>• Note down the transaction ID from your payment receipt</li>
                 <li>• Enter the transaction ID in the field above</li>
@@ -1261,32 +1261,32 @@ const MultiStepRegistration = () => {
   return (
     <section id="register" className="py-24 bg-gradient-to-b from-background via-muted/20 to-background relative overflow-hidden">
       {/* Decorative background */}
-      <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+      <div className="absolute left-0 top-0 h-2 w-full bg-blue-600" />
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center mb-20">
-          <div className="inline-block mb-4 px-4 py-2 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
-            <span className="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto text-center mb-14 sm:mb-16">
+          <div className="inline-flex items-center gap-2 mb-5 px-4 py-2 bg-blue-600 rounded-full text-white shadow-md">
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-white">
               Join Itumbu Welfare
             </span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Member <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Registration</span>
+          <h2 className="text-4xl md:text-6xl font-black mb-6 text-slate-950 leading-tight">
+            Member <span className="text-blue-600">Registration</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
             Complete the multi-step registration form to join our supportive community
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Modern Progress Indicator */}
-          <div className="mb-12">
+          <div className="mb-10">
             <div className="relative">
               {/* Progress bar background */}
-              <div className="absolute top-5 left-0 right-0 h-1 bg-muted/50 rounded-full" />
+              <div className="absolute top-5 left-0 right-0 h-1 bg-slate-200 rounded-full" />
               {/* Active progress bar */}
               <div 
-                className="absolute top-5 left-0 h-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-full transition-all duration-500"
+                className="absolute top-5 left-0 h-1 bg-blue-600 rounded-full transition-all duration-500"
                 style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
               />
               
@@ -1297,17 +1297,17 @@ const MultiStepRegistration = () => {
                     <div
                       className={`relative w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300 ${
                         i + 1 <= currentStep
-                          ? 'bg-gradient-to-br from-primary to-secondary text-white border-primary shadow-lg scale-110'
-                          : 'bg-background text-muted-foreground border-muted'
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-110'
+                          : 'bg-white text-slate-500 border-slate-300'
                       }`}
                     >
                       {i + 1 <= currentStep && (
-                        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+                        <div className="absolute inset-0 rounded-full bg-blue-300/30 blur-lg animate-pulse" />
                       )}
                       <span className="relative z-10">{i + 1}</span>
                     </div>
                     <span className={`text-xs font-medium transition-colors duration-300 ${
-                      i + 1 <= currentStep ? 'text-foreground' : 'text-muted-foreground'
+                      i + 1 <= currentStep ? 'text-slate-900' : 'text-slate-500'
                     }`}>
                       {['Country', 'Personal', 'Spouse', 'Children', 'Parents', 'Payment'][i]}
                     </span>
@@ -1317,16 +1317,16 @@ const MultiStepRegistration = () => {
             </div>
           </div>
 
-          <Card className="relative overflow-hidden backdrop-blur-sm bg-card/80 shadow-xl border-border/50 rounded-3xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+          <Card className="relative overflow-hidden bg-white shadow-2xl border-2 border-slate-200 rounded-3xl">
+            <div className="absolute left-0 top-0 h-2 w-full bg-green-600" />
             <CardHeader className="relative z-10 pb-8">
               <div className="text-center">
                 <div className="inline-block mb-2 px-3 py-1 bg-primary/10 backdrop-blur-sm rounded-full border border-primary/20">
-                  <span className="text-xs font-semibold text-primary">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
                     Step {currentStep} of {totalSteps}
                   </span>
                 </div>
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                <CardTitle className="text-2xl font-black text-slate-950">
                   {['Select Country', 'Personal Information', 'Spouse Details', 'Children Information', 'Parent Details', 'Payment Proof'][currentStep - 1]}
                 </CardTitle>
               </div>
@@ -1335,7 +1335,7 @@ const MultiStepRegistration = () => {
             <CardContent className="relative z-10">
               {renderStepContent()}
 
-              <div className="flex justify-between items-center pt-10 gap-4">
+              <div className="flex justify-between items-center pt-10 gap-4 border-t border-slate-200 mt-8">
                 <Button
                   onClick={prevStep}
                   disabled={currentStep === 1}
@@ -1352,7 +1352,7 @@ const MultiStepRegistration = () => {
                     onClick={handleSubmit}
                     disabled={isSubmitting || !transactionId}
                     size="lg"
-                    className="flex-1 md:flex-initial bg-gradient-to-r from-primary to-secondary hover:shadow-xl hover:scale-105 transition-all duration-300"
+                    className="flex-1 md:flex-initial bg-blue-600 hover:bg-blue-700 hover:shadow-xl transition-all duration-300"
                   >
                     {isSubmitting ? (
                       <>
@@ -1370,7 +1370,7 @@ const MultiStepRegistration = () => {
                   <Button 
                     onClick={nextStep}
                     size="lg"
-                    className="flex-1 md:flex-initial bg-gradient-to-r from-primary to-secondary hover:shadow-xl hover:scale-105 transition-all duration-300"
+                    className="flex-1 md:flex-initial bg-blue-600 hover:bg-blue-700 hover:shadow-xl transition-all duration-300"
                   >
                     Next
                     <ChevronRight className="h-4 w-4 ml-2" />
@@ -1381,6 +1381,7 @@ const MultiStepRegistration = () => {
           </Card>
         </div>
       </div>
+      <div className="absolute bottom-0 left-0 h-2 w-full bg-green-600" />
     </section>
   );
 };
