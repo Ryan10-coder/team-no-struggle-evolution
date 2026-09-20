@@ -44,7 +44,7 @@ const Header = () => {
             <div className="h-11 w-11 flex items-center justify-center">
               <img
                 src="/lovable-uploads/"
-                alt="Itumbu Welfare"
+                alt=""
                 className="h-10 w-auto object-contain"
               />
             </div>
