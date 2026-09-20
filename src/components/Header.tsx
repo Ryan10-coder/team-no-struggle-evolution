@@ -43,8 +43,8 @@ const Header = () => {
 
             <div className="h-11 w-11 flex items-center justify-center">
               <img
-                src="/lovable-uploads/"
-                alt=""
+                src="/lovable-uploads/itumbuwelfare.png"
+                alt="Itumbu Welfare"
                 className="h-10 w-auto object-contain"
               />
             </div>
