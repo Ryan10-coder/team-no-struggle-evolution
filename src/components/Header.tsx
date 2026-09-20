@@ -32,246 +32,321 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border">
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[76px]">
 
-          {/* Brand */}
-          <div className="flex items-center gap-3 cursor-pointer group">
-            <div className="relative flex items-center justify-center">
-              <div className="absolute w-11 h-11 rounded-xl bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"></div>
+        <div className="h-[74px] flex items-center justify-between">
 
+          {/* ================= BRAND ================= */}
+          <div className="flex items-center gap-3 cursor-pointer min-w-fit">
+
+            <div className="h-11 w-11 flex items-center justify-center">
               <img
                 src="/lovable-uploads/"
-                alt=""
-                className="h-11 w-auto relative z-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                alt="Itumbu Welfare"
+                className="h-10 w-auto object-contain"
               />
             </div>
 
-            <div className="leading-tight">
-              <h4 className="text-[17px] font-extrabold tracking-[-0.02em] text-foreground">
+            <div className="hidden sm:block leading-none">
+              <h4 className="text-[17px] font-bold text-foreground tracking-tight">
                 Itumbu Welfare
               </h4>
-              <p className="text-[11px] font-medium text-muted-foreground tracking-wide uppercase">
+
+              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                 Welfare Community
               </p>
             </div>
+
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center ml-auto mr-8">
-            <div className="flex items-center gap-1">
 
-              {navigation.slice(0, 4).map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleNavigation(item)}
+          {/* ================= DESKTOP NAVIGATION ================= */}
+          <nav className="hidden lg:flex items-center h-full">
+
+            {navigation.slice(0, 4).map((item) => (
+              <button
+                key={item.name}
+                onClick={() => handleNavigation(item)}
+                className="
+                  relative
+                  h-[74px]
+                  px-4
+                  text-[13px]
+                  font-medium
+                  text-muted-foreground
+                  hover:text-foreground
+                  transition-colors
+                  group
+                "
+              >
+
+                {item.name}
+
+                <span
                   className="
-                    relative px-3.5 py-2.5
-                    text-[13px] font-semibold
-                    text-muted-foreground
-                    rounded-lg
-                    transition-all duration-200
-                    hover:text-foreground
-                    hover:bg-muted
-                    group
-                  "
-                >
-                  {item.name}
-
-                  <span className="
-                    absolute left-3.5 right-3.5 bottom-1
+                    absolute
+                    left-4
+                    right-4
+                    bottom-0
                     h-[2px]
-                    rounded-full
                     bg-primary
                     scale-x-0
                     group-hover:scale-x-100
-                    transition-transform duration-200 origin-center
-                  " />
-                </button>
-              ))}
+                    transition-transform
+                    duration-200
+                    origin-center
+                  "
+                />
 
-            </div>
+              </button>
+            ))}
+
           </nav>
 
-          {/* Right Actions */}
-          <div className="hidden lg:flex items-center gap-2.5">
 
-            {/* More Navigation */}
+          {/* ================= RIGHT SIDE ================= */}
+          <div className="hidden lg:flex items-center gap-2 min-w-fit">
+
+            {/* More */}
             <div className="relative group">
+
               <Button
                 variant="ghost"
                 size="sm"
                 className="
-                  h-10 px-3.5
-                  gap-1.5
-                  rounded-lg
+                  h-9
+                  px-3
+                  rounded-md
                   text-[13px]
-                  font-semibold
+                  font-medium
                   text-muted-foreground
                   hover:text-foreground
                   hover:bg-muted
+                  gap-1
                 "
               >
                 More
-                <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
+
+                <ChevronDown
+                  className="
+                    h-3.5
+                    w-3.5
+                    transition-transform
+                    duration-200
+                    group-hover:rotate-180
+                  "
+                />
               </Button>
 
-              {/* Dropdown */}
-              <div className="
-                absolute top-[calc(100%+10px)] right-0
-                w-64
-                bg-card
-                border border-border
-                rounded-xl
-                shadow-xl
-                opacity-0 invisible
-                translate-y-1
-                group-hover:opacity-100
-                group-hover:visible
-                group-hover:translate-y-0
-                transition-all duration-200
-                overflow-hidden
-              ">
 
-                <div className="px-4 pt-4 pb-2">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                    Quick Access
+              {/* Dropdown */}
+              <div
+                className="
+                  absolute
+                  top-full
+                  right-0
+                  mt-2
+                  w-60
+                  bg-card
+                  border
+                  border-border
+                  rounded-lg
+                  shadow-lg
+                  opacity-0
+                  invisible
+                  translate-y-1
+                  group-hover:opacity-100
+                  group-hover:visible
+                  group-hover:translate-y-0
+                  transition-all
+                  duration-150
+                  overflow-hidden
+                "
+              >
+
+                <div className="px-4 py-3 border-b border-border">
+
+                  <p className="text-xs font-semibold text-foreground">
+                    Account & Portal
                   </p>
+
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Access additional services
+                  </p>
+
                 </div>
 
-                <div className="px-2 pb-2">
+
+                <div className="p-1.5">
+
                   {navigation.slice(4).map((item) => (
                     <button
                       key={item.name}
                       onClick={() => handleNavigation(item)}
                       className="
                         w-full
-                        flex items-center
-                        px-3 py-2.5
                         text-left
+                        px-3
+                        py-2.5
+                        rounded-md
                         text-[13px]
                         font-medium
                         text-muted-foreground
-                        rounded-lg
                         hover:text-foreground
                         hover:bg-muted
-                        transition-colors duration-150
+                        transition-colors
                       "
                     >
                       {item.name}
                     </button>
                   ))}
+
                 </div>
+
               </div>
+
             </div>
 
-            {/* Join Button */}
+
+            {/* Divider */}
+            <div className="h-7 w-px bg-border mx-1" />
+
+
+            {/* Join */}
             <Button
               size="sm"
               onClick={() => handleNavigation({ href: '#register' })}
               className="
-                h-10
+                h-9
                 px-4
+                rounded-md
                 gap-2
-                rounded-lg
                 text-[13px]
-                font-bold
-                shadow-sm
-                hover:shadow-md
-                transition-all duration-200
+                font-semibold
+                shadow-none
               "
             >
-              <User className="h-4 w-4" />
+              <User className="h-3.5 w-3.5" />
               Join Now
             </Button>
 
           </div>
 
-          {/* Mobile Menu Button */}
+
+          {/* ================= MOBILE BUTTON ================= */}
           <button
             className="
               lg:hidden
-              flex items-center justify-center
-              w-10 h-10
-              rounded-lg
-              border border-border
+              h-10
+              w-10
+              flex
+              items-center
+              justify-center
+              rounded-md
+              border
+              border-border
               bg-background
               text-foreground
               hover:bg-muted
-              transition-all duration-200
+              transition-colors
             "
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation"
           >
+
             {isMenuOpen ? (
               <X className="h-5 w-5" />
             ) : (
               <Menu className="h-5 w-5" />
             )}
+
           </button>
 
         </div>
 
-        {/* Mobile Navigation */}
+
+        {/* ================= MOBILE NAVIGATION ================= */}
         <div
           className={`
             lg:hidden
             overflow-hidden
-            transition-all duration-300 ease-out
+            transition-all
+            duration-200
+            ease-in-out
             ${isMenuOpen
-              ? 'max-h-[620px] opacity-100 border-t border-border'
+              ? 'max-h-[650px] opacity-100 border-t border-border'
               : 'max-h-0 opacity-0'
             }
           `}
         >
-          <div className="py-4">
 
-            <div className="space-y-1">
+          <div className="py-3">
+
+            {/* Mobile links */}
+            <nav className="space-y-0.5">
+
               {navigation.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => handleNavigation(item)}
                   className="
                     w-full
-                    flex items-center
+                    flex
+                    items-center
+                    justify-between
+                    px-4
+                    py-3
+                    rounded-md
                     text-left
-                    px-4 py-3
-                    rounded-lg
                     text-[14px]
-                    font-semibold
+                    font-medium
                     text-muted-foreground
                     hover:text-foreground
                     hover:bg-muted
-                    transition-all duration-200
+                    transition-colors
                   "
                 >
-                  {item.name}
+                  <span>{item.name}</span>
+
+                  <span className="text-muted-foreground/50">
+                    →
+                  </span>
+
                 </button>
               ))}
-            </div>
 
-            <div className="pt-4 mt-3 border-t border-border">
+            </nav>
+
+
+            {/* Mobile CTA */}
+            <div className="mt-3 pt-3 border-t border-border">
+
               <Button
                 size="sm"
                 onClick={() => handleNavigation({ href: '#register' })}
                 className="
                   w-full
                   h-11
+                  rounded-md
                   gap-2
-                  rounded-lg
-                  font-bold
-                  shadow-sm
+                  font-semibold
+                  shadow-none
                 "
               >
                 <User className="h-4 w-4" />
                 Join Now
               </Button>
+
             </div>
 
           </div>
+
         </div>
 
       </div>
+
     </header>
   );
 };
