@@ -7,6 +7,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, Phone, Mail, MapPin, Users } from 'lucide-react';
+import { z } from 'zod';
+
+// Input validation schema
+const registrationSchema = z.object({
+  fullName: z.string()
+    .min(2, 'Full name must be at least 2 characters')
+    .max(100, 'Full name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+  email: z.string()
+    .email('Invalid email address')
+    .max(255, 'Email must be less than 255 characters'),
+  phone: z.string()
+    .regex(/^[+]?[0-9\s-()]{10,20}$/, 'Invalid phone number format'),
+  address: z.string()
+    .min(5, 'Address must be at least 5 characters')
+    .max(500, 'Address must be less than 500 characters'),
+  membershipType: z.string()
+    .min(1, 'Please select a membership type'),
+  emergencyContact: z.string()
+    .min(2, 'Emergency contact name must be at least 2 characters')
+    .max(100, 'Emergency contact name must be less than 100 characters'),
+  emergencyPhone: z.string()
+    .regex(/^[+]?[0-9\s-()]{10,20}$/, 'Invalid emergency phone number format'),
+  reasonForJoining: z.string()
+    .min(10, 'Please provide at least 10 characters explaining your reason')
+    .max(1000, 'Reason must be less than 1000 characters'),
+});
 
 const Registration = () => {
   const { toast } = useToast();
@@ -30,27 +57,52 @@ const Registration = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Validate input using Zod schema
+      const validationResult = registrationSchema.safeParse(formData);
+      
+      if (!validationResult.success) {
+        const firstError = validationResult.error.errors[0];
+        toast({
+          title: "Validation Error",
+          description: firstError.message,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
-    toast({
-      title: "Registration Submitted!",
-      description: "Thank you for your interest. Our team will contact you within 24 hours to complete your membership setup.",
-    });
+      // Use validated data
+      const validatedData = validationResult.data;
 
-    // Reset form
-    setFormData({
-      fullName: '',
-      email: '',
-      phone: '',
-      address: '',
-      membershipType: '',
-      emergencyContact: '',
-      emergencyPhone: '',
-      reasonForJoining: '',
-    });
+      // Simulate form submission with validated data
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-    setIsSubmitting(false);
+      toast({
+        title: "Registration Submitted!",
+        description: "Thank you for your interest. Our team will contact you within 24 hours to complete your membership setup.",
+      });
+
+      // Reset form
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        address: '',
+        membershipType: '',
+        emergencyContact: '',
+        emergencyPhone: '',
+        reasonForJoining: '',
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -207,7 +259,7 @@ const Registration = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="reasonForJoining" className="text-foreground font-medium">
-                    Why do you want to join Team No Struggle?
+                    Why do you want to join Itumbu Welfare?
                   </Label>
                   <Textarea
                     id="reasonForJoining"

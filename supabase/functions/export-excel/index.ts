@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { verifyAuth, verifyRole } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,6 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify authentication and authorization
+    const { user, supabase } = await verifyAuth(req);
+    
+    const hasPermission = await verifyRole(supabase, user.id, ['admin', 'treasurer', 'area_coordinator']);
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin, Treasurer, or Coordinator role required.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { members, contributions, balances, area } = await req.json();
 
     // Create Excel-compatible CSV data
@@ -65,11 +76,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status 
       }
     );
   }

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { verifyAuth, verifyRole } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,15 +12,26 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify authentication and authorization
+    const { user, supabase } = await verifyAuth(req);
+    
+    const hasPermission = await verifyRole(supabase, user.id, ['admin', 'customer_service', 'treasurer']);
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin, Customer Service, or Treasurer role required.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { phone, memberName, tnsNumber, balance, messageType } = await req.json();
 
     // Format the SMS message based on type
     let message = '';
     
     if (messageType === 'balance') {
-      message = `Dear ${memberName},\n\nYour TNS Account Update:\nTNS Number: ${tnsNumber}\nBenevolent Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nCustomer Care: 0700-000-000\n\nThank you for being part of Team No Struggle.`;
+      message = `Dear ${memberName},\n\nYour TNS Account Update:\nTNS Number: ${tnsNumber}\nBenevolent Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nCustomer Care: 0700-000-000\n\nThank you for being part of Itumbu Welfare.`;
     } else if (messageType === 'welcome') {
-      message = `Welcome to Team No Struggle, ${memberName}!\n\nYour TNS Number: ${tnsNumber}\nPAYBILL: 4148511\n\nFor support, call Customer Care: 0700-000-000\n\nWe're glad to have you!`;
+      message = `Welcome to Itumbu Welfare, ${memberName}!\n\nYour TNS Number: ${tnsNumber}\nPAYBILL: 4148511\n\nFor support, call Customer Care: 0700-000-000\n\nWe're glad to have you!`;
     } else if (messageType === 'contribution') {
       message = `Dear ${memberName},\n\nContribution received successfully!\nTNS Number: ${tnsNumber}\nNew Balance: KES ${balance.toLocaleString()}\nPAYBILL: 4148511\n\nThank you for your contribution.`;
     }
@@ -55,11 +66,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error sending SMS:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send SMS';
+    const status = errorMessage.includes('authorization') || errorMessage.includes('token') ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: 'Failed to send SMS' }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
-        status: 500 
+        status 
       }
     );
   }

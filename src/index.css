@@ -2,120 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Team No Struggle Welfare Group Design System
-   Professional, community-focused palette with trust and warmth
+/* Itumbu Welfare Welfare Group Design System
+   Modern, vibrant palette with energy and trust
    All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 215 27% 17%;
+    --background: 240 20% 99%;
+    --foreground: 240 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 27% 17%;
+    --card-foreground: 240 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 27% 17%;
+    --popover-foreground: 240 10% 15%;
 
-    /* Professional blue palette */
-    --primary: 215 85% 35%;
-    --primary-foreground: 0 0% 98%;
-    --primary-light: 215 85% 45%;
-    --primary-dark: 215 85% 25%;
+    /* Modern vibrant indigo */
+    --primary: 242 75% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 242 75% 68%;
+    --primary-dark: 242 75% 48%;
 
-    /* Warm community accent */
-    --secondary: 35 78% 55%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 35 78% 65%;
+    /* Electric purple accent */
+    --secondary: 280 70% 62%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 280 70% 72%;
 
-    /* Neutral tones */
-    --muted: 215 20% 96%;
-    --muted-foreground: 215 20% 45%;
+    /* Neutral modern tones */
+    --muted: 240 15% 96%;
+    --muted-foreground: 240 5% 50%;
 
-    --accent: 215 20% 93%;
-    --accent-foreground: 215 27% 17%;
+    --accent: 180 70% 92%;
+    --accent-foreground: 240 10% 15%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 90% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 88%;
-    --input: 215 20% 92%;
-    --ring: 215 85% 35%;
+    --border: 240 10% 90%;
+    --input: 240 10% 94%;
+    --ring: 242 75% 58%;
 
     /* Custom design tokens */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
+    --success: 142 70% 50%;
+    --success-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(215 85% 35%) 0%, hsl(215 85% 45%) 50%, hsl(35 78% 55%) 100%);
+    /* Modern vibrant chart colors */
+    --chart-1: 280 70% 62%;  /* Electric Purple */
+    --chart-2: 180 70% 55%;  /* Cyan */
+    --chart-3: 42 100% 65%;  /* Vibrant Gold */
+    --chart-4: 15 90% 65%;   /* Coral */
+    --chart-5: 330 80% 60%;  /* Magenta */
+    --chart-6: 200 95% 58%;  /* Bright Blue */
+    --chart-7: 142 70% 50%;  /* Emerald */
+    --chart-8: 260 85% 70%;  /* Light Purple */
+    --chart-9: 25 98% 60%;   /* Orange */
+    --chart-10: 80 75% 55%;  /* Lime Green */
 
-    --shadow-soft: 0 4px 6px -1px hsl(215 27% 17% / 0.1), 0 2px 4px -2px hsl(215 27% 17% / 0.1);
-    --shadow-medium: 0 10px 15px -3px hsl(215 27% 17% / 0.1), 0 4px 6px -4px hsl(215 27% 17% / 0.1);
-    --shadow-large: 0 25px 50px -12px hsl(215 27% 17% / 0.25);
+    --gradient-primary: linear-gradient(135deg, hsl(242 75% 58%) 0%, hsl(280 70% 62%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(280 70% 62%) 0%, hsl(330 80% 60%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(242 75% 58%) 0%, hsl(280 70% 62%) 50%, hsl(180 70% 55%) 100%);
+    --gradient-chart: linear-gradient(135deg, hsl(242 75% 58%), hsl(180 70% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(180 70% 55%) 0%, hsl(200 95% 58%) 100%);
+
+    --shadow-soft: 0 4px 12px -2px hsl(242 75% 58% / 0.15), 0 2px 6px -2px hsl(242 75% 58% / 0.1);
+    --shadow-medium: 0 10px 25px -5px hsl(242 75% 58% / 0.2), 0 4px 10px -4px hsl(242 75% 58% / 0.15);
+    --shadow-large: 0 30px 60px -15px hsl(242 75% 58% / 0.3), 0 10px 30px -10px hsl(280 70% 62% / 0.2);
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 20% 99%;
+    --sidebar-foreground: 240 10% 15%;
+    --sidebar-primary: 242 75% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 15% 96%;
+    --sidebar-accent-foreground: 240 10% 15%;
+    --sidebar-border: 240 10% 90%;
+    --sidebar-ring: 242 75% 58%;
   }
 
   .dark {
-    --background: 215 27% 12%;
+    --background: 240 15% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 215 27% 15%;
+    --card: 240 15% 11%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 215 27% 15%;
+    --popover: 240 15% 11%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 215 85% 45%;
-    --primary-foreground: 0 0% 98%;
-    --primary-light: 215 85% 55%;
-    --primary-dark: 215 85% 35%;
+    --primary: 242 75% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 242 75% 75%;
+    --primary-dark: 242 75% 55%;
 
-    --secondary: 35 78% 55%;
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 35 78% 65%;
+    --secondary: 280 70% 65%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 280 70% 75%;
 
-    --muted: 215 20% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 240 10% 18%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 215 20% 25%;
+    --accent: 240 10% 22%;
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 90% 70%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 25%;
-    --input: 215 20% 20%;
-    --ring: 215 85% 45%;
+    --border: 240 10% 20%;
+    --input: 240 10% 18%;
+    --ring: 242 75% 65%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
+    --success: 142 70% 55%;
+    --success-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
-    --gradient-hero: linear-gradient(135deg, hsl(215 85% 45%) 0%, hsl(215 85% 55%) 50%, hsl(35 78% 55%) 100%);
+    /* Modern vibrant chart colors - enhanced for dark mode */
+    --chart-1: 280 70% 65%;  /* Electric Purple */
+    --chart-2: 180 70% 60%;  /* Cyan */
+    --chart-3: 42 100% 70%;  /* Vibrant Gold */
+    --chart-4: 15 90% 70%;   /* Coral */
+    --chart-5: 330 80% 65%;  /* Magenta */
+    --chart-6: 200 95% 65%;  /* Bright Blue */
+    --chart-7: 142 70% 55%;  /* Emerald */
+    --chart-8: 260 85% 75%;  /* Light Purple */
+    --chart-9: 25 98% 65%;   /* Orange */
+    --chart-10: 80 75% 60%;  /* Lime Green */
 
-    --shadow-soft: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
-    --shadow-medium: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
-    --shadow-large: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+    --gradient-primary: linear-gradient(135deg, hsl(242 75% 65%) 0%, hsl(280 70% 65%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(280 70% 65%) 0%, hsl(330 80% 65%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(242 75% 65%) 0%, hsl(280 70% 65%) 50%, hsl(180 70% 60%) 100%);
+    --gradient-chart: linear-gradient(135deg, hsl(242 75% 65%), hsl(180 70% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(180 70% 60%) 0%, hsl(200 95% 65%) 100%);
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --shadow-soft: 0 4px 12px -2px hsl(0 0% 0% / 0.4), 0 2px 6px -2px hsl(242 75% 65% / 0.2);
+    --shadow-medium: 0 10px 25px -5px hsl(0 0% 0% / 0.5), 0 4px 10px -4px hsl(242 75% 65% / 0.3);
+    --shadow-large: 0 30px 60px -15px hsl(0 0% 0% / 0.6), 0 10px 30px -10px hsl(280 70% 65% / 0.3);
+
+    --sidebar-background: 240 15% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 242 75% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 10% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 10% 20%;
+    --sidebar-ring: 242 75% 65%;
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
@@ -131,4 +163,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Utility for hiding scrollbar while keeping scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
