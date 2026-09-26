@@ -15,21 +15,11 @@ interface MPESAPaymentProps {
 const normalizeKenyanPhone = (phone: string): string => {
   const digits = phone.replace(/\D/g, "");
 
-  if (!digits) return "";
+  if (digits.startsWith("0") && digits.length === 10) return `254${digits.slice(1)}`;
+  if (digits.startsWith("254") && digits.length === 12) return digits;
+  if (digits.startsWith("7") && digits.length === 9) return `254${digits}`;
 
-  if (digits.startsWith("0") && digits.length === 10) {
-    return `254${digits.slice(1)}`;
-  }
-
-  if (digits.startsWith("254") && digits.length === 12) {
-    return digits;
-  }
-
-  if (digits.startsWith("7") && digits.length === 9) {
-    return `254${digits}`;
-  }
-
-  return digits;
+  return "";
 };
 
 export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
@@ -43,49 +33,52 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
       return;
     }
 
-    if (parseFloat(amount) <= 0) {
-      toast.error("Amount must be greater than 0");
+    const numericAmount = Number(amount);
+    const normalizedPhone = normalizeKenyanPhone(phoneNumber);
+
+    if (!Number.isInteger(numericAmount) || numericAmount <= 0) {
+      toast.error("Enter a valid whole KES amount.");
       return;
     }
 
-    const normalizedPhone = normalizeKenyanPhone(phoneNumber);
-
-    if (!/^((2547\d{8})|(7\d{8})|(0[17]\d{8})|(\+2547\d{8}))$/.test(normalizedPhone)) {
-      toast.error("Invalid phone number format. Use 0712345678 or +254712345678");
+    if (!normalizedPhone) {
+      toast.error("Invalid Safaricom number. Use 0712345678 or 254712345678.");
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      const { data, error } = await supabase.functions.invoke('mpesa-stk-push', {
+      const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
         body: {
-          action: 'stk_push',
+          action: "stk_push",
           memberId,
-          amount: parseFloat(amount),
-          phoneNumber: normalizedPhone
-        }
+          amount: numericAmount,
+          phoneNumber: normalizedPhone,
+        },
       });
 
       if (error) {
-        console.error('Edge function invocation error:', error);
+        console.error("STK function invocation error:", error);
         toast.error(`Payment failed: ${error.message}`);
         return;
       }
 
       if (data?.success) {
-        toast.success("STK push sent! Please check your phone and enter your MPESA PIN.");
+        toast.success(
+          data.message || "STK Push sent. Check the customer's phone for the M-PESA prompt.",
+        );
         setAmount("");
         setPhoneNumber("");
       } else {
-        const errorMsg = data?.error || "Payment failed - unknown error";
-        console.error('Payment failed:', errorMsg);
-        toast.error(errorMsg);
+        console.error("STK Push failed:", data);
+        toast.error(data?.error || "M-PESA STK Push failed.");
       }
     } catch (error) {
-      console.error('Payment error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Payment failed. Please try again.";
-      toast.error(errorMessage);
+      console.error("Payment error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Payment failed. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -99,12 +92,13 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
           MPESA Payment
         </CardTitle>
         <CardDescription>
-          {memberName ? `Make payment for ${memberName}` : 'Make your membership payment'}
+          {memberName ? `Make payment for ${memberName}` : "Make your membership payment"}
         </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount (KSH)</Label>
+          <Label htmlFor="amount">Amount (KES)</Label>
           <Input
             id="amount"
             type="number"
@@ -113,14 +107,14 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
             onChange={(e) => setAmount(e.target.value)}
             disabled={isLoading}
             min="1"
-            step="0.01"
+            step="1"
           />
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label> 
+          <Label htmlFor="phone">Safaricom Phone Number</Label>
           <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               id="phone"
               type="tel"
@@ -132,28 +126,28 @@ export const MPESAPayment = ({ memberId, memberName }: MPESAPaymentProps) => {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Enter your Safaricom number (format: 0712345678)
+            The M-PESA prompt will be sent to this Safaricom number.
           </p>
         </div>
 
-        <Button 
-          onClick={handlePayment} 
+        <Button
+          onClick={handlePayment}
           className="w-full"
           disabled={isLoading || !amount || !phoneNumber}
         >
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sending STK Push...
+              Sending M-PESA Prompt...
             </>
           ) : (
-            'Pay via MPESA'
+            "Send M-PESA Prompt"
           )}
         </Button>
 
         <div className="text-center text-xs text-muted-foreground">
           <p>Paybill: 4148511</p>
-          <p>You will receive an STK push notification on your phone</p>
+          <p>After sending, check the phone for the M-PESA PIN prompt.</p>
         </div>
       </CardContent>
     </Card>
