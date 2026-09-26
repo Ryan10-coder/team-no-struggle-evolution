@@ -1,235 +1,321 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verifyAuth, verifyRole } from "../_shared/auth.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const jsonResponse = (body: unknown, status = 200) => {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
+const jsonResponse = (
+  body: unknown,
+  status = 200,
+) => {
+  return new Response(
+    JSON.stringify(body),
+    {
+      status,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
     },
-  });
+  );
 };
 
-const normalizeKenyanPhone = (phone: string) => {
-  const digits = String(phone ?? "").replace(/\D/g, "");
+/**
+ * Convert Kenyan phone numbers to 254XXXXXXXXX.
+ */
+function normalizeKenyanPhone(
+  phone: string,
+): string {
+  const digits = String(phone ?? "").replace(
+    /\D/g,
+    "",
+  );
 
-  if (digits.startsWith("0") && digits.length === 10) {
+  if (
+    digits.startsWith("0") &&
+    digits.length === 10
+  ) {
     return `254${digits.slice(1)}`;
   }
 
-  if (digits.startsWith("7") && digits.length === 9) {
-    return `254${digits}`;
-  }
-
-  if (digits.startsWith("254") && digits.length === 12) {
+  if (
+    digits.startsWith("254") &&
+    digits.length === 12
+  ) {
     return digits;
   }
 
-  return "";
-};
-
-const darajaTimestamp = () => {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Africa/Nairobi",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date());
-
-  const get = (type: string) =>
-    parts.find((part) => part.type === type)?.value ?? "";
-
-  return `${get("year")}${get("month")}${get("day")}${get("hour")}${get(
-    "minute",
-  )}${get("second")}`;
-};
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (
+    digits.startsWith("7") &&
+    digits.length === 9
+  ) {
+    return `254${digits}`;
   }
 
+  return "";
+}
+
+/**
+ * Generate Daraja timestamp in Nairobi time.
+ *
+ * Format:
+ * YYYYMMDDHHmmss
+ */
+function getTimestamp(): string {
+  const parts = new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      timeZone: "Africa/Nairobi",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    },
+  ).formatToParts(new Date());
+
+  const get = (type: string) =>
+    parts.find(
+      (part) => part.type === type,
+    )?.value ?? "";
+
+  return (
+    get("year") +
+    get("month") +
+    get("day") +
+    get("hour") +
+    get("minute") +
+    get("second")
+  );
+}
+
+Deno.serve(async (req) => {
+  /*
+   * CORS
+   */
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+
+  /*
+   * Only POST is allowed.
+   */
   if (req.method !== "POST") {
     return jsonResponse(
       {
         success: false,
-        error: "Method not allowed",
+        error: "Only POST requests are allowed.",
       },
       405,
     );
   }
 
   try {
+    /*
+     * Read request body.
+     */
     const body = await req.json();
-    const { action } = body ?? {};
 
-    if (action !== "stk_push") {
+    const {
+      amount,
+      phoneNumber,
+    } = body;
+
+    /*
+     * Validate amount.
+     */
+    const numericAmount = Number(amount);
+
+    if (
+      !Number.isInteger(numericAmount) ||
+      numericAmount <= 0
+    ) {
       return jsonResponse(
         {
           success: false,
-          error: "Invalid action",
+          error:
+            "Amount must be a positive whole number.",
         },
         400,
       );
     }
 
-    const { user, supabase: userSupabase } = await verifyAuth(req);
+    /*
+     * Validate phone.
+     */
+    const phone =
+      normalizeKenyanPhone(phoneNumber);
 
-    const hasPermission = await verifyRole(
-      userSupabase,
-      user.id,
-      [
-        "admin",
-        "treasurer",
-        "secretary",
-        "area_coordinator",
-        "general_coordinator",
-      ],
-    );
-
-    if (!hasPermission) {
+    if (!phone) {
       return jsonResponse(
         {
           success: false,
           error:
-            "Insufficient permissions. Admin or Treasurer role required.",
+            "Invalid Kenyan phone number. Use 0712345678 or 254712345678.",
         },
-        403,
+        400,
       );
     }
 
-    return await handleSTKPush(
-      body,
-      createClient(supabaseUrl, supabaseServiceKey),
-    );
-  } catch (error) {
-    console.error("M-PESA STK Push error:", error);
-
-    return jsonResponse(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Internal server error",
-      },
-      500,
-    );
-  }
-});
-
-async function handleSTKPush(data: any, supabase: any) {
-  const { memberId, amount, phoneNumber } = data;
-
-  if (!memberId || amount === undefined || !phoneNumber) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Member, amount and phone number are required.",
-      },
-      400,
-    );
-  }
-
-  const numericAmount = Number(amount);
-
-  if (!Number.isInteger(numericAmount) || numericAmount <= 0) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Amount must be a positive whole number in KES.",
-      },
-      400,
-    );
-  }
-
-  const msisdn = normalizeKenyanPhone(phoneNumber);
-
-  if (!msisdn) {
-    return jsonResponse(
-      {
-        success: false,
-        error:
-          "Invalid Safaricom phone number. Use 0712345678 or 254712345678.",
-      },
-      400,
-    );
-  }
-
-  const consumerKey = Deno.env.get("MPESA_CONSUMER_KEY");
-  const consumerSecret = Deno.env.get("MPESA_CONSUMER_SECRET");
-  const passkey = Deno.env.get("MPESA_PASSKEY");
-  const shortcode = Deno.env.get("MPESA_SHORTCODE");
-
-  const environment = (
-    Deno.env.get("MPESA_ENVIRONMENT") || "production"
-  ).toLowerCase();
-
-  if (!consumerKey || !consumerSecret || !passkey || !shortcode) {
-    return jsonResponse(
-      {
-        success: false,
-        error:
-          "M-PESA credentials are not fully configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY and MPESA_SHORTCODE.",
-      },
-      500,
-    );
-  }
-
-  const baseUrl =
-    environment === "sandbox"
-      ? "https://sandbox.safaricom.co.ke"
-      : "https://api.safaricom.co.ke";
-
-  try {
     /*
-     * STEP 1:
-     * Generate Daraja OAuth access token.
+     * M-PESA credentials.
+     *
+     * These MUST be configured as Supabase
+     * Edge Function secrets.
      */
-    const auth = btoa(`${consumerKey}:${consumerSecret}`);
+    const consumerKey =
+      Deno.env.get(
+        "MPESA_CONSUMER_KEY",
+      );
 
-    const tokenResponse = await fetch(
-      `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/json",
+    const consumerSecret =
+      Deno.env.get(
+        "MPESA_CONSUMER_SECRET",
+      );
+
+    const passkey =
+      Deno.env.get(
+        "MPESA_PASSKEY",
+      );
+
+    const shortcode =
+      Deno.env.get(
+        "MPESA_SHORTCODE",
+      );
+
+    /*
+     * For actual phone testing, use production.
+     *
+     * Set:
+     * MPESA_ENVIRONMENT=production
+     *
+     * Sandbox is for Daraja testing/simulation.
+     */
+    const environment = (
+      Deno.env.get(
+        "MPESA_ENVIRONMENT",
+      ) || "production"
+    ).toLowerCase();
+
+    if (
+      !consumerKey ||
+      !consumerSecret ||
+      !passkey ||
+      !shortcode
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          error:
+            "M-PESA configuration is incomplete. Required secrets: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY and MPESA_SHORTCODE.",
         },
-      },
-    );
-
-    const tokenText = await tokenResponse.text();
-
-    let tokenData: any;
-
-    try {
-      tokenData = JSON.parse(tokenText);
-    } catch {
-      tokenData = {};
+        500,
+      );
     }
 
-    if (!tokenResponse.ok || !tokenData.access_token) {
+    /*
+     * Select Daraja environment.
+     */
+    const baseUrl =
+      environment === "sandbox"
+        ? "https://sandbox.safaricom.co.ke"
+        : "https://api.safaricom.co.ke";
+
+    /*
+     * Callback URL.
+     *
+     * Set MPESA_CALLBACK_URL in Supabase secrets.
+     *
+     * Example:
+     * https://YOUR-PROJECT.supabase.co/functions/v1/payment-callback
+     */
+    const callbackUrl =
+      Deno.env.get(
+        "MPESA_CALLBACK_URL",
+      );
+
+    if (!callbackUrl) {
+      return jsonResponse(
+        {
+          success: false,
+          error:
+            "MPESA_CALLBACK_URL is not configured.",
+        },
+        500,
+      );
+    }
+
+    if (
+      !callbackUrl.startsWith("https://")
+    ) {
+      return jsonResponse(
+        {
+          success: false,
+          error:
+            "MPESA_CALLBACK_URL must use HTTPS.",
+        },
+        500,
+      );
+    }
+
+    /*
+     * ==========================================
+     * STEP 1: GET DARAJA ACCESS TOKEN
+     * ==========================================
+     */
+
+    const credentials =
+      btoa(
+        `${consumerKey}:${consumerSecret}`,
+      );
+
+    const tokenResponse =
+      await fetch(
+        `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Basic ${credentials}`,
+          },
+        },
+      );
+
+    const tokenText =
+      await tokenResponse.text();
+
+    let tokenData: any = {};
+
+    try {
+      tokenData =
+        JSON.parse(tokenText);
+    } catch {
       console.error(
-        "Daraja OAuth failed:",
-        tokenResponse.status,
+        "Invalid OAuth response:",
         tokenText,
+      );
+    }
+
+    if (
+      !tokenResponse.ok ||
+      !tokenData.access_token
+    ) {
+      console.error(
+        "Daraja OAuth error:",
+        {
+          status:
+            tokenResponse.status,
+          response:
+            tokenText,
+        },
       );
 
       return jsonResponse(
@@ -238,202 +324,234 @@ async function handleSTKPush(data: any, supabase: any) {
           error:
             tokenData.errorMessage ||
             tokenData.error_description ||
-            `M-PESA authentication failed (HTTP ${tokenResponse.status}).`,
+            `Could not obtain M-PESA access token. HTTP ${tokenResponse.status}`,
         },
         502,
       );
     }
 
     /*
-     * STEP 2:
-     * Generate timestamp and password.
+     * ==========================================
+     * STEP 2: CREATE PASSWORD
+     * ==========================================
      */
-    const timestamp = darajaTimestamp();
 
-    const password = btoa(
-      `${shortcode}${passkey}${timestamp}`,
-    );
+    const timestamp =
+      getTimestamp();
 
-    /*
-     * STEP 3:
-     * Callback URL.
-     *
-     * MPESA_CALLBACK_URL is preferred so production can use a
-     * specifically registered HTTPS callback URL.
-     *
-     * The fallback is also safe because this path does not contain
-     * the restricted "mpesa" keyword.
-     */
-    const callbackUrl =
-      Deno.env.get("MPESA_CALLBACK_URL") ||
-      `${supabaseUrl}/functions/v1/payment-callback`;
-
-    if (!callbackUrl.startsWith("https://")) {
-      return jsonResponse(
-        {
-          success: false,
-          error:
-            "M-PESA callback URL must use HTTPS in production.",
-        },
-        500,
+    const password =
+      btoa(
+        `${shortcode}${passkey}${timestamp}`,
       );
-    }
 
     /*
-     * STEP 4:
-     * Build STK Push request.
+     * ==========================================
+     * STEP 3: CREATE STK REQUEST
+     * ==========================================
      */
+
     const stkPayload = {
-      BusinessShortCode: shortcode,
-      Password: password,
-      Timestamp: timestamp,
-      TransactionType: "CustomerPayBillOnline",
-      Amount: numericAmount,
-      PartyA: msisdn,
-      PartyB: shortcode,
-      PhoneNumber: msisdn,
-      CallBackURL: callbackUrl,
-      AccountReference: `TNS-${String(memberId).slice(0, 20)}`,
-      TransactionDesc: "TNS Contribution Payment",
+      BusinessShortCode:
+        shortcode,
+
+      Password:
+        password,
+
+      Timestamp:
+        timestamp,
+
+      TransactionType:
+        "CustomerPayBillOnline",
+
+      Amount:
+        numericAmount,
+
+      PartyA:
+        phone,
+
+      PartyB:
+        shortcode,
+
+      PhoneNumber:
+        phone,
+
+      CallBackURL:
+        callbackUrl,
+
+      AccountReference:
+        "TNS",
+
+      TransactionDesc:
+        "TNS Contribution",
     };
 
-    console.log("Sending STK Push:", {
-      environment,
-      shortcode,
-      phone: `${msisdn.slice(0, 6)}******`,
-      amount: numericAmount,
-      callbackUrl,
-    });
-
-    /*
-     * STEP 5:
-     * Send the actual M-PESA Express prompt.
-     */
-    const stkResponse = await fetch(
-      `${baseUrl}/mpesa/stkpush/v1/processrequest`,
+    console.log(
+      "Sending M-PESA STK Push:",
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(stkPayload),
+        environment,
+        shortcode,
+        amount:
+          numericAmount,
+        phone:
+          `${phone.substring(
+            0,
+            6,
+          )}******`,
+        callbackUrl,
       },
     );
 
-    const stkText = await stkResponse.text();
+    /*
+     * ==========================================
+     * STEP 4: SEND STK PUSH TO SAFARICOM
+     * ==========================================
+     */
 
-    let stkResult: any;
+    const stkResponse =
+      await fetch(
+        `${baseUrl}/mpesa/stkpush/v1/processrequest`,
+        {
+          method: "POST",
+
+          headers: {
+            Authorization:
+              `Bearer ${tokenData.access_token}`,
+
+            "Content-Type":
+              "application/json",
+          },
+
+          body:
+            JSON.stringify(
+              stkPayload,
+            ),
+        },
+      );
+
+    const stkText =
+      await stkResponse.text();
+
+    let stkData: any = {};
 
     try {
-      stkResult = JSON.parse(stkText);
+      stkData =
+        JSON.parse(stkText);
     } catch {
-      stkResult = {};
+      console.error(
+        "Invalid STK response:",
+        stkText,
+      );
     }
 
     console.log(
       "Daraja STK response:",
-      stkResponse.status,
-      stkResult,
+      {
+        status:
+          stkResponse.status,
+        response:
+          stkData,
+      },
     );
 
     /*
-     * Daraja normally returns ResponseCode "0" when the request
-     * has been accepted for processing.
+     * ==========================================
+     * STEP 5: CHECK SAFARICOM RESPONSE
+     * ==========================================
      */
-    if (!stkResponse.ok || stkResult.ResponseCode !== "0") {
-      const errorMessage =
-        stkResult.errorMessage ||
-        stkResult.ResponseDescription ||
-        stkResult.errorCode ||
-        `STK Push request failed (HTTP ${stkResponse.status}).`;
 
+    if (
+      !stkResponse.ok
+    ) {
       return jsonResponse(
         {
           success: false,
-          error: errorMessage,
-          daraja: {
-            responseCode: stkResult.ResponseCode ?? null,
-            responseDescription:
-              stkResult.ResponseDescription ?? null,
-            requestId: stkResult.requestId ?? null,
-          },
+          error:
+            stkData.errorMessage ||
+            stkData.ResponseDescription ||
+            `M-PESA STK request failed. HTTP ${stkResponse.status}`,
+          daraja:
+            stkData,
         },
         502,
       );
     }
 
     /*
-     * STEP 6:
-     * Save the transaction as pending.
-     *
-     * Do this immediately after Daraja accepts the STK request.
+     * Daraja ResponseCode "0" means
+     * the STK request was accepted.
      */
-    const {
-      data: paymentData,
-      error: paymentError,
-    } = await supabase
-      .from("mpesa_payments")
-      .insert({
-        member_id: memberId,
-        phone_number: msisdn,
-        amount: numericAmount,
-        merchant_request_id: stkResult.MerchantRequestID,
-        checkout_request_id: stkResult.CheckoutRequestID,
-        status: "pending",
-      })
-      .select()
-      .single();
-
-    if (paymentError) {
-      console.error(
-        "Could not save pending M-PESA payment:",
-        paymentError,
-      );
-
+    if (
+      stkData.ResponseCode !==
+      "0"
+    ) {
       return jsonResponse(
         {
           success: false,
+
           error:
-            "STK Push was accepted by M-PESA, but the pending payment could not be saved. Check the M-PESA transaction before retrying.",
-          checkoutRequestId:
-            stkResult.CheckoutRequestID ?? null,
+            stkData.ResponseDescription ||
+            stkData.errorMessage ||
+            "M-PESA did not accept the STK Push.",
+
+          daraja:
+            stkData,
         },
-        500,
+        400,
       );
     }
 
     /*
-     * STEP 7:
-     * Return success to the admin portal.
+     * ==========================================
+     * SUCCESS
+     * ==========================================
+     *
+     * At this point Safaricom has accepted
+     * the STK Push request.
+     *
+     * The customer should receive the
+     * M-PESA prompt on the phone.
      */
-    return jsonResponse({
-      success: true,
-      message:
-        "STK Push sent successfully. Check the customer's phone for the M-PESA prompt.",
-      data: {
+
+    return jsonResponse(
+      {
+        success: true,
+
+        message:
+          "M-PESA STK Push sent successfully. Check the phone for the M-PESA prompt.",
+
         merchantRequestId:
-          stkResult.MerchantRequestID ?? null,
+          stkData.MerchantRequestID ||
+          null,
+
         checkoutRequestId:
-          stkResult.CheckoutRequestID ?? null,
+          stkData.CheckoutRequestID ||
+          null,
+
         customerMessage:
-          stkResult.CustomerMessage ||
+          stkData.CustomerMessage ||
           "Check your phone for the M-PESA prompt.",
-        paymentId: paymentData.id,
+
+        phone:
+          phone,
       },
-    });
+      200,
+    );
   } catch (error) {
-    console.error("STK Push request error:", error);
+    console.error(
+      "M-PESA STK Push exception:",
+      error,
+    );
 
     return jsonResponse(
       {
         success: false,
+
         error:
           error instanceof Error
             ? error.message
-            : "Failed to initiate STK Push.",
+            : "Unexpected M-PESA error.",
       },
-      502,
+      500,
     );
   }
-}
+});
